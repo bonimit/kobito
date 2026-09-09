@@ -17,6 +17,7 @@ from kobito.constants import (
 from kobito.entities.player import Player
 from kobito.entities.question_block import QuestionBlock
 from kobito.fonts import get_font
+from kobito.hint_service import HintService
 from kobito.levels.level1 import build_level1
 from kobito.questions import QuestionBank
 from kobito.quiz_screen import QuizScreen
@@ -74,6 +75,7 @@ class Game:
         self.camera_x = 0.0
 
         self.question_bank = QuestionBank()
+        self.hint_service = HintService()
         self.score = 0
         self.lives = STARTING_LIVES
         self.gauge = 0
@@ -160,7 +162,9 @@ class Game:
         background = self.screen.copy()
         anchor_rect = block.rect.move(-self.camera_x, 0)
 
-        correct = QuizScreen(self.screen, question, background=background, anchor_rect=anchor_rect).run()
+        correct = QuizScreen(
+            self.screen, question, background=background, anchor_rect=anchor_rect, hint_service=self.hint_service
+        ).run()
 
         if correct:
             self.score += CORRECT_ANSWER_SCORE
