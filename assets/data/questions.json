@@ -1,245 +1,2252 @@
 [
   {
-    "id": "vocab_001",
+    "id": "vocab_n5_001",
     "category": "vocabulary",
     "jlpt": "N5",
-    "prompt": "犬 (inu) means...",
-    "choices": ["Cat", "Dog", "Bird", "Fish"],
+    "prompt": "A furry friend runs up wagging its tail. It's a 犬 (inu) — what is it?",
+    "choices": [
+      "Cat",
+      "Dog",
+      "Bird",
+      "Fish"
+    ],
     "answer": 1,
-    "explanation": "犬 (いぬ) means \"dog\"."
+    "explanation": "犬 (いぬ) means \"dog\".",
+    "hint": "You already know this one from words like 'inu' in dog cafes -- picture the animal that barks."
   },
   {
-    "id": "vocab_002",
+    "id": "vocab_n5_002",
     "category": "vocabulary",
     "jlpt": "N5",
-    "prompt": "猫 (neko) means...",
-    "choices": ["Cat", "Dog", "Mouse", "Fox"],
-    "answer": 0,
-    "explanation": "猫 (ねこ) means \"cat\"."
-  },
-  {
-    "id": "vocab_003",
-    "category": "vocabulary",
-    "jlpt": "N5",
-    "prompt": "水 (mizu) means...",
-    "choices": ["Fire", "Water", "Earth", "Wind"],
+    "prompt": "You're thirsty and ask for 水 (mizu). What are you asking for?",
+    "choices": [
+      "Fire",
+      "Water",
+      "Wind",
+      "Earth"
+    ],
     "answer": 1,
-    "explanation": "水 (みず) means \"water\"."
+    "explanation": "水 (みず) means \"water\".",
+    "hint": "The kanji itself looks like a stream flowing down the middle -- follow the shape."
   },
   {
-    "id": "vocab_004",
+    "id": "vocab_n5_003",
+    "category": "vocabulary",
+    "jlpt": "N5",
+    "prompt": "The librarian hands you a 本 (hon). What did you receive?",
+    "choices": [
+      "Pen",
+      "Desk",
+      "Book",
+      "Bag"
+    ],
+    "answer": 2,
+    "explanation": "本 (ほん) means \"book\".",
+    "hint": "Think about where you'd be if a librarian handed it to you."
+  },
+  {
+    "id": "vocab_n5_004",
     "category": "vocabulary",
     "jlpt": "N5",
     "prompt": "学校 (gakkou) means...",
-    "choices": ["Hospital", "School", "Station", "Library"],
-    "answer": 1,
-    "explanation": "学校 (がっこう) means \"school\"."
+    "choices": [
+      "Hospital",
+      "Station",
+      "School",
+      "Store"
+    ],
+    "answer": 2,
+    "explanation": "学校 (がっこう) means \"school\".",
+    "hint": "The first kanji 学 shows up in 学生 (student) -- so where do students go?"
   },
   {
-    "id": "vocab_005",
+    "id": "vocab_n5_005",
     "category": "vocabulary",
-    "jlpt": "N4",
-    "prompt": "火 (hi) means...",
-    "choices": ["Water", "Fire", "Tree", "Metal"],
+    "jlpt": "N5",
+    "prompt": "食べる (taberu) means...",
+    "choices": [
+      "To drink",
+      "To eat",
+      "To sleep",
+      "To walk"
+    ],
     "answer": 1,
-    "explanation": "火 (ひ) means \"fire\"."
+    "explanation": "食べる (たべる) means \"to eat\".",
+    "hint": "食 is the kanji you'll see on restaurant signs -- it's about food."
   },
   {
-    "id": "kanji_001",
+    "id": "vocab_n5_006",
+    "category": "vocabulary",
+    "jlpt": "N5",
+    "prompt": "新しい (atarashii) means...",
+    "choices": [
+      "Old",
+      "New",
+      "Expensive",
+      "Quiet"
+    ],
+    "answer": 1,
+    "explanation": "新しい (あたらしい) means \"new\".",
+    "hint": "You've seen 新 in 新聞 (newspaper) -- news is always fresh."
+  },
+  {
+    "id": "vocab_n5_007",
+    "category": "vocabulary",
+    "jlpt": "N5",
+    "prompt": "先生 (sensei) means...",
+    "choices": [
+      "Student",
+      "Doctor",
+      "Teacher",
+      "Friend"
+    ],
+    "answer": 2,
+    "explanation": "先生 (せんせい) means \"teacher\".",
+    "hint": "It's the title you'd use for the person at the front of the classroom."
+  },
+  {
+    "id": "vocab_n5_008",
+    "category": "vocabulary",
+    "jlpt": "N5",
+    "prompt": "山 (yama) means...",
+    "choices": [
+      "River",
+      "Sea",
+      "Mountain",
+      "Sky"
+    ],
+    "answer": 2,
+    "explanation": "山 (やま) means \"mountain\".",
+    "hint": "The kanji is a picture: three peaks rising from a flat base."
+  },
+  {
+    "id": "kanji_n5_001",
+    "category": "kanji",
+    "jlpt": "N5",
+    "prompt": "How do you read 日本語?",
+    "choices": [
+      "にほんご",
+      "にほんじん",
+      "にちようび",
+      "ほんじつ"
+    ],
+    "answer": 0,
+    "explanation": "日本語 (にほんご) means \"Japanese language\".",
+    "hint": "The last kanji 語 means \"language\" and is read ご -- build backwards from there."
+  },
+  {
+    "id": "kanji_n5_002",
+    "category": "kanji",
+    "jlpt": "N5",
+    "prompt": "How is 人 read when it stands alone as a word?",
+    "choices": [
+      "ひと",
+      "じん",
+      "にん",
+      "ど"
+    ],
+    "answer": 0,
+    "explanation": "Standing alone, 人 is read ひと (person). じん and にん are used in compounds.",
+    "hint": "Two of these readings only ever appear stuck to other kanji, never on their own."
+  },
+  {
+    "id": "kanji_n5_003",
     "category": "kanji",
     "jlpt": "N5",
     "prompt": "Which kanji means \"big\"?",
-    "choices": ["小", "大", "中", "上"],
+    "choices": [
+      "小",
+      "大",
+      "中",
+      "少"
+    ],
     "answer": 1,
-    "explanation": "大 means \"big/large\"; 小 means \"small\"."
+    "explanation": "大 means \"big\". 小 is small, 中 is middle, 少 is few.",
+    "hint": "One of these is a person stretching their arms out as wide as they can."
   },
   {
-    "id": "kanji_002",
+    "id": "kanji_n5_004",
     "category": "kanji",
     "jlpt": "N5",
-    "prompt": "What is the reading of 山?",
-    "choices": ["かわ", "やま", "うみ", "そら"],
+    "prompt": "How do you read 一つ?",
+    "choices": [
+      "いちつ",
+      "ひとつ",
+      "ひとり",
+      "いっこ"
+    ],
     "answer": 1,
-    "explanation": "山 is read \"やま\" (yama), meaning \"mountain\"."
+    "explanation": "一つ (ひとつ) is \"one (thing)\" using the native Japanese counter.",
+    "hint": "Native counting (ひと, ふた, み...) is different from the Chinese-derived いち, に, さん."
   },
   {
-    "id": "kanji_003",
+    "id": "kanji_n5_005",
     "category": "kanji",
     "jlpt": "N5",
-    "prompt": "Which kanji means \"person\"?",
-    "choices": ["人", "入", "八", "大"],
+    "prompt": "Which kanji means \"river\"?",
+    "choices": [
+      "山",
+      "川",
+      "田",
+      "石"
+    ],
+    "answer": 1,
+    "explanation": "川 means \"river\". 山 is mountain, 田 is rice field, 石 is stone.",
+    "hint": "Look for the one drawn as lines of water running downstream side by side."
+  },
+  {
+    "id": "kanji_n5_006",
+    "category": "kanji",
+    "jlpt": "N5",
+    "prompt": "How do you read 先生?",
+    "choices": [
+      "せんせい",
+      "せんじょう",
+      "さきしょう",
+      "せいと"
+    ],
     "answer": 0,
-    "explanation": "人 means \"person\"; 入 means \"enter\"."
+    "explanation": "先生 (せんせい) means \"teacher\".",
+    "hint": "You've heard this word spoken in every dojo and classroom scene you've ever watched."
   },
   {
-    "id": "kanji_004",
+    "id": "kanji_n5_007",
     "category": "kanji",
-    "jlpt": "N4",
-    "prompt": "Which kanji means \"water\"?",
-    "choices": ["氷", "水", "木", "火"],
-    "answer": 1,
-    "explanation": "水 means \"water\"; 氷 means \"ice\"."
-  },
-  {
-    "id": "kanji_005",
-    "category": "kanji",
-    "jlpt": "N3",
-    "prompt": "What is the reading of 木曜日 (a day of the week)?",
-    "choices": ["すいようび", "もくようび", "きんようび", "かようび"],
-    "answer": 1,
-    "explanation": "木曜日 (もくようび) means \"Thursday\"."
-  },
-  {
-    "id": "grammar_001",
-    "category": "grammar",
     "jlpt": "N5",
-    "prompt": "わたし___がくせいです。 (Fill in the particle: \"I am a student.\")",
-    "choices": ["は", "を", "に", "で"],
-    "answer": 0,
-    "explanation": "は marks the topic: わたしはがくせいです = \"I am a student.\""
-  },
-  {
-    "id": "grammar_002",
-    "category": "grammar",
-    "jlpt": "N4",
-    "prompt": "りんご___食べます。 (Fill in the particle: \"I eat an apple.\")",
-    "choices": ["は", "を", "に", "と"],
-    "answer": 1,
-    "explanation": "を marks the direct object: りんごを食べます = \"I eat an apple.\""
-  },
-  {
-    "id": "grammar_003",
-    "category": "grammar",
-    "jlpt": "N4",
-    "prompt": "ここ___猫がいます。 (Fill in the particle: \"There is a cat here.\")",
-    "choices": ["は", "を", "に", "と"],
+    "prompt": "Which kanji means \"eye\"?",
+    "choices": [
+      "耳",
+      "口",
+      "目",
+      "手"
+    ],
     "answer": 2,
-    "explanation": "に marks the location of existence: ここに猫がいます = \"There is a cat here.\""
+    "explanation": "目 means \"eye\". 耳 is ear, 口 is mouth, 手 is hand.",
+    "hint": "Turn each one sideways -- one of them is a pupil inside an eyelid."
   },
   {
-    "id": "grammar_004",
+    "id": "kanji_n5_008",
+    "category": "kanji",
+    "jlpt": "N5",
+    "prompt": "How do you read 車?",
+    "choices": [
+      "くるま",
+      "でんしゃ",
+      "じてんしゃ",
+      "くるまや"
+    ],
+    "answer": 0,
+    "explanation": "車 alone is read くるま and means \"car\".",
+    "hint": "Two of the options are compounds that need an extra kanji in front to be read that way."
+  },
+  {
+    "id": "grammar_n5_001",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "わたし＿ 学生です。 (I am a student.)",
+    "choices": [
+      "は",
+      "を",
+      "に",
+      "で"
+    ],
+    "answer": 0,
+    "explanation": "は marks the topic of the sentence: \"as for me, (I'm) a student\".",
+    "hint": "Which particle announces what the whole sentence is about, rather than what's being acted on?"
+  },
+  {
+    "id": "grammar_n5_002",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "パン＿ 食べます。 (I eat bread.)",
+    "choices": [
+      "が",
+      "を",
+      "に",
+      "へ"
+    ],
+    "answer": 1,
+    "explanation": "を marks the direct object -- the thing the verb acts on.",
+    "hint": "The bread is receiving the action of eating. Which particle flags the receiver?"
+  },
+  {
+    "id": "grammar_n5_003",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "図書館＿ 本を 読みます。 (I read books at the library.)",
+    "choices": [
+      "に",
+      "で",
+      "へ",
+      "を"
+    ],
+    "answer": 1,
+    "explanation": "で marks the place where an action happens. に would mark existence or a destination.",
+    "hint": "You're doing something at that place, not just existing there or heading toward it."
+  },
+  {
+    "id": "grammar_n5_004",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "一緒に 昼ご飯を 食べ＿。 (Let's eat lunch together.)",
+    "choices": [
+      "ます",
+      "ました",
+      "ましょう",
+      "ません"
+    ],
+    "answer": 2,
+    "explanation": "～ましょう is the polite \"let's ~\" invitation form.",
+    "hint": "Three of these just report facts. Only one invites someone to join you."
+  },
+  {
+    "id": "grammar_n5_005",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "これは だれ＿ かばんですか。 (Whose bag is this?)",
+    "choices": [
+      "が",
+      "の",
+      "は",
+      "を"
+    ],
+    "answer": 1,
+    "explanation": "の links two nouns, showing possession: だれの = \"whose\".",
+    "hint": "You need the little connector that glues one noun to another, like an apostrophe-s."
+  },
+  {
+    "id": "grammar_n5_006",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "日本へ 行き＿です。 (I want to go to Japan.)",
+    "choices": [
+      "たい",
+      "ながら",
+      "ましょう",
+      "ください"
+    ],
+    "answer": 0,
+    "explanation": "verb stem + たい expresses the speaker's own desire.",
+    "hint": "You're describing a wish of your own, not inviting or requesting anything."
+  },
+  {
+    "id": "grammar_n5_007",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "暑いです＿、窓を 開けます。 (Because it's hot, I'll open the window.)",
+    "choices": [
+      "から",
+      "まで",
+      "より",
+      "など"
+    ],
+    "answer": 0,
+    "explanation": "から after a clause means \"because; since\".",
+    "hint": "The first half is the reason for the second half. Which word introduces a reason?"
+  },
+  {
+    "id": "grammar_n5_008",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "机の 上＿ 本が あります。 (There is a book on the desk.)",
+    "choices": [
+      "に",
+      "を",
+      "へ",
+      "と"
+    ],
+    "answer": 0,
+    "explanation": "に marks the location where something exists with あります/います.",
+    "hint": "With あります you're stating where something sits, not where it's going."
+  },
+  {
+    "id": "verb_n5_001",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "食べる → polite present (masu-form)?",
+    "choices": [
+      "食べます",
+      "食べました",
+      "食べません",
+      "食べたい"
+    ],
+    "answer": 0,
+    "explanation": "食べる is a ru-verb: drop る, add ます → 食べます.",
+    "hint": "Strip the final る off the dictionary form, then attach the plain polite ending."
+  },
+  {
+    "id": "verb_n5_002",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "飲む → polite past?",
+    "choices": [
+      "飲みます",
+      "飲みました",
+      "飲みません",
+      "飲んで"
+    ],
+    "answer": 1,
+    "explanation": "飲む → 飲みます → 飲みました (polite past).",
+    "hint": "First make it polite, then push that polite ending into the past."
+  },
+  {
+    "id": "verb_n5_003",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "行く → polite negative?",
+    "choices": [
+      "行きます",
+      "行きました",
+      "行きません",
+      "行って"
+    ],
+    "answer": 2,
+    "explanation": "行く → 行きます → 行きません (polite negative).",
+    "hint": "You want the ending that cancels the action while staying polite."
+  },
+  {
+    "id": "verb_n5_004",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "する → polite present?",
+    "choices": [
+      "します",
+      "さます",
+      "すます",
+      "しります"
+    ],
+    "answer": 0,
+    "explanation": "する is irregular: its polite form is します.",
+    "hint": "This verb is one of only two true irregulars in Japanese -- its stem vowel changes to し."
+  },
+  {
+    "id": "verb_n5_005",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "来る → polite present?",
+    "choices": [
+      "くます",
+      "きます",
+      "こます",
+      "けます"
+    ],
+    "answer": 1,
+    "explanation": "来る is irregular: 来ます, read きます.",
+    "hint": "The reading of 来 shifts depending on the form -- here it takes the き sound."
+  },
+  {
+    "id": "verb_n5_006",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "見る → te-form?",
+    "choices": [
+      "見って",
+      "見て",
+      "見んで",
+      "見いて"
+    ],
+    "answer": 1,
+    "explanation": "見る is a ru-verb: drop る, add て → 見て.",
+    "hint": "Ru-verbs are the easy ones -- nothing doubles or shifts, you just swap the ending."
+  },
+  {
+    "id": "vocab_n4_001",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "約束 (yakusoku) means...",
+    "choices": [
+      "Promise",
+      "Mistake",
+      "Holiday",
+      "Reason"
+    ],
+    "answer": 0,
+    "explanation": "約束 (やくそく) means \"promise; appointment\".",
+    "hint": "It's what you make with a friend when you agree to meet on Saturday."
+  },
+  {
+    "id": "vocab_n4_002",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "準備 (junbi) means...",
+    "choices": [
+      "Conversation",
+      "Preparation",
+      "Decision",
+      "Invitation"
+    ],
+    "answer": 1,
+    "explanation": "準備 (じゅんび) means \"preparation\".",
+    "hint": "It's what you do the night before a trip, not during it."
+  },
+  {
+    "id": "vocab_n4_003",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "心配 (shinpai) means...",
+    "choices": [
+      "Delight",
+      "Worry",
+      "Surprise",
+      "Boredom"
+    ],
+    "answer": 1,
+    "explanation": "心配 (しんぱい) means \"worry; anxiety\".",
+    "hint": "The first kanji is 心 (heart) -- so this is a feeling that weighs on it."
+  },
+  {
+    "id": "vocab_n4_004",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "説明 (setsumei) means...",
+    "choices": [
+      "Question",
+      "Apology",
+      "Explanation",
+      "Complaint"
+    ],
+    "answer": 2,
+    "explanation": "説明 (せつめい) means \"explanation\".",
+    "hint": "明 means \"clear\" -- this is the act of making something clear to someone."
+  },
+  {
+    "id": "vocab_n4_005",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "経験 (keiken) means...",
+    "choices": [
+      "Experience",
+      "Expense",
+      "Exception",
+      "Expectation"
+    ],
+    "answer": 0,
+    "explanation": "経験 (けいけん) means \"experience\".",
+    "hint": "It's the noun you'd use on a resume for everything you've actually done."
+  },
+  {
+    "id": "vocab_n4_006",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "珍しい (mezurashii) means...",
+    "choices": [
+      "Noisy",
+      "Rare",
+      "Gentle",
+      "Heavy"
+    ],
+    "answer": 1,
+    "explanation": "珍しい (めずらしい) means \"rare; unusual\".",
+    "hint": "You'd say this when you spot something you almost never see."
+  },
+  {
+    "id": "vocab_n4_007",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "便利 (benri) means...",
+    "choices": [
+      "Dangerous",
+      "Convenient",
+      "Expensive",
+      "Quiet"
+    ],
+    "answer": 1,
+    "explanation": "便利 (べんり) means \"convenient; handy\".",
+    "hint": "It's the compliment you'd pay a well-placed konbini."
+  },
+  {
+    "id": "vocab_n4_008",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "急ぐ (isogu) means...",
+    "choices": [
+      "To rest",
+      "To hurry",
+      "To forget",
+      "To borrow"
+    ],
+    "answer": 1,
+    "explanation": "急ぐ (いそぐ) means \"to hurry\".",
+    "hint": "急 also appears in 急行 (express train) -- it's all about speed."
+  },
+  {
+    "id": "kanji_n4_001",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "How do you read 地図?",
+    "choices": [
+      "ちず",
+      "じず",
+      "ちと",
+      "ちほう"
+    ],
+    "answer": 0,
+    "explanation": "地図 (ちず) means \"map\".",
+    "hint": "図 is read ず here, the same way it is in 図書館 (library)."
+  },
+  {
+    "id": "kanji_n4_002",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "How do you read 世界?",
+    "choices": [
+      "せかい",
+      "せいかい",
+      "よかい",
+      "せけん"
+    ],
+    "answer": 0,
+    "explanation": "世界 (せかい) means \"world\".",
+    "hint": "Careful: one distractor adds a long vowel this word doesn't have."
+  },
+  {
+    "id": "kanji_n4_003",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "Which kanji means \"to use\"?",
+    "choices": [
+      "使",
+      "便",
+      "働",
+      "作"
+    ],
+    "answer": 0,
+    "explanation": "使 means \"to use\" (使う). 便 is convenience, 働 is to work, 作 is to make.",
+    "hint": "One of these contains the person radical beside a shape meaning \"official errand\"."
+  },
+  {
+    "id": "kanji_n4_004",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "How do you read 買い物?",
+    "choices": [
+      "かいもつ",
+      "かいもの",
+      "ばいもの",
+      "かいぶつ"
+    ],
+    "answer": 1,
+    "explanation": "買い物 (かいもの) means \"shopping\".",
+    "hint": "物 is read もの when it stands as a native word, not ぶつ."
+  },
+  {
+    "id": "kanji_n4_005",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "Which kanji means \"cheap\" (and also \"safe\")?",
+    "choices": [
+      "高",
+      "安",
+      "低",
+      "悪"
+    ],
+    "answer": 1,
+    "explanation": "安 means \"cheap; safe; at ease\". 高 is expensive/tall.",
+    "hint": "It's the opposite of the kanji you'd see on an expensive price tag."
+  },
+  {
+    "id": "kanji_n4_006",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "How do you read 病院?",
+    "choices": [
+      "びょういん",
+      "へいいん",
+      "やまいいん",
+      "びょうえん"
+    ],
+    "answer": 0,
+    "explanation": "病院 (びょういん) means \"hospital\".",
+    "hint": "院 is read いん in every building compound -- 大学院, 美容院, and this one."
+  },
+  {
+    "id": "kanji_n4_007",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "Which kanji means \"to teach\"?",
+    "choices": [
+      "習",
+      "教",
+      "学",
+      "校"
+    ],
+    "answer": 1,
+    "explanation": "教 means \"to teach\" (教える). 習 is to learn by practice, 学 is study.",
+    "hint": "Three of these are about receiving knowledge. Only one is about giving it."
+  },
+  {
+    "id": "kanji_n4_008",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "How do you read 特別?",
+    "choices": [
+      "とくべつ",
+      "どくべつ",
+      "とくべち",
+      "とくれつ"
+    ],
+    "answer": 0,
+    "explanation": "特別 (とくべつ) means \"special\".",
+    "hint": "別 is read べつ, the same as in 別々 (separately)."
+  },
+  {
+    "id": "grammar_n4_001",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "富士山に 登った＿が あります。 (I have climbed Mt. Fuji.)",
+    "choices": [
+      "こと",
+      "もの",
+      "とき",
+      "ところ"
+    ],
+    "answer": 0,
+    "explanation": "past-plain + ことがある expresses having had an experience.",
+    "hint": "This pattern turns a past action into an abstract 'instance' you possess."
+  },
+  {
+    "id": "grammar_n4_002",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "音楽を 聞き＿、勉強します。 (I study while listening to music.)",
+    "choices": [
+      "ながら",
+      "ないで",
+      "たあと",
+      "ながく"
+    ],
+    "answer": 0,
+    "explanation": "verb stem + ながら means doing two things simultaneously.",
+    "hint": "Both actions run at the same time -- one isn't finished before the other starts."
+  },
+  {
+    "id": "grammar_n4_003",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "空が 暗いですね。雨が 降り＿です。 (It looks like it will rain.)",
+    "choices": [
+      "そう",
+      "よう",
+      "らしい",
+      "みたい"
+    ],
+    "answer": 0,
+    "explanation": "verb stem + そうです reports an impression from what you can see right now.",
+    "hint": "You're judging from the sky in front of you, not from hearsay or resemblance."
+  },
+  {
+    "id": "grammar_n4_004",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "明日までに 宿題を し＿。 (I must do the homework by tomorrow.)",
+    "choices": [
+      "なければなりません",
+      "てもいいです",
+      "ないでください",
+      "たいです"
+    ],
+    "answer": 0,
+    "explanation": "～なければなりません expresses obligation: \"must do\".",
+    "hint": "It's a double negative in disguise: 'if you don't do it, it won't do'."
+  },
+  {
+    "id": "grammar_n4_005",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "ここで 写真を 撮っ＿ですか。 (May I take photos here?)",
+    "choices": [
+      "てもいい",
+      "てはいけない",
+      "たらだめ",
+      "なくてもいい"
+    ],
+    "answer": 0,
+    "explanation": "～てもいいですか asks for permission.",
+    "hint": "You're asking to be allowed, not being told you're forbidden."
+  },
+  {
+    "id": "grammar_n4_006",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "雨が 降っ＿、試合は 中止です。 (If it rains, the match is cancelled.)",
+    "choices": [
+      "たら",
+      "ても",
+      "ながら",
+      "ないで"
+    ],
+    "answer": 0,
+    "explanation": "～たら sets up a conditional: \"if/when X happens\".",
+    "hint": "One of these means 'even if', which would flip the meaning entirely."
+  },
+  {
+    "id": "grammar_n4_007",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "毎日 練習して、泳げる＿なりました。 (I became able to swim.)",
+    "choices": [
+      "ように",
+      "ことに",
+      "そうに",
+      "ために"
+    ],
+    "answer": 0,
+    "explanation": "potential + ようになる marks a change into a new ability or habit.",
+    "hint": "You're describing a gradual change of state, not a decision or a purpose."
+  },
+  {
+    "id": "grammar_n4_008",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "食べ＿て、お腹が 痛いです。 (I ate too much and my stomach hurts.)",
+    "choices": [
+      "すぎ",
+      "にくく",
+      "やすく",
+      "はじめ"
+    ],
+    "answer": 0,
+    "explanation": "verb stem + すぎる means doing something to excess.",
+    "hint": "The stomachache tells you the amount went past a reasonable limit."
+  },
+  {
+    "id": "verb_n4_001",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "書く → potential form (\"can write\")?",
+    "choices": [
+      "書ける",
+      "書かれる",
+      "書かせる",
+      "書こう"
+    ],
+    "answer": 0,
+    "explanation": "u-verb potential: final -u → -eru. 書く → 書ける.",
+    "hint": "For u-verbs, shift the last vowel to the え row, then add る."
+  },
+  {
+    "id": "verb_n4_002",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "食べる → passive form?",
+    "choices": [
+      "食べれる",
+      "食べられる",
+      "食べさせる",
+      "食べよう"
+    ],
+    "answer": 1,
+    "explanation": "ru-verb passive: drop る, add られる → 食べられる.",
+    "hint": "Ru-verbs take the full られる ending -- the shortened version is casual potential, not passive."
+  },
+  {
+    "id": "verb_n4_003",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "行く → plain volitional (\"let's go\")?",
+    "choices": [
+      "行こう",
+      "行かう",
+      "行きよう",
+      "行けよう"
+    ],
+    "answer": 0,
+    "explanation": "u-verb volitional: final -u → -ou. 行く → 行こう.",
+    "hint": "Move the last vowel to the お row and lengthen it."
+  },
+  {
+    "id": "verb_n4_004",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "する → causative form (\"make/let someone do\")?",
+    "choices": [
+      "される",
+      "させる",
+      "しられる",
+      "すらせる"
+    ],
+    "answer": 1,
+    "explanation": "する is irregular: its causative is させる.",
+    "hint": "One of the options is the passive of this same verb -- don't mix them up."
+  },
+  {
+    "id": "verb_n4_005",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "読む → te-form?",
+    "choices": [
+      "読みて",
+      "読んで",
+      "読って",
+      "読いて"
+    ],
+    "answer": 1,
+    "explanation": "u-verbs ending in む take んで: 読む → 読んで.",
+    "hint": "Verbs ending in む, ぶ and ぬ all share the same voiced te-form ending."
+  },
+  {
+    "id": "verb_n4_006",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "待つ → ba-conditional?",
+    "choices": [
+      "待てば",
+      "待つば",
+      "待ちば",
+      "待たば"
+    ],
+    "answer": 0,
+    "explanation": "u-verb ば-form: final -u → -eba. 待つ → 待てば.",
+    "hint": "Same trick as the potential: slide the final vowel to the え row, then add ば."
+  },
+  {
+    "id": "vocab_n3_001",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "迷う (mayou) means...",
+    "choices": [
+      "To decide",
+      "To hesitate / get lost",
+      "To arrive",
+      "To promise"
+    ],
+    "answer": 1,
+    "explanation": "迷う (まよう) means \"to hesitate; to waver; to get lost\".",
+    "hint": "It's the state of not being able to pick a path -- literally or figuratively."
+  },
+  {
+    "id": "vocab_n3_002",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "諦める (akirameru) means...",
+    "choices": [
+      "To continue",
+      "To give up",
+      "To begin",
+      "To succeed"
+    ],
+    "answer": 1,
+    "explanation": "諦める (あきらめる) means \"to give up\".",
+    "hint": "It's what you finally do after trying and deciding to stop."
+  },
+  {
+    "id": "vocab_n3_003",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "我慢 (gaman) means...",
+    "choices": [
+      "Enjoyment",
+      "Endurance / putting up with",
+      "Confusion",
+      "Gratitude"
+    ],
+    "answer": 1,
+    "explanation": "我慢 (がまん) means \"endurance; patience; putting up with something\".",
+    "hint": "It's the very Japanese virtue of quietly bearing something unpleasant."
+  },
+  {
+    "id": "vocab_n3_004",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "苦手 (nigate) means...",
+    "choices": [
+      "Skilled at",
+      "Not good at",
+      "Interested in",
+      "Tired of"
+    ],
+    "answer": 1,
+    "explanation": "苦手 (にがて) means \"not good at; poor at\".",
+    "hint": "The first kanji 苦 means \"bitter; painful\" -- how would that feel about a skill?"
+  },
+  {
+    "id": "vocab_n3_005",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "遠慮 (enryo) means...",
+    "choices": [
+      "Restraint / holding back",
+      "Ambition",
+      "Distance",
+      "Welcome"
+    ],
+    "answer": 0,
+    "explanation": "遠慮 (えんりょ) means \"restraint; reserve; holding back out of politeness\".",
+    "hint": "It's what you're doing when you politely decline the last piece of cake."
+  },
+  {
+    "id": "vocab_n3_006",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "頼る (tayoru) means...",
+    "choices": [
+      "To refuse",
+      "To rely on",
+      "To compare",
+      "To repair"
+    ],
+    "answer": 1,
+    "explanation": "頼る (たよる) means \"to rely on; to depend on\".",
+    "hint": "The same kanji shows up in 依頼 (request) -- it's about leaning on someone."
+  },
+  {
+    "id": "vocab_n3_007",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "素直 (sunao) means...",
+    "choices": [
+      "Stubborn",
+      "Honest / obedient",
+      "Careless",
+      "Clever"
+    ],
+    "answer": 1,
+    "explanation": "素直 (すなお) means \"honest; frank; obedient; straightforward\".",
+    "hint": "直 means \"straight\" -- this describes a personality with no bends in it."
+  },
+  {
+    "id": "vocab_n3_008",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "提案 (teian) means...",
+    "choices": [
+      "Proposal",
+      "Permission",
+      "Prediction",
+      "Protection"
+    ],
+    "answer": 0,
+    "explanation": "提案 (ていあん) means \"proposal; suggestion\".",
+    "hint": "It's the noun for what you put on the table at a meeting."
+  },
+  {
+    "id": "kanji_n3_001",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 経済?",
+    "choices": [
+      "けいざい",
+      "きょうざい",
+      "けいさい",
+      "けいえい"
+    ],
+    "answer": 0,
+    "explanation": "経済 (けいざい) means \"economy\".",
+    "hint": "One distractor, けいえい, is 経営 (management) -- a different word with the same first kanji."
+  },
+  {
+    "id": "kanji_n3_002",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 政治?",
+    "choices": [
+      "せいじ",
+      "せいち",
+      "しょうじ",
+      "せいぢ"
+    ],
+    "answer": 0,
+    "explanation": "政治 (せいじ) means \"politics\".",
+    "hint": "治 is read じ here, as in 明治 (Meiji)."
+  },
+  {
+    "id": "kanji_n3_003",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 増える?",
+    "choices": [
+      "ふえる",
+      "まえる",
+      "ぞうえる",
+      "へえる"
+    ],
+    "answer": 0,
+    "explanation": "増える (ふえる) means \"to increase\".",
+    "hint": "Its opposite is 減る (へる) -- one distractor is a mash-up of the two."
+  },
+  {
+    "id": "kanji_n3_004",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 調べる?",
+    "choices": [
+      "しらべる",
+      "ととべる",
+      "ちょうべる",
+      "たしべる"
+    ],
+    "answer": 0,
+    "explanation": "調べる (しらべる) means \"to investigate; to look up\".",
+    "hint": "The kun-reading here is nothing like the on-reading ちょう you see in 調子."
+  },
+  {
+    "id": "kanji_n3_005",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 期待?",
+    "choices": [
+      "きたい",
+      "ごたい",
+      "きだい",
+      "きまち"
+    ],
+    "answer": 0,
+    "explanation": "期待 (きたい) means \"expectation; hope\".",
+    "hint": "待 keeps its on-reading たい here, not the kun-reading まち."
+  },
+  {
+    "id": "kanji_n3_006",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 反対?",
+    "choices": [
+      "はんたい",
+      "ほんたい",
+      "はんつい",
+      "へんたい"
+    ],
+    "answer": 0,
+    "explanation": "反対 (はんたい) means \"opposition; the opposite\".",
+    "hint": "対 is read たい in this compound, as in 対象 and 絶対."
+  },
+  {
+    "id": "kanji_n3_007",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 認める?",
+    "choices": [
+      "みとめる",
+      "にんめる",
+      "したためる",
+      "あらためる"
+    ],
+    "answer": 0,
+    "explanation": "認める (みとめる) means \"to recognize; to admit\".",
+    "hint": "The on-reading にん appears in 確認, but the kun-reading here is completely different."
+  },
+  {
+    "id": "kanji_n3_008",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 価値?",
+    "choices": [
+      "かち",
+      "かおく",
+      "かじ",
+      "ちか"
+    ],
+    "answer": 0,
+    "explanation": "価値 (かち) means \"value; worth\".",
+    "hint": "Both kanji use short on-readings here -- one option simply reverses them."
+  },
+  {
+    "id": "grammar_n3_001",
     "category": "grammar",
     "jlpt": "N3",
-    "prompt": "ともだち___行きます。 (Fill in the particle meaning \"to/toward\": \"I'm going to a friend's place.\")",
-    "choices": ["へ", "を", "が", "も"],
+    "prompt": "先生の＿、試験に 合格できました。 (Thanks to my teacher, I passed.)",
+    "choices": [
+      "おかげで",
+      "せいで",
+      "ために",
+      "くせに"
+    ],
     "answer": 0,
-    "explanation": "へ marks direction: ともだちへ行きます = \"I'm going to my friend's place.\""
+    "explanation": "おかげで credits a *positive* outcome to someone or something.",
+    "hint": "The result here is good news -- which of these carries gratitude rather than blame?"
   },
   {
-    "id": "verb_001",
-    "category": "verb_conjugation",
-    "jlpt": "N4",
-    "prompt": "What is the te-form of 食べる (to eat)?",
-    "choices": ["食べって", "食べて", "食べいて", "食べた"],
+    "id": "grammar_n3_002",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "寝坊した＿、電車に 遅れた。 (Because I overslept, I missed the train.)",
+    "choices": [
+      "おかげで",
+      "せいで",
+      "ながら",
+      "ついでに"
+    ],
     "answer": 1,
-    "explanation": "Ru-verbs drop る and add て: 食べる → 食べて."
+    "explanation": "せいで blames a *negative* result on a cause.",
+    "hint": "This outcome is unwelcome -- pick the one that assigns fault."
   },
   {
-    "id": "verb_002",
-    "category": "verb_conjugation",
-    "jlpt": "N4",
-    "prompt": "What is the past tense of 行く (to go)?",
-    "choices": ["行いた", "行った", "行きた", "行くた"],
-    "answer": 1,
-    "explanation": "行く is an irregular u-verb: its past tense is 行った, not 行いた."
+    "id": "grammar_n3_003",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "説明書の＿ 組み立ててください。 (Please assemble it as the manual says.)",
+    "choices": [
+      "とおりに",
+      "かわりに",
+      "ながらに",
+      "ばかりに"
+    ],
+    "answer": 0,
+    "explanation": "N + のとおりに means \"in the way that; exactly as\".",
+    "hint": "You're following a model exactly -- think of the word for 'street/way' used figuratively."
   },
   {
-    "id": "verb_003",
+    "id": "grammar_n3_004",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "野菜が 嫌いな＿。ただ お腹が いっぱいなんです。 (It's not that I dislike vegetables.)",
+    "choices": [
+      "わけではない",
+      "ほかない",
+      "にすぎない",
+      "しかない"
+    ],
+    "answer": 0,
+    "explanation": "わけではない softly denies a conclusion someone might have drawn: \"it's not that ~\".",
+    "hint": "The second sentence corrects a wrong assumption -- you need a gentle partial denial."
+  },
+  {
+    "id": "grammar_n3_005",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "彼は 文句を 言う＿で、何も しない。 (He does nothing but complain.)",
+    "choices": [
+      "ばかり",
+      "だけしか",
+      "のみに",
+      "しか"
+    ],
+    "answer": 0,
+    "explanation": "～てばかり/～ばかりで means doing nothing but that one thing.",
+    "hint": "You need the word that means 'only, and endlessly so' before で."
+  },
+  {
+    "id": "grammar_n3_006",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "どこかで 会った＿がする。 (I feel like we've met somewhere.)",
+    "choices": [
+      "ような気",
+      "そうな気",
+      "ように気",
+      "らしい気"
+    ],
+    "answer": 0,
+    "explanation": "～ような気がする means \"I get the feeling that ~\".",
+    "hint": "The set phrase pairs a 'seems like' word with 気がする -- watch the correct connector."
+  },
+  {
+    "id": "grammar_n3_007",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "あの 顔つきから見て、彼が 犯人＿。 (Judging by that face, he must be the culprit.)",
+    "choices": [
+      "に違いない",
+      "かもしれない",
+      "とは限らない",
+      "わけがない"
+    ],
+    "answer": 0,
+    "explanation": "に違いない expresses strong conviction: \"must be; no doubt\".",
+    "hint": "The speaker is confident, not hedging -- one option means the exact opposite."
+  },
+  {
+    "id": "grammar_n3_008",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "去年＿、今年は 雨が 多い。 (Compared to last year, there's more rain.)",
+    "choices": [
+      "に比べて",
+      "に加えて",
+      "につれて",
+      "において"
+    ],
+    "answer": 0,
+    "explanation": "に比べて means \"compared to\".",
+    "hint": "Two things are being measured against each other -- look for the 'compare' kanji."
+  },
+  {
+    "id": "verb_n3_001",
     "category": "verb_conjugation",
     "jlpt": "N3",
-    "prompt": "What is the plain negative form of する (to do)?",
-    "choices": ["する", "した", "しない", "している"],
-    "answer": 2,
-    "explanation": "する is irregular: its plain negative is しない."
+    "prompt": "飲む → causative form (\"make someone drink\")?",
+    "choices": [
+      "飲ませる",
+      "飲まれる",
+      "飲める",
+      "飲もう"
+    ],
+    "answer": 0,
+    "explanation": "u-verb causative: -u → -aseru. 飲む → 飲ませる.",
+    "hint": "Take the ない-stem (飲ま-) and attach the causative ending."
   },
   {
-    "id": "verb_004",
+    "id": "verb_n3_002",
     "category": "verb_conjugation",
     "jlpt": "N3",
-    "prompt": "What is the te-form of 飲む (to drink)?",
-    "choices": ["飲んで", "飲みて", "飲むで", "飲んだ"],
+    "prompt": "見る → causative-passive (\"be made to watch\")?",
+    "choices": [
+      "見させられる",
+      "見せられる",
+      "見られる",
+      "見させる"
+    ],
     "answer": 0,
-    "explanation": "Verbs ending in む/ぶ/ぬ take んで in the te-form: 飲む → 飲んで."
+    "explanation": "Causative 見させる + passive → 見させられる (\"be made to watch\").",
+    "hint": "Build it in two steps: first make it causative, then make *that* passive."
   },
   {
-    "id": "kanji_n2_001",
-    "category": "kanji",
-    "jlpt": "N2",
-    "prompt": "What is the reading of 経済 (economy)?",
-    "choices": ["けいざい", "けいさい", "きょうざい", "きょうさい"],
+    "id": "verb_n3_003",
+    "category": "verb_conjugation",
+    "jlpt": "N3",
+    "prompt": "泳ぐ → ba-conditional?",
+    "choices": [
+      "泳げば",
+      "泳ぐば",
+      "泳ぎば",
+      "泳がば"
+    ],
     "answer": 0,
-    "explanation": "経済 (けいざい) means \"economy\"."
+    "explanation": "u-verb ば-form: -u → -eba. 泳ぐ → 泳げば.",
+    "hint": "Slide the final vowel to the え row before adding ば."
   },
   {
-    "id": "kanji_n2_002",
-    "category": "kanji",
-    "jlpt": "N2",
-    "prompt": "What is the reading of 環境 (environment)?",
-    "choices": ["かんきょう", "かんけい", "げんきょう", "げんけい"],
+    "id": "verb_n3_004",
+    "category": "verb_conjugation",
+    "jlpt": "N3",
+    "prompt": "帰る → plain imperative (blunt command)?",
+    "choices": [
+      "帰れ",
+      "帰ろ",
+      "帰り",
+      "帰よ"
+    ],
     "answer": 0,
-    "explanation": "環境 (かんきょう) means \"environment\"."
+    "explanation": "u-verb imperative: -u → -e. 帰る → 帰れ.",
+    "hint": "The blunt command form ends on the え row -- no extra syllable attached."
+  },
+  {
+    "id": "verb_n3_005",
+    "category": "verb_conjugation",
+    "jlpt": "N3",
+    "prompt": "話す → passive form?",
+    "choices": [
+      "話される",
+      "話せる",
+      "話させる",
+      "話そう"
+    ],
+    "answer": 0,
+    "explanation": "u-verb passive: -u → -areru. 話す → 話される.",
+    "hint": "Use the ない-stem (話さ-) plus れる. One distractor is the potential form instead."
+  },
+  {
+    "id": "verb_n3_006",
+    "category": "verb_conjugation",
+    "jlpt": "N3",
+    "prompt": "起きる → causative form (\"wake someone up\")?",
+    "choices": [
+      "起きさせる",
+      "起こす",
+      "起きられる",
+      "起きよう"
+    ],
+    "answer": 0,
+    "explanation": "ru-verb causative: drop る, add させる → 起きさせる. (起こす is a separate transitive verb.)",
+    "hint": "One option is a different verb entirely, not a conjugation of this one."
   },
   {
     "id": "vocab_n2_001",
     "category": "vocabulary",
     "jlpt": "N2",
-    "prompt": "確かに (tashikani) means...",
-    "choices": ["Certainly", "Maybe", "Never", "Suddenly"],
+    "prompt": "曖昧 (aimai) means...",
+    "choices": [
+      "Precise",
+      "Vague / ambiguous",
+      "Urgent",
+      "Splendid"
+    ],
+    "answer": 1,
+    "explanation": "曖昧 (あいまい) means \"vague; ambiguous\".",
+    "hint": "It's the criticism you'd level at an answer that refuses to commit either way."
+  },
+  {
+    "id": "vocab_n2_002",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "慎重 (shinchou) means...",
+    "choices": [
+      "Cautious",
+      "Cheerful",
+      "Stubborn",
+      "Generous"
+    ],
     "answer": 0,
-    "explanation": "確かに (たしかに) means \"certainly / indeed\"."
+    "explanation": "慎重 (しんちょう) means \"cautious; careful; prudent\".",
+    "hint": "重 suggests weight -- this person weighs things heavily before acting."
+  },
+  {
+    "id": "vocab_n2_003",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "把握 (haaku) means...",
+    "choices": [
+      "Grasp / firm understanding",
+      "Release",
+      "Rejection",
+      "Delay"
+    ],
+    "answer": 0,
+    "explanation": "把握 (はあく) means \"grasp; comprehension; getting a firm hold on\".",
+    "hint": "Both kanji are about gripping with the hand -- now apply that to understanding."
+  },
+  {
+    "id": "vocab_n2_004",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "促す (unagasu) means...",
+    "choices": [
+      "To urge / prompt",
+      "To postpone",
+      "To ignore",
+      "To permit"
+    ],
+    "answer": 0,
+    "explanation": "促す (うながす) means \"to urge; to prompt; to encourage someone to act\".",
+    "hint": "The same kanji appears in 促進 (promotion) -- it's about pushing something forward."
+  },
+  {
+    "id": "vocab_n2_005",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "妥協 (dakyou) means...",
+    "choices": [
+      "Conflict",
+      "Compromise",
+      "Competition",
+      "Cooperation"
+    ],
+    "answer": 1,
+    "explanation": "妥協 (だきょう) means \"compromise\".",
+    "hint": "It's what two sides reach when neither gets everything they wanted."
+  },
+  {
+    "id": "vocab_n2_006",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "効率 (kouritsu) means...",
+    "choices": [
+      "Efficiency",
+      "Effort",
+      "Effect",
+      "Emergency"
+    ],
+    "answer": 0,
+    "explanation": "効率 (こうりつ) means \"efficiency\".",
+    "hint": "率 means \"rate\" -- so this is the rate at which effort turns into results."
+  },
+  {
+    "id": "vocab_n2_007",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "矛盾 (mujun) means...",
+    "choices": [
+      "Agreement",
+      "Contradiction",
+      "Conclusion",
+      "Condition"
+    ],
+    "answer": 1,
+    "explanation": "矛盾 (むじゅん) means \"contradiction\".",
+    "hint": "It comes from a fable about an unstoppable spear and an unbreakable shield."
+  },
+  {
+    "id": "vocab_n2_008",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "補う (oginau) means...",
+    "choices": [
+      "To supplement / make up for",
+      "To abandon",
+      "To divide",
+      "To criticize"
+    ],
+    "answer": 0,
+    "explanation": "補う (おぎなう) means \"to supplement; to make up for; to compensate\".",
+    "hint": "It's what you do to fill a gap or shortfall, as in 補強 or 補助."
+  },
+  {
+    "id": "kanji_n2_001",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 影響?",
+    "choices": [
+      "えいきょう",
+      "えいごう",
+      "かげひびき",
+      "えんきょう"
+    ],
+    "answer": 0,
+    "explanation": "影響 (えいきょう) means \"influence; effect\".",
+    "hint": "One distractor uses the kun-readings (かげ, ひびき) -- this compound uses on-readings."
+  },
+  {
+    "id": "kanji_n2_002",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 環境?",
+    "choices": [
+      "かんきょう",
+      "かんけい",
+      "わきょう",
+      "けんきょう"
+    ],
+    "answer": 0,
+    "explanation": "環境 (かんきょう) means \"environment\".",
+    "hint": "One distractor is actually 関係 (relationship) in disguise."
+  },
+  {
+    "id": "kanji_n2_003",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 需要?",
+    "choices": [
+      "じゅよう",
+      "しゅよう",
+      "じゅうよう",
+      "にゅよう"
+    ],
+    "answer": 0,
+    "explanation": "需要 (じゅよう) means \"demand\" (as in supply and demand).",
+    "hint": "Watch the length: one distractor is 重要 (important), which has a long vowel this word lacks."
+  },
+  {
+    "id": "kanji_n2_004",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 傾向?",
+    "choices": [
+      "けいこう",
+      "けいむき",
+      "きょうこう",
+      "けいごう"
+    ],
+    "answer": 0,
+    "explanation": "傾向 (けいこう) means \"tendency; trend\".",
+    "hint": "向 takes its on-reading こう here, not the kun-reading むき."
+  },
+  {
+    "id": "kanji_n2_005",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 貧しい?",
+    "choices": [
+      "まずしい",
+      "とぼしい",
+      "いやしい",
+      "ひんしい"
+    ],
+    "answer": 0,
+    "explanation": "貧しい (まずしい) means \"poor\".",
+    "hint": "One distractor, とぼしい, is 乏しい (scarce) -- close in meaning, different kanji."
+  },
+  {
+    "id": "kanji_n2_006",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 承認?",
+    "choices": [
+      "しょうにん",
+      "じょうにん",
+      "しょうみとめ",
+      "そうにん"
+    ],
+    "answer": 0,
+    "explanation": "承認 (しょうにん) means \"approval; recognition\".",
+    "hint": "認 keeps its on-reading にん here, as in 確認."
+  },
+  {
+    "id": "kanji_n2_007",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 象徴?",
+    "choices": [
+      "しょうちょう",
+      "ぞうちょう",
+      "しょうびょう",
+      "ぞうしるし"
+    ],
+    "answer": 0,
+    "explanation": "象徴 (しょうちょう) means \"symbol\".",
+    "hint": "象 is read ぞう when it means \"elephant\", but しょう in abstract compounds like this one."
+  },
+  {
+    "id": "kanji_n2_008",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 巧み?",
+    "choices": [
+      "たくみ",
+      "こうみ",
+      "たくらみ",
+      "うまみ"
+    ],
+    "answer": 0,
+    "explanation": "巧み (たくみ) means \"skillful; adept\".",
+    "hint": "One distractor, たくらみ, is 企み (a scheme) -- similar sound, very different meaning."
   },
   {
     "id": "grammar_n2_001",
     "category": "grammar",
     "jlpt": "N2",
-    "prompt": "彼は忙しい___、いつも手伝ってくれる。 (Fill in: \"Even though he's busy, he always helps.\")",
-    "choices": ["のに", "ので", "から", "し"],
+    "prompt": "上司の 命令だから、やら＿。 (It's the boss's order, so I have no choice but to do it.)",
+    "choices": [
+      "ざるを得ない",
+      "ないではない",
+      "かねる",
+      "までもない"
+    ],
     "answer": 0,
-    "explanation": "のに expresses contrast/concession: 忙しいのに = \"even though busy\"."
+    "explanation": "ざるを得ない means \"cannot help but; have no choice but to\".",
+    "hint": "You're forced into it by circumstance -- look for the classical negative + 'cannot obtain'."
   },
   {
     "id": "grammar_n2_002",
     "category": "grammar",
     "jlpt": "N2",
-    "prompt": "食べた___なのに、もうお腹が空いた。 (Fill in: \"Even though I JUST ate, I'm hungry again.\")",
-    "choices": ["ばかり", "だけ", "しか", "のみ"],
+    "prompt": "その 発言は 誤解を 招き＿。 (That remark could invite misunderstanding.)",
+    "choices": [
+      "かねない",
+      "かねる",
+      "きれない",
+      "得ない"
+    ],
     "answer": 0,
-    "explanation": "Verb-た + ばかり means \"just did ~\": 食べたばかり = \"just ate\"."
+    "explanation": "かねない means \"might; could well (something bad) happen\".",
+    "hint": "Careful: its near-twin かねる means the *opposite* -- 'cannot bring oneself to'."
   },
   {
-    "id": "kanji_n1_001",
-    "category": "kanji",
-    "jlpt": "N1",
-    "prompt": "What is the reading of 曖昧 (ambiguous)?",
-    "choices": ["あいまい", "あんまい", "あいまつ", "あんまつ"],
+    "id": "grammar_n2_003",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "それは 言い訳＿。 (That's nothing more than an excuse.)",
+    "choices": [
+      "にすぎない",
+      "にほかならない",
+      "に違いない",
+      "にあたらない"
+    ],
     "answer": 0,
-    "explanation": "曖昧 (あいまい) means \"ambiguous / vague\"."
+    "explanation": "にすぎない means \"nothing more than; merely\", downplaying something.",
+    "hint": "The speaker is belittling it -- which phrase caps its value at 'only that much'?"
   },
   {
-    "id": "kanji_n1_002",
-    "category": "kanji",
-    "jlpt": "N1",
-    "prompt": "What is the reading of 頻繁 (frequent)?",
-    "choices": ["ひんぱん", "ひんばん", "へいぱん", "へいばん"],
+    "id": "grammar_n2_004",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "彼は 謝る＿、逆に 怒り出した。 (Far from apologizing, he got angry.)",
+    "choices": [
+      "どころか",
+      "ばかりか",
+      "とともに",
+      "にしては"
+    ],
     "answer": 0,
-    "explanation": "頻繁 (ひんぱん) means \"frequent\"."
+    "explanation": "どころか means \"far from X -- on the contrary, Y\", reversing the expectation.",
+    "hint": "Reality turned out opposite to what was expected, not merely beyond it."
+  },
+  {
+    "id": "grammar_n2_005",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "一言 余計なことを 言った＿、友達を 失った。 (Just because I said one thing too many, I lost a friend.)",
+    "choices": [
+      "ばかりに",
+      "ばかりで",
+      "おかげで",
+      "ながらも"
+    ],
+    "answer": 0,
+    "explanation": "ばかりに means \"just because ~ (and regrettably, a bad result followed)\".",
+    "hint": "One small cause led to an outsized *regrettable* consequence."
+  },
+  {
+    "id": "grammar_n2_006",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "入院を ＿に、生活習慣を 見直した。 (Taking hospitalization as a trigger, I reviewed my habits.)",
+    "choices": [
+      "きっかけ",
+      "もと",
+      "ため",
+      "かぎり"
+    ],
+    "answer": 0,
+    "explanation": "をきっかけに means \"taking ~ as an opportunity/trigger\".",
+    "hint": "You need the noun that means the spark or turning point that started a change."
+  },
+  {
+    "id": "grammar_n2_007",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "実力＿、仕事が 与えられる。 (Work is assigned according to ability.)",
+    "choices": [
+      "に応じて",
+      "に沿って",
+      "に際して",
+      "にかけて"
+    ],
+    "answer": 0,
+    "explanation": "に応じて means \"in accordance with; depending on\" a variable factor.",
+    "hint": "The amount of work *varies with* the ability -- look for the 'respond' kanji."
+  },
+  {
+    "id": "grammar_n2_008",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "病気は 快方に 向かい＿ある。 (The illness is gradually improving.)",
+    "choices": [
+      "つつ",
+      "ながら",
+      "ばかり",
+      "きり"
+    ],
+    "answer": 0,
+    "explanation": "～つつある means a change is in progress: \"is gradually ~ing\".",
+    "hint": "This is the formal way to say a process is underway, and it pairs with ある."
+  },
+  {
+    "id": "verb_n2_001",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "先生が 教室に ＿。 (honorific form of 来る)",
+    "choices": [
+      "いらっしゃいます",
+      "まいります",
+      "おります",
+      "いたします"
+    ],
+    "answer": 0,
+    "explanation": "いらっしゃる is the honorific (尊敬語) for 来る/行く/いる, used for someone above you.",
+    "hint": "The subject is your teacher, so you must *elevate* them -- three options lower yourself instead."
+  },
+  {
+    "id": "verb_n2_002",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "私が ご案内 ＿。 (humble form of する)",
+    "choices": [
+      "いたします",
+      "なさいます",
+      "されます",
+      "くださいます"
+    ],
+    "answer": 0,
+    "explanation": "いたす is the humble (謙譲語) form of する, used for your own actions.",
+    "hint": "The subject is 私, so you must *lower* yourself -- the others all elevate someone else."
+  },
+  {
+    "id": "verb_n2_003",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "資料を ＿ましたか。 (honorific form of 見る)",
+    "choices": [
+      "ご覧になり",
+      "拝見し",
+      "お目にかかり",
+      "見られ"
+    ],
+    "answer": 0,
+    "explanation": "ご覧になる is the honorific for 見る. 拝見する is its humble counterpart.",
+    "hint": "You're asking about the listener's action, so elevate it -- don't use the humble form here."
+  },
+  {
+    "id": "verb_n2_004",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "お土産を ＿。 (humble form of もらう)",
+    "choices": [
+      "いただきます",
+      "くださいます",
+      "さしあげます",
+      "まいります"
+    ],
+    "answer": 0,
+    "explanation": "いただく is the humble form of もらう (to receive).",
+    "hint": "You are the one receiving, so the verb should lower you, not the giver."
+  },
+  {
+    "id": "verb_n2_005",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "社長が そう ＿。 (honorific form of 言う)",
+    "choices": [
+      "おっしゃいました",
+      "申しました",
+      "伺いました",
+      "承りました"
+    ],
+    "answer": 0,
+    "explanation": "おっしゃる is the honorific for 言う. 申す is the humble form.",
+    "hint": "The company president is speaking -- their words need the elevating verb."
+  },
+  {
+    "id": "verb_n2_006",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "明日 そちらへ ＿。 (humble form of 行く)",
+    "choices": [
+      "参ります",
+      "いらっしゃいます",
+      "おいでになります",
+      "お越しになります"
+    ],
+    "answer": 0,
+    "explanation": "参る is the humble form of 行く/来る, used for your own movement.",
+    "hint": "You are the one travelling, so pick the verb that lowers your own action."
   },
   {
     "id": "vocab_n1_001",
     "category": "vocabulary",
     "jlpt": "N1",
-    "prompt": "至急 (shikyuu) means...",
-    "choices": ["Urgently", "Slowly", "Rarely", "Eventually"],
+    "prompt": "顕著 (kencho) means...",
+    "choices": [
+      "Conspicuous / remarkable",
+      "Concealed",
+      "Temporary",
+      "Trivial"
+    ],
     "answer": 0,
-    "explanation": "至急 (しきゅう) means \"urgently / immediately\"."
+    "explanation": "顕著 (けんちょ) means \"conspicuous; striking; remarkable\".",
+    "hint": "顕 means \"to reveal\" -- so this describes something impossible to overlook."
+  },
+  {
+    "id": "vocab_n1_002",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "憂鬱 (yuuutsu) means...",
+    "choices": [
+      "Melancholy",
+      "Euphoria",
+      "Curiosity",
+      "Indifference"
+    ],
+    "answer": 0,
+    "explanation": "憂鬱 (ゆううつ) means \"melancholy; gloom; depression\".",
+    "hint": "憂 means \"grief\" -- the mood here is heavy, not bright."
+  },
+  {
+    "id": "vocab_n1_003",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "委ねる (yudaneru) means...",
+    "choices": [
+      "To entrust",
+      "To withhold",
+      "To inspect",
+      "To imitate"
+    ],
+    "answer": 0,
+    "explanation": "委ねる (ゆだねる) means \"to entrust; to leave (a matter) to someone\".",
+    "hint": "The kanji appears in 委員 (committee member) -- someone things are handed over to."
+  },
+  {
+    "id": "vocab_n1_004",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "覆す (kutsugaesu) means...",
+    "choices": [
+      "To overturn",
+      "To reinforce",
+      "To postpone",
+      "To summarize"
+    ],
+    "answer": 0,
+    "explanation": "覆す (くつがえす) means \"to overturn; to overthrow; to reverse (a decision)\".",
+    "hint": "It's the verb used when a verdict or a theory is turned completely upside down."
+  },
+  {
+    "id": "vocab_n1_005",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "逸脱 (itsudatsu) means...",
+    "choices": [
+      "Deviation",
+      "Dedication",
+      "Delegation",
+      "Deduction"
+    ],
+    "answer": 0,
+    "explanation": "逸脱 (いつだつ) means \"deviation; departure from the norm\".",
+    "hint": "脱 means \"to slip out of\" -- so this is straying outside the expected bounds."
+  },
+  {
+    "id": "vocab_n1_006",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "巧妙 (koumyou) means...",
+    "choices": [
+      "Ingenious / skillful",
+      "Clumsy",
+      "Hesitant",
+      "Generous"
+    ],
+    "answer": 0,
+    "explanation": "巧妙 (こうみょう) means \"ingenious; clever; skillful\".",
+    "hint": "巧 is the same kanji as in 巧み (adept) -- so the sense is positive and skilled."
+  },
+  {
+    "id": "vocab_n1_007",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "培う (tsuchikau) means...",
+    "choices": [
+      "To cultivate / foster",
+      "To exhaust",
+      "To scatter",
+      "To conceal"
+    ],
+    "answer": 0,
+    "explanation": "培う (つちかう) means \"to cultivate; to foster (ability, friendship)\".",
+    "hint": "The kanji contains 土 (earth) -- think of growing something slowly over time."
+  },
+  {
+    "id": "vocab_n1_008",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "潔い (isagiyoi) means...",
+    "choices": [
+      "Resolute and graceful (in accepting)",
+      "Cowardly",
+      "Indecisive",
+      "Arrogant"
+    ],
+    "answer": 0,
+    "explanation": "潔い (いさぎよい) describes accepting defeat or responsibility gracefully, without clinging.",
+    "hint": "It's the quality praised in someone who admits fault cleanly and makes no excuses."
+  },
+  {
+    "id": "kanji_n1_001",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 促進?",
+    "choices": [
+      "そくしん",
+      "さくしん",
+      "しょくしん",
+      "そくじん"
+    ],
+    "answer": 0,
+    "explanation": "促進 (そくしん) means \"promotion; acceleration\".",
+    "hint": "促 is read そく, the same on-reading it carries in 催促."
+  },
+  {
+    "id": "kanji_n1_002",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 崩壊?",
+    "choices": [
+      "ほうかい",
+      "ぼうかい",
+      "くずれかい",
+      "ほうえ"
+    ],
+    "answer": 0,
+    "explanation": "崩壊 (ほうかい) means \"collapse; breakdown\".",
+    "hint": "One distractor mixes the kun-reading くずれる into a compound that uses on-readings only."
+  },
+  {
+    "id": "kanji_n1_003",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 遂行?",
+    "choices": [
+      "すいこう",
+      "ついこう",
+      "すいぎょう",
+      "とげこう"
+    ],
+    "answer": 0,
+    "explanation": "遂行 (すいこう) means \"execution; carrying out (a duty)\".",
+    "hint": "遂 is read すい in compounds, though its kun-reading is とげる."
+  },
+  {
+    "id": "kanji_n1_004",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 循環?",
+    "choices": [
+      "じゅんかん",
+      "しゅんかん",
+      "じゅんわ",
+      "じゅんきょう"
+    ],
+    "answer": 0,
+    "explanation": "循環 (じゅんかん) means \"circulation; cycle\".",
+    "hint": "One distractor is 瞬間 (moment) -- listen for the voiced first syllable."
+  },
+  {
+    "id": "kanji_n1_005",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 疎か?",
+    "choices": [
+      "おろそか",
+      "まばらか",
+      "うとか",
+      "そか"
+    ],
+    "answer": 0,
+    "explanation": "疎か (おろそか) means \"negligent; careless\", as in 〜をおろそかにする.",
+    "hint": "This kanji has several readings; the one used with か here means neglecting a duty."
+  },
+  {
+    "id": "kanji_n1_006",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 陳列?",
+    "choices": [
+      "ちんれつ",
+      "じんれつ",
+      "ちんれい",
+      "ちんぎょう"
+    ],
+    "answer": 0,
+    "explanation": "陳列 (ちんれつ) means \"display; exhibition\".",
+    "hint": "列 is read れつ, the same as in 行列 and 列車."
+  },
+  {
+    "id": "kanji_n1_007",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 措置?",
+    "choices": [
+      "そち",
+      "しょち",
+      "そおき",
+      "さくち"
+    ],
+    "answer": 0,
+    "explanation": "措置 (そち) means \"measure; step taken\".",
+    "hint": "One distractor is 処置 (treatment) -- a near-synonym with a different first kanji."
+  },
+  {
+    "id": "kanji_n1_008",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 憂慮?",
+    "choices": [
+      "ゆうりょ",
+      "ゆうりょう",
+      "うれりょ",
+      "ゆりょ"
+    ],
+    "answer": 0,
+    "explanation": "憂慮 (ゆうりょ) means \"anxiety; grave concern\".",
+    "hint": "慮 is read りょ (short), as in 考慮 and 遠慮 -- watch out for the long-vowel distractor."
   },
   {
     "id": "grammar_n1_001",
     "category": "grammar",
     "jlpt": "N1",
-    "prompt": "彼の努力___、計画は失敗した。 (Fill in: \"Despite his efforts, the plan failed.\")",
-    "choices": ["にもかかわらず", "によって", "において", "にとって"],
+    "prompt": "彼の努力＿、計画は失敗した。 (Despite his efforts, the plan failed.)",
+    "choices": [
+      "にもかかわらず",
+      "によって",
+      "において",
+      "にとって"
+    ],
     "answer": 0,
-    "explanation": "にもかかわらず means \"despite / in spite of\"."
+    "explanation": "にもかかわらず means \"despite; in spite of\".",
+    "hint": "The two halves of the sentence clash -- you need the concessive connector."
+  },
+  {
+    "id": "grammar_n1_002",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "反対を ＿、彼は 計画を 実行した。 (Undaunted by opposition, he carried out the plan.)",
+    "choices": [
+      "ものともせず",
+      "をもって",
+      "にあたって",
+      "をこめて"
+    ],
+    "answer": 0,
+    "explanation": "をものともせず(に) means \"undaunted by; in defiance of\", praising someone's resolve.",
+    "hint": "He pushed through the obstacle as if it were nothing -- look for the phrase built on 物."
+  },
+  {
+    "id": "grammar_n1_003",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "一日＿ 忘れたことはない。 (I haven't forgotten for even a single day.)",
+    "choices": [
+      "たりとも",
+      "なりとも",
+      "であれ",
+      "にせよ"
+    ],
+    "answer": 0,
+    "explanation": "（一）＋counter＋たりとも～ない means \"not even a single ~\".",
+    "hint": "It follows a minimal quantity and pairs with a negative for maximum emphasis."
+  },
+  {
+    "id": "grammar_n1_004",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "彼には 早合点する＿。 (He has a tendency to jump to conclusions.)",
+    "choices": [
+      "きらいがある",
+      "おそれがある",
+      "ことがある",
+      "わけがある"
+    ],
+    "answer": 0,
+    "explanation": "きらいがある means \"has an (undesirable) tendency to\".",
+    "hint": "It's about an ingrained habit, not a risk of a one-off event -- and despite the sound, 嫌い isn't the point."
+  },
+  {
+    "id": "grammar_n1_005",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "この 映画は 何度見ても 泣か＿。 (No matter how often I watch it, I can't help crying.)",
+    "choices": [
+      "ずにはいられない",
+      "ないではおかない",
+      "ずにすむ",
+      "ないまでもない"
+    ],
+    "answer": 0,
+    "explanation": "ずにはいられない means \"cannot help but; cannot keep oneself from\".",
+    "hint": "The feeling overwhelms the speaker involuntarily -- one distractor means the opposite (getting away without doing it)."
+  },
+  {
+    "id": "grammar_n1_006",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "理由が 何＿、遅刻は 遅刻だ。 (Whatever the reason may be, late is late.)",
+    "choices": [
+      "であれ",
+      "でこそ",
+      "ですら",
+      "でさえ"
+    ],
+    "answer": 0,
+    "explanation": "疑問詞 + であれ means \"whatever/whoever it may be\".",
+    "hint": "It follows a question word and concedes every possible case at once."
+  },
+  {
+    "id": "grammar_n1_007",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "結果の ＿、全力を 尽くすのみだ。 (Regardless of the result, I'll just do my best.)",
+    "choices": [
+      "いかんによらず",
+      "いかんにより",
+      "ゆえに",
+      "ともなって"
+    ],
+    "answer": 0,
+    "explanation": "いかんによらず means \"regardless of; irrespective of\".",
+    "hint": "Careful: dropping the negative element flips this into 'depending on' -- the opposite meaning."
+  },
+  {
+    "id": "grammar_n1_008",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "この 味は 職人＿の 技だ。 (This flavour is a craft unique to artisans.)",
+    "choices": [
+      "ならでは",
+      "ながら",
+      "なりに",
+      "ならば"
+    ],
+    "answer": 0,
+    "explanation": "ならでは means \"unique to; only possible for\", always with a positive, admiring tone.",
+    "hint": "Only that person could achieve it -- look for the phrase that praises exclusivity."
+  },
+  {
+    "id": "verb_n1_001",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "読む + まい → negative volitional (\"I shan't read\")?",
+    "choices": [
+      "読むまい",
+      "読ままい",
+      "読みまい",
+      "読もまい"
+    ],
+    "answer": 0,
+    "explanation": "For u-verbs, まい attaches to the plain dictionary form: 読む → 読むまい.",
+    "hint": "U-verbs keep their dictionary form intact before this ending -- nothing gets stripped."
+  },
+  {
+    "id": "verb_n1_002",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "食べる + ざるを得ない → ?",
+    "choices": [
+      "食べざるを得ない",
+      "食べらざるを得ない",
+      "食べないざるを得ない",
+      "食べるざるを得ない"
+    ],
+    "answer": 0,
+    "explanation": "ざるを得ない attaches to the ない-stem: 食べない → 食べ + ざるを得ない.",
+    "hint": "Take the stem you'd use for ない, then swap ない out for this classical ending."
+  },
+  {
+    "id": "verb_n1_003",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "する + ざるを得ない → ?",
+    "choices": [
+      "せざるを得ない",
+      "しざるを得ない",
+      "さざるを得ない",
+      "するざるを得ない"
+    ],
+    "answer": 0,
+    "explanation": "する is irregular before ざるを得ない, taking the classical stem せ → せざるを得ない.",
+    "hint": "This verb doesn't use its usual し- stem here; it reaches for an older, literary one."
+  },
+  {
+    "id": "verb_n1_004",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "来る → plain imperative?",
+    "choices": [
+      "来い",
+      "来れ",
+      "来よ",
+      "来ろ"
+    ],
+    "answer": 0,
+    "explanation": "来る is irregular: its imperative is 来い (こい).",
+    "hint": "This irregular verb doesn't follow the え-row rule that regular u-verbs use."
+  },
+  {
+    "id": "verb_n1_005",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "言う + んばかり → (\"as if about to say\")?",
+    "choices": [
+      "言わんばかり",
+      "言いんばかり",
+      "言うんばかり",
+      "言おんばかり"
+    ],
+    "answer": 0,
+    "explanation": "んばかり attaches to the ない-stem: 言わない → 言わ + んばかり.",
+    "hint": "Like ざるを得ない, this classical ending builds on the ない-stem."
+  },
+  {
+    "id": "verb_n1_006",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "行く + んがため → (\"in order to go\")?",
+    "choices": [
+      "行かんがため",
+      "行きんがため",
+      "行くんがため",
+      "行こんがため"
+    ],
+    "answer": 0,
+    "explanation": "んがため attaches to the ない-stem: 行かない → 行か + んがため.",
+    "hint": "Same stem rule as 言わんばかり -- find the form that would precede ない."
   }
 ]

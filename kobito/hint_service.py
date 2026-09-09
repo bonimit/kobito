@@ -43,25 +43,51 @@ class HintService:
             # back to a local hint below.
             return None
 
-    def get_hint(self, question):
+    def get_hint(self, question, chosen_index=None):
         if self._client is not None:
-            hint = self._ask_claude(question)
+            hint = self._ask_claude(question, chosen_index)
             if hint:
                 return hint
         return self._fallback_hint(question)
 
-    def _ask_claude(self, question):
-        prompt = (
-            "A student learning Japanese just answered this quiz question wrong.\n"
-            f"Category: {question['category']}\n"
-            f"Question: {question['prompt']}\n"
-            f"Choices: {', '.join(question['choices'])}\n\n"
-            "You are Kobito, a small, warm, encouraging forest-spirit companion. "
-            "Give ONE short hint (at most 2 sentences) that helps the student "
-            "reason toward the answer themselves next time. Do NOT state or "
-            "spell out the correct choice. Speak directly and warmly to the "
-            "student."
-        )
+    def _ask_claude(self, question, chosen_index=None):
+        # The model is given the ground truth (correct choice, the
+        # official explanation, and the author's own hint) rather than
+        # left to work the answer out from the prompt alone. Without it
+        # a hint can confidently point the student the wrong way --
+        # accuracy here matters more than novelty, so the model's job is
+        # to *reword* known-correct reasoning at the right level, not to
+        # solve the question itself.
+        correct_choice = question["choices"][question["answer"]]
+        lines = [
+            "A student learning Japanese just answered this quiz question wrong.",
+            "",
+            f"JLPT level: {question['jlpt']}",
+            f"Category: {question['category']}",
+            f"Question: {question['prompt']}",
+            f"Choices: {', '.join(question['choices'])}",
+            f"CORRECT answer: {correct_choice}",
+            f"Why it's correct: {question.get('explanation', '(none given)')}",
+        ]
+        if question.get("hint"):
+            lines.append(f"Reference hint written by the course author: {question['hint']}")
+        if chosen_index is not None and 0 <= chosen_index < len(question["choices"]):
+            lines.append(f"The student incorrectly chose: {question['choices'][chosen_index]}")
+        lines += [
+            "",
+            "You are Kobito, a small, warm, encouraging forest-spirit companion.",
+            "Give ONE short hint (at most 2 sentences) that guides the student to",
+            f"reason out the answer themselves, pitched at {question['jlpt']} level.",
+            "Rules:",
+            "- NEVER state, translate, or spell out the correct choice.",
+            "- Be factually accurate: build only on the explanation above.",
+            "- Point at the useful clue (a radical, a particle's role, a stem",
+            "  change, a nuance that separates the answer from the distractor).",
+            "- If the student's wrong choice reveals a specific misunderstanding,",
+            "  gently steer them off it without naming the right answer.",
+            "- Speak directly and warmly to the student. No preamble.",
+        ]
+        prompt = "\n".join(lines)
         try:
             response = self._client.messages.create(
                 model=self.model,
@@ -80,4 +106,12 @@ class HintService:
         return None
 
     def _fallback_hint(self, question):
-        return FALLBACK_HINTS.get(question["category"], DEFAULT_FALLBACK_HINT)
+        # Every question in the bank ships with a hint written for that
+        # exact question, so offline play gets a genuinely useful nudge
+        # rather than the generic per-category line. The category and
+        # default hints below only cover questions added without one.
+        return (
+            question.get("hint")
+            or FALLBACK_HINTS.get(question["category"])
+            or DEFAULT_FALLBACK_HINT
+        )

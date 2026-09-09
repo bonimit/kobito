@@ -169,12 +169,41 @@ class Background:
         # below where there's no platform to cover it (e.g. over a gap),
         # reading as landscape meeting the horizon rather than a shape
         # floating in the pit.
+        # Two passes per layer: every silhouette first, then every
+        # highlight. Drawing them interleaved would let a later hill's
+        # base color paint over the previous hill's highlight where they
+        # overlap, leaving the lit caps randomly chopped.
+        # Clip every bump layer to the horizon. These are a distant
+        # backdrop, so where the level has a gap in its ground there's
+        # nothing to hide the bottom of the circles, and an unclipped
+        # hill hangs into the pit looking like a loose ball. Clipped, the
+        # gap reads as a clean drop to open sky instead.
+        previous_clip = screen.get_clip()
+        screen.set_clip(pygame.Rect(0, 0, screen_width, self.ground_y))
+
         for layer, bumps in self.bumps:
             base_y = self.ground_y - layer.base_offset
+            visible = []
             for x, radius in bumps:
                 draw_x = self._wrapped_x(x, camera_x, layer.parallax, screen_width)
                 if -radius < draw_x < screen_width + radius:
+                    visible.append((draw_x, radius))
                     pygame.draw.circle(screen, layer.color, (draw_x, base_y), radius)
+
+            # Offset straight up and only slightly smaller, so what shows
+            # is a soft lit dome with a thin darker rim at the hill's
+            # base. Offsetting sideways or shrinking much more makes the
+            # highlight read as a separate inner circle -- hills end up
+            # looking like soap bubbles rather than sunlit landforms.
+            if layer.highlight:
+                for draw_x, radius in visible:
+                    pygame.draw.circle(
+                        screen, layer.highlight,
+                        (draw_x, base_y - radius * 0.12),
+                        radius * 0.90,
+                    )
+
+        screen.set_clip(previous_clip)
 
         for layer, items in self.floaties:
             for x, y, size, color in items:

@@ -32,7 +32,8 @@ PHASE_REVEAL = "reveal"
 PHASE_HINT = "hint"
 
 RPG_BOX_MARGIN = 24
-RPG_BOX_HEIGHT = 92
+RPG_BOX_HEIGHT = 116  # tall enough for a 3-line hint; a clipped hint is a useless hint
+RPG_MAX_LINES = 3
 RPG_BOX_COLOR = (15, 15, 15, 175)  # plain translucent black, no border -- classic JRPG textbox
 RPG_NAME_COLOR = (255, 210, 110)
 RPG_TEXT_COLOR = (245, 245, 245)
@@ -58,12 +59,19 @@ class QuizScreen:
     triggered it -- see _position_box.
     """
 
-    def __init__(self, screen, question, background=None, anchor_rect=None, hint_service=None):
+    def __init__(
+        self, screen, question, background=None, anchor_rect=None, hint_service=None, points=None, penalty=None
+    ):
         self.screen = screen
         self.question = question
         self.background = background
         self.anchor_rect = anchor_rect or pygame.Rect(SCREEN_WIDTH // 2, 80, 1, 1)
         self.hint_service = hint_service or HintService()
+        # What this block is worth, and what missing it costs -- shown
+        # up front so the player can see that a harder level pays more
+        # and stings more, rather than having to infer it.
+        self.points = points
+        self.penalty = penalty
         self.clock = pygame.time.Clock()
         game_input.get_joysticks()
         self.font_prompt = get_font(18)
@@ -114,7 +122,7 @@ class QuizScreen:
                     # blocking) network call, so the player sees Kobito
                     # start working rather than a frozen screen.
                     self._draw(selected, phase, kobito_state="thinking")
-                    hint_text = self.hint_service.get_hint(self.question)
+                    hint_text = self.hint_service.get_hint(self.question, chosen_index=selected)
                     phase = PHASE_HINT
 
             self._draw(selected, phase, hint_text=hint_text)
@@ -154,7 +162,7 @@ class QuizScreen:
         y = box.y + BOX_PADDING
         x = box.x + BOX_PADDING
 
-        category = self.font_category.render(self.question["category"].upper(), True, CATEGORY_COLOR)
+        category = self.font_category.render(self._header_text(), True, CATEGORY_COLOR)
         self.screen.blit(category, (x, y))
         y += category.get_height() + LINE_GAP
 
@@ -185,11 +193,24 @@ class QuizScreen:
             self._draw_rpg_dialogue("...", expression="thinking", show_continue=False)
         elif phase == PHASE_REVEAL and selected is not None:
             if selected == self.question["answer"]:
-                self._draw_rpg_dialogue("Correct! Nice work.", expression="happy", show_continue=False)
+                gain = f" +{self.points} XP" if self.points is not None else ""
+                self._draw_rpg_dialogue(f"Correct! Nice work.{gain}", expression="happy", show_continue=False)
             else:
-                self._draw_rpg_dialogue("Not quite... let me think.", expression="sympathetic", show_continue=False)
+                loss = f" -{self.penalty} XP" if self.penalty is not None else ""
+                self._draw_rpg_dialogue(
+                    f"Not quite... let me think.{loss}", expression="sympathetic", show_continue=False
+                )
 
         pygame.display.flip()
+
+    def _header_text(self):
+        """e.g. "N3 · GRAMMAR · 20 XP" -- level, topic and stake in one
+        line above the question.
+        """
+        parts = [self.question["jlpt"], self.question["category"].upper().replace("_", " ")]
+        if self.points is not None:
+            parts.append(f"{self.points} XP")
+        return "  ·  ".join(parts)
 
     def _footer_text(self, phase, selected):
         if phase == PHASE_ANSWERING:
@@ -225,7 +246,7 @@ class QuizScreen:
 
         lines = self._wrap_text(text or "...", self.font_kobito, text_width)
         line_y = box.y + BOX_PADDING + name_label.get_height() + LINE_GAP
-        for line in lines[:2]:  # the box has room for ~2 lines at this height
+        for line in lines[:RPG_MAX_LINES]:
             surface = self.font_kobito.render(line, True, RPG_TEXT_COLOR)
             self.screen.blit(surface, (text_x, line_y))
             line_y += surface.get_height() + LINE_GAP

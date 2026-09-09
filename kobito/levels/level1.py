@@ -56,6 +56,8 @@ def build_level1(theme_id="forest"):
                 width_in_tiles * TILE_SIZE,
                 height_in_tiles * TILE_SIZE,
                 color=color or theme.platform_color,
+                cap_color=theme.cap_color,
+                shade_color=theme.shade_color,
             )
         )
 

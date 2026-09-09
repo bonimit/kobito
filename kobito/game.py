@@ -9,6 +9,8 @@ from kobito.constants import (
     GAUGE_DAMAGE,
     GAUGE_MAX,
     INVULNERABILITY_SECONDS,
+    JLPT_GAUGE_PENALTY,
+    JLPT_QUESTION_POINTS,
     KNOCKBACK_SPEED_X,
     KNOCKBACK_SPEED_Y,
     SCREEN_HEIGHT,
@@ -210,6 +212,8 @@ class Game:
     def _trigger_question(self, block):
         block.mark_used()
         question = self.question_bank.random_question(jlpt=self.jlpt_level)
+        points = JLPT_QUESTION_POINTS.get(question["jlpt"], CORRECT_ANSWER_SCORE)
+        penalty = JLPT_GAUGE_PENALTY.get(question["jlpt"], GAUGE_DAMAGE)
 
         # Snapshot the level as it looks right now (block already
         # marked used) so the quiz box shows over the actual scene
@@ -220,14 +224,24 @@ class Game:
         anchor_rect = block.rect.move(-self.camera_x, 0)
 
         correct = QuizScreen(
-            self.screen, question, background=background, anchor_rect=anchor_rect, hint_service=self.hint_service
+            self.screen,
+            question,
+            background=background,
+            anchor_rect=anchor_rect,
+            hint_service=self.hint_service,
+            points=points,
+            penalty=penalty,
         ).run()
 
         if correct:
-            self.score += CORRECT_ANSWER_SCORE
+            # Quiz blocks are the main XP source: a right answer both
+            # scores and fills the gauge, so studying -- not just coin
+            # collecting -- is what earns bonus lives.
+            self.score += points
+            self._add_gauge(points)
             self.correct_count += 1
         else:
-            self._take_damage()
+            self._take_damage(gauge_cost=penalty)
             self.wrong_count += 1
 
         # QuizScreen ran its own loop with its own clock, so the main
@@ -253,12 +267,14 @@ class Game:
         self.player.velocity_x = direction * KNOCKBACK_SPEED_X
         self.player.velocity_y = KNOCKBACK_SPEED_Y
 
-    def _take_damage(self):
+    def _take_damage(self, gauge_cost=GAUGE_DAMAGE):
         # A wrong quiz answer or an enemy hit costs a life outright,
         # *and* sets the gauge back -- mistakes also cost progress
         # toward the next bonus life, not just the life you just lost.
+        # Quiz misses pass a gauge_cost scaled to the question's JLPT
+        # level; enemy contact uses the flat default.
         self.lives -= 1
-        self.gauge = max(0, self.gauge - GAUGE_DAMAGE)
+        self.gauge = max(0, self.gauge - gauge_cost)
         if self.lives <= 0:
             self.game_over = True
 
@@ -320,7 +336,9 @@ class Game:
 
         label_height = self.hud_font_small.get_height()
         self._draw_outlined_text(
-            "Gauge", self.hud_font_small, (bar_rect.right + 8, bar_rect.centery - label_height // 2)
+            f"XP {self.gauge}/{GAUGE_MAX}",
+            self.hud_font_small,
+            (bar_rect.right + 8, bar_rect.centery - label_height // 2),
         )
 
     def _draw_game_over(self):
