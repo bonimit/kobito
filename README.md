@@ -47,11 +47,13 @@ the next bonus life, not just the life you lose. Add more collectibles
 by calling `add_collectible(col, row, kind=...)` in
 `kobito/levels/level1.py`.
 
-Clouds drift behind the level at a slower scroll rate than the camera
-(parallax, for a sense of depth); trees scroll at the same rate as the
-ground since they're rooted in it, and are only ever placed on solid
-ground segments — never floating over a gap. Both are in
-`kobito/background.py`.
+The backdrop is layered for depth (back to front): distant mountains,
+two rolling-hill layers, clouds, then trees/bushes/flowers rooted in
+the actual ground. Each layer scrolls at its own rate relative to the
+camera (parallax — mountains barely move, hills a bit more, trees
+scroll in lockstep since they're planted in the ground); trees, bushes,
+and flowers are only ever placed on solid ground segments, never
+floating over a gap. All of it is in `kobito/background.py`.
 
 ## Adding real sprite art
 
