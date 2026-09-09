@@ -3,7 +3,7 @@ import pygame
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 
-BOX_COLOR = (12, 12, 16, 220)
+BOX_COLOR = (18, 18, 30, 175)  # translucent, not flat opaque -- lets the scene show through
 BOX_BORDER = (230, 230, 230)
 TEXT_COLOR = (240, 240, 240)
 CATEGORY_COLOR = (200, 175, 110)
@@ -11,27 +11,29 @@ CORRECT_COLOR = (140, 220, 140)
 WRONG_COLOR = (235, 120, 110)
 HINT_COLOR = (180, 180, 180)
 
-BOX_WIDTH = 360
+BOX_WIDTH = 340
 BOX_PADDING = 14
 LINE_GAP = 4
 CHOICE_HEIGHT = 24
-GAP_TO_ANCHOR = 10
+GAP_TO_ANCHOR = 12
 SCREEN_MARGIN = 10
+TAIL_SIZE = 9
 
 RESULT_DISPLAY_SECONDS = 1.0
 ANSWER_KEYS = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3}
 
 
 class QuizScreen:
-    """A question-block encounter: a small black box next to the block
-    itself shows the question, waits for the player to press 1-4,
-    briefly highlights right/wrong, then returns whether they got it
-    correct.
+    """A question-block encounter: a small translucent tooltip box pops
+    up from the block itself -- with a pointer tail toward it, like a
+    speech bubble -- and shows the question. Waits for the player to
+    press 1-4, briefly highlights right/wrong, then returns whether
+    they got it correct.
 
-    Self-contained loop, same shape as SelectScreen and Game. Unlike a
-    full-screen dialog, the rest of the level stays fully visible and
-    undimmed behind the box -- it's a callout next to the block, not a
-    takeover.
+    Self-contained loop, same shape as SelectScreen and Game. The rest
+    of the level stays fully visible behind the (translucent) box, and
+    the box is always positioned so it never covers the block that
+    triggered it -- see _position_box.
     """
 
     def __init__(self, screen, question, background=None, anchor_rect=None):
@@ -84,12 +86,13 @@ class QuizScreen:
             + len(hint_lines) * (self.font_hint.get_height() + LINE_GAP)
         )
         box_height = content_height + 2 * BOX_PADDING
-        box = self._position_box(BOX_WIDTH, box_height)
+        box, side = self._position_box(BOX_WIDTH, box_height)
 
         box_surface = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
         box_surface.fill(BOX_COLOR)
         self.screen.blit(box_surface, box.topleft)
         pygame.draw.rect(self.screen, BOX_BORDER, box, width=1)
+        self._draw_tail(box, side)
 
         y = box.y + BOX_PADDING
         x = box.x + BOX_PADDING
@@ -129,17 +132,83 @@ class QuizScreen:
         return self.question.get("explanation", "Not quite.")
 
     def _position_box(self, width, height):
-        box = pygame.Rect(0, 0, width, height)
-        box.centerx = self.anchor_rect.centerx
-        box.centerx = max(SCREEN_MARGIN + width // 2, min(box.centerx, SCREEN_WIDTH - SCREEN_MARGIN - width // 2))
+        """Picks whichever side (above/below/left/right of the block)
+        has room for the box, and places it fully on that side --
+        never overlapping the block itself. Falls back to whichever
+        side has the *most* room if none fits perfectly (only possible
+        in extremely cramped corners), still anchored outside the
+        block first.
+        """
+        anchor = self.anchor_rect
+        room = {
+            "above": anchor.top - SCREEN_MARGIN - GAP_TO_ANCHOR,
+            "below": SCREEN_HEIGHT - SCREEN_MARGIN - anchor.bottom - GAP_TO_ANCHOR,
+            "left": anchor.left - SCREEN_MARGIN - GAP_TO_ANCHOR,
+            "right": SCREEN_WIDTH - SCREEN_MARGIN - anchor.right - GAP_TO_ANCHOR,
+        }
 
-        room_above = self.anchor_rect.top - GAP_TO_ANCHOR - SCREEN_MARGIN
-        if room_above >= height:
-            box.bottom = self.anchor_rect.top - GAP_TO_ANCHOR
+        if room["above"] >= height:
+            side = "above"
+        elif room["below"] >= height:
+            side = "below"
+        elif room["left"] >= width:
+            side = "left"
+        elif room["right"] >= width:
+            side = "right"
         else:
-            box.top = self.anchor_rect.bottom + GAP_TO_ANCHOR
-        box.top = max(SCREEN_MARGIN, min(box.top, SCREEN_HEIGHT - SCREEN_MARGIN - height))
-        return box
+            side = max(room, key=room.get)
+
+        box = pygame.Rect(0, 0, width, height)
+        if side == "above":
+            box.midbottom = (anchor.centerx, anchor.top - GAP_TO_ANCHOR)
+            box.centerx = self._clamp(box.centerx, SCREEN_MARGIN + width // 2, SCREEN_WIDTH - SCREEN_MARGIN - width // 2)
+            box.top = max(box.top, SCREEN_MARGIN)
+        elif side == "below":
+            box.midtop = (anchor.centerx, anchor.bottom + GAP_TO_ANCHOR)
+            box.centerx = self._clamp(box.centerx, SCREEN_MARGIN + width // 2, SCREEN_WIDTH - SCREEN_MARGIN - width // 2)
+            box.bottom = min(box.bottom, SCREEN_HEIGHT - SCREEN_MARGIN)
+        elif side == "left":
+            box.midright = (anchor.left - GAP_TO_ANCHOR, anchor.centery)
+            box.centery = self._clamp(box.centery, SCREEN_MARGIN + height // 2, SCREEN_HEIGHT - SCREEN_MARGIN - height // 2)
+            box.left = max(box.left, SCREEN_MARGIN)
+        else:
+            box.midleft = (anchor.right + GAP_TO_ANCHOR, anchor.centery)
+            box.centery = self._clamp(box.centery, SCREEN_MARGIN + height // 2, SCREEN_HEIGHT - SCREEN_MARGIN - height // 2)
+            box.right = min(box.right, SCREEN_WIDTH - SCREEN_MARGIN)
+
+        return box, side
+
+    def _draw_tail(self, box, side):
+        """A small triangle on the box's anchor-facing edge, pointing
+        at the block -- the speech-bubble "tail" that makes the box
+        read as popping up *from* the block rather than a separate,
+        unrelated panel.
+        """
+        anchor = self.anchor_rect
+        if side == "above":
+            tip_x = self._clamp(anchor.centerx, box.left + TAIL_SIZE, box.right - TAIL_SIZE)
+            points = [(tip_x, box.bottom + TAIL_SIZE), (tip_x - TAIL_SIZE, box.bottom), (tip_x + TAIL_SIZE, box.bottom)]
+        elif side == "below":
+            tip_x = self._clamp(anchor.centerx, box.left + TAIL_SIZE, box.right - TAIL_SIZE)
+            points = [(tip_x, box.top - TAIL_SIZE), (tip_x - TAIL_SIZE, box.top), (tip_x + TAIL_SIZE, box.top)]
+        elif side == "left":
+            tip_y = self._clamp(anchor.centery, box.top + TAIL_SIZE, box.bottom - TAIL_SIZE)
+            points = [(box.right + TAIL_SIZE, tip_y), (box.right, tip_y - TAIL_SIZE), (box.right, tip_y + TAIL_SIZE)]
+        else:
+            tip_y = self._clamp(anchor.centery, box.top + TAIL_SIZE, box.bottom - TAIL_SIZE)
+            points = [(box.left - TAIL_SIZE, tip_y), (box.left, tip_y - TAIL_SIZE), (box.left, tip_y + TAIL_SIZE)]
+
+        xs = [p[0] for p in points]
+        ys = [p[1] for p in points]
+        bounds = pygame.Rect(min(xs), min(ys), max(xs) - min(xs) + 1, max(ys) - min(ys) + 1)
+        local_points = [(px - bounds.x, py - bounds.y) for px, py in points]
+
+        tail_surface = pygame.Surface(bounds.size, pygame.SRCALPHA)
+        pygame.draw.polygon(tail_surface, BOX_COLOR, local_points)
+        self.screen.blit(tail_surface, bounds.topleft)
+
+    def _clamp(self, value, low, high):
+        return max(low, min(value, high))
 
     def _wrap_text(self, text, font, max_width):
         words = text.split(" ")

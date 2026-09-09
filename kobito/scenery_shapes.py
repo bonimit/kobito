@@ -157,15 +157,125 @@ def draw_bubble(screen, x, y, size, color=(230, 245, 255)):
     pygame.draw.circle(screen, color, (x - size * 0.3, y - size * 0.3), max(1, size * 0.2))
 
 
-def draw_bird(screen, x, y, size, color=(70, 60, 60)):
+def draw_bird(screen, x, y, size, color=(70, 60, 60), facing=1):
     pygame.draw.arc(screen, color, (x - size, y - size / 2, size, size), 0.3, 2.8, 2)
     pygame.draw.arc(screen, color, (x, y - size / 2, size, size), 0.3, 2.8, 2)
 
 
-def draw_fish(screen, x, y, size, color=(230, 140, 90)):
+def draw_bat(screen, x, y, size, color=(50, 45, 60), facing=1):
+    # Pointed membrane wings instead of a bird's simple arcs, and a
+    # small round body, to read distinctly as a bat against a night sky.
+    for side in (-1, 1):
+        wing = [
+            (x, y),
+            (x + side * size * 1.1, y - size * 0.3),
+            (x + side * size * 0.7, y + size * 0.1),
+            (x + side * size * 1.0, y + size * 0.4),
+            (x + side * size * 0.3, y + size * 0.2),
+        ]
+        pygame.draw.polygon(screen, color, wing)
+    pygame.draw.circle(screen, color, (x, y), max(2, int(size * 0.25)))
+
+
+def draw_butterfly(screen, x, y, size, color=(230, 150, 200), facing=1):
+    for side in (-1, 1):
+        wing_rect = pygame.Rect(0, 0, size * 0.8, size)
+        wing_rect.center = (x + side * size * 0.35, y)
+        pygame.draw.ellipse(screen, color, wing_rect)
+    pygame.draw.line(screen, (60, 50, 40), (x, y - size * 0.5), (x, y + size * 0.5), 2)
+
+
+def draw_fish(screen, x, y, size, color=(230, 140, 90), facing=1):
     body_rect = pygame.Rect(0, 0, size * 1.6, size)
     body_rect.center = (x, y)
     pygame.draw.ellipse(screen, color, body_rect)
-    tail = [(body_rect.left + 2, y), (body_rect.left - size * 0.5, y - size * 0.4), (body_rect.left - size * 0.5, y + size * 0.4)]
+    if facing >= 0:
+        tail = [(body_rect.left + 2, y), (body_rect.left - size * 0.5, y - size * 0.4), (body_rect.left - size * 0.5, y + size * 0.4)]
+        eye_x = body_rect.right - size * 0.3
+    else:
+        tail = [(body_rect.right - 2, y), (body_rect.right + size * 0.5, y - size * 0.4), (body_rect.right + size * 0.5, y + size * 0.4)]
+        eye_x = body_rect.left + size * 0.3
     pygame.draw.polygon(screen, color, tail)
-    pygame.draw.circle(screen, (30, 30, 30), (int(body_rect.right - size * 0.3), int(y)), max(1, int(size * 0.08)))
+    pygame.draw.circle(screen, (30, 30, 30), (int(eye_x), int(y)), max(1, int(size * 0.08)))
+
+
+def draw_whale(screen, x, y, size, color=(90, 130, 170), facing=1):
+    body_rect = pygame.Rect(0, 0, size * 2.2, size)
+    body_rect.center = (x, y)
+    pygame.draw.ellipse(screen, color, body_rect)
+
+    tail_x = body_rect.left if facing >= 0 else body_rect.right
+    tail_dir = -1 if facing >= 0 else 1
+    tail = [
+        (tail_x, y),
+        (tail_x + tail_dir * size * 0.4, y - size * 0.5),
+        (tail_x + tail_dir * size * 0.4, y + size * 0.5),
+    ]
+    pygame.draw.polygon(screen, color, tail)
+
+    spout_x = body_rect.right - size * 0.3 if facing >= 0 else body_rect.left + size * 0.3
+    pygame.draw.line(screen, (210, 235, 245), (spout_x, body_rect.top), (spout_x, body_rect.top - size * 0.4), 3)
+    pygame.draw.circle(screen, (30, 30, 30), (int(spout_x - facing * size * 0.15), int(y - size * 0.1)), max(1, int(size * 0.06)))
+
+
+def draw_squid(screen, x, y, size, color=(180, 110, 200), facing=1):
+    mantle_rect = pygame.Rect(0, 0, size * 0.9, size * 1.1)
+    mantle_rect.midbottom = (x, y)
+    pygame.draw.ellipse(screen, color, mantle_rect)
+
+    for i, dx in enumerate((-0.3, -0.1, 0.1, 0.3)):
+        wave = 4 if i % 2 == 0 else -4
+        pygame.draw.line(
+            screen, color,
+            (x + dx * size, y),
+            (x + dx * size + wave, y + size * 0.6),
+            3,
+        )
+
+
+def draw_crab(screen, x, ground_y, size, color=(210, 90, 70), facing=1):
+    body_rect = pygame.Rect(0, 0, size * 1.3, size * 0.8)
+    body_rect.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, color, body_rect)
+
+    for side in (-1, 1):
+        claw_x = x + side * size * 0.8
+        pygame.draw.line(screen, color, (x + side * size * 0.5, body_rect.centery), (claw_x, body_rect.top), 3)
+        pygame.draw.circle(screen, color, (int(claw_x), int(body_rect.top)), max(2, int(size * 0.18)))
+        for leg_i in range(2):
+            leg_y = body_rect.bottom - leg_i * 3
+            pygame.draw.line(screen, color, (x + side * size * 0.3, leg_y), (x + side * (size * 0.5 + leg_i * 4), leg_y + 4), 2)
+
+
+def draw_lizard(screen, x, ground_y, size, color=(120, 160, 90), facing=1):
+    body_rect = pygame.Rect(0, 0, size * 1.4, size * 0.5)
+    body_rect.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, color, body_rect)
+
+    tail_dir = -1 if facing >= 0 else 1
+    tail_tip = (body_rect.centerx + tail_dir * size * 1.1, ground_y - size * 0.15)
+    pygame.draw.line(screen, color, (body_rect.centerx + tail_dir * size * 0.5, body_rect.centery), tail_tip, 3)
+
+    for side in (-1, 1):
+        leg_x = body_rect.centerx + side * size * 0.35
+        pygame.draw.line(screen, color, (leg_x, body_rect.bottom - 2), (leg_x + side * 3, ground_y), 2)
+
+
+def draw_scorpion(screen, x, ground_y, size, color=(70, 55, 50), facing=1):
+    body_rect = pygame.Rect(0, 0, size, size * 0.5)
+    body_rect.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, color, body_rect)
+
+    tail_dir = -1 if facing >= 0 else 1
+    points = [(body_rect.centerx - tail_dir * size * 0.3, body_rect.centery)]
+    px, py = points[0]
+    for i in range(3):
+        px -= tail_dir * size * 0.22
+        py -= size * 0.22
+        points.append((px, py))
+    pygame.draw.lines(screen, color, False, points, 3)
+    pygame.draw.circle(screen, color, (int(points[-1][0]), int(points[-1][1])), max(2, int(size * 0.14)))
+
+    for side in (-1, 1):
+        claw_x = x + side * size * 0.75
+        pygame.draw.line(screen, color, (x + side * size * 0.4, body_rect.centery), (claw_x, body_rect.centery - 3), 2)
