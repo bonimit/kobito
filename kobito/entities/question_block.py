@@ -8,6 +8,9 @@ USED_COLOR = (120, 108, 90)
 MARK_COLOR = (90, 60, 0)
 
 
+SIZE_RATIO = 0.7  # fraction of a full tile cell the block actually occupies
+
+
 class QuestionBlock(Platform):
     """A solid block that triggers a Japanese question the first time
     the player touches it.
@@ -16,10 +19,17 @@ class QuestionBlock(Platform):
     collides with it exactly like any other tile, with zero extra
     physics code. `used` just tracks whether this particular block has
     already been answered, so it doesn't fire again.
+
+    Drawn smaller than a full tile cell (see SIZE_RATIO) and centered
+    within it, rather than filling the cell like a platform tile --
+    this reads visually as a distinct object rather than another
+    ground/wall block, and its hitbox shrinks to match.
     """
 
-    def __init__(self, x, y, size):
-        super().__init__(x, y, size, size, color=ACTIVE_COLOR)
+    def __init__(self, cell_x, cell_y, cell_size):
+        block_size = round(cell_size * SIZE_RATIO)
+        offset = (cell_size - block_size) // 2
+        super().__init__(cell_x + offset, cell_y + offset, block_size, block_size, color=ACTIVE_COLOR)
         self.used = False
         self._draw_question_mark()
 

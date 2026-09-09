@@ -5,6 +5,8 @@ from kobito.characters import get_character
 from kobito.constants import (
     CORRECT_ANSWER_SCORE,
     FPS,
+    GAUGE_DAMAGE,
+    GAUGE_MAX,
     INVULNERABILITY_SECONDS,
     KNOCKBACK_SPEED_X,
     KNOCKBACK_SPEED_Y,
@@ -23,6 +25,12 @@ from kobito.quiz_screen import QuizScreen
 HUD_TEXT_COLOR = (30, 30, 30)
 GAME_OVER_OVERLAY = (0, 0, 0, 160)
 BLINK_INTERVAL_SECONDS = 0.1
+
+GAUGE_BAR_SIZE = (140, 14)
+GAUGE_BAR_POS = (12, 62)
+GAUGE_BAR_BG = (210, 205, 195)
+GAUGE_BAR_FILL = (90, 190, 110)
+GAUGE_BAR_BORDER = (60, 50, 40)
 
 
 class Game:
@@ -67,8 +75,10 @@ class Game:
         self.question_bank = QuestionBank()
         self.score = 0
         self.lives = STARTING_LIVES
+        self.gauge = 0
         self.invulnerable_timer = 0.0
         self.hud_font = get_font(22)
+        self.hud_font_small = get_font(16)
         self.game_over_font = get_font(36)
 
     def run(self):
@@ -115,7 +125,17 @@ class Game:
         # belongs to (collectibles *and* all_sprites), so there's no
         # separate cleanup needed once it's picked up.
         for item in pygame.sprite.spritecollide(self.player, self.collectibles, dokill=True):
-            self.score += item.value
+            if item.kind == "shiitake":
+                self.lives += 1
+            else:
+                self.score += item.value
+                self._add_gauge(item.value)
+
+    def _add_gauge(self, amount):
+        self.gauge += amount
+        while self.gauge >= GAUGE_MAX:
+            self.gauge -= GAUGE_MAX
+            self.lives += 1
 
     def _check_question_blocks(self):
         # player.touched is whatever solids collision resolution found
@@ -141,7 +161,7 @@ class Game:
         if correct:
             self.score += CORRECT_ANSWER_SCORE
         else:
-            self._lose_a_life()
+            self._take_damage()
 
         # QuizScreen ran its own loop with its own clock, so the main
         # loop's clock has an artificially large elapsed time queued up
@@ -154,7 +174,7 @@ class Game:
         if not hit_enemies:
             return
 
-        self._lose_a_life()
+        self._take_damage()
         self.invulnerable_timer = INVULNERABILITY_SECONDS
 
         # Knock the player up and away from whichever enemy they hit,
@@ -166,8 +186,12 @@ class Game:
         self.player.velocity_x = direction * KNOCKBACK_SPEED_X
         self.player.velocity_y = KNOCKBACK_SPEED_Y
 
-    def _lose_a_life(self):
+    def _take_damage(self):
+        # A wrong quiz answer or an enemy hit costs a life outright,
+        # *and* sets the gauge back -- mistakes also cost progress
+        # toward the next bonus life, not just the life you just lost.
         self.lives -= 1
+        self.gauge = max(0, self.gauge - GAUGE_DAMAGE)
         if self.lives <= 0:
             self.game_over = True
 
@@ -206,6 +230,20 @@ class Game:
         lives_label = self.hud_font.render(f"Lives: {self.lives}", True, HUD_TEXT_COLOR)
         self.screen.blit(score_label, (12, 10))
         self.screen.blit(lives_label, (12, 36))
+        self._draw_gauge_bar()
+
+    def _draw_gauge_bar(self):
+        width, height = GAUGE_BAR_SIZE
+        bar_rect = pygame.Rect(GAUGE_BAR_POS, GAUGE_BAR_SIZE)
+        pygame.draw.rect(self.screen, GAUGE_BAR_BG, bar_rect)
+
+        fill_width = round(width * (self.gauge / GAUGE_MAX))
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, GAUGE_BAR_FILL, (*bar_rect.topleft, fill_width, height))
+        pygame.draw.rect(self.screen, GAUGE_BAR_BORDER, bar_rect, width=2)
+
+        label = self.hud_font_small.render("Gauge", True, HUD_TEXT_COLOR)
+        self.screen.blit(label, (bar_rect.right + 8, bar_rect.centery - label.get_height() // 2))
 
     def _draw_game_over(self):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)

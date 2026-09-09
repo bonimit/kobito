@@ -21,6 +21,15 @@ GROUND_BROWN = (139, 90, 43)
 STARTING_LIVES = 3
 CORRECT_ANSWER_SCORE = 10
 
+# Life gauge: fills from coin/onigiri pickups (by their value), same
+# idea as classic "100 coins = 1UP" -- reaching/exceeding GAUGE_MAX
+# grants a bonus life and the gauge carries over its remainder. A wrong
+# quiz answer or an enemy hit sets the gauge back by GAUGE_DAMAGE, on
+# top of costing a life outright, so mistakes also cost progress toward
+# the next bonus life.
+GAUGE_MAX = 100
+GAUGE_DAMAGE = 5
+
 # Enemy contact: a brief invulnerability window (with knockback) after
 # getting hit, so touching an enemy costs exactly one life instead of
 # draining several in the few frames it takes to separate.

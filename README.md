@@ -36,9 +36,16 @@ gravity, turn at their patrol bounds) roam the level; touching one costs
 a life, with a brief blinking invulnerability window and knockback
 afterward.
 
-Collectibles — coins, shiitake mushrooms, and onigiri — add to your
-score on touch (`kobito/entities/collectible.py`). Add more by calling
-`add_collectible(col, row, kind=...)` in `kobito/levels/level1.py`.
+Collectibles — coins, shiitake mushrooms, and onigiri — are picked up on
+touch (`kobito/entities/collectible.py`). Coins and onigiri add to your
+score *and* fill a Life Gauge (0-100, shown under the score); a shiitake
+instead grants an extra life outright. Reaching/exceeding a full gauge
+grants a bonus life too (classic "100 coins = 1UP", just gauge-shaped),
+carrying over any remainder. A wrong quiz answer or an enemy hit costs a
+life *and* knocks the gauge back by 5 — mistakes cost progress toward
+the next bonus life, not just the life you lose. Add more collectibles
+by calling `add_collectible(col, row, kind=...)` in
+`kobito/levels/level1.py`.
 
 Clouds drift behind the level at a slower scroll rate than the camera
 (parallax, for a sense of depth); trees scroll at the same rate as the
