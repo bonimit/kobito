@@ -24,8 +24,7 @@ from kobito.questions import QuestionBank
 from kobito.quiz_screen import QuizScreen
 
 HUD_TEXT_COLOR = (255, 255, 255)
-HUD_BACKING_COLOR = (20, 20, 25, 130)
-HUD_BACKING_RECT = pygame.Rect(4, 4, 210, 100)
+HUD_TEXT_OUTLINE = (20, 20, 20)
 GAME_OVER_OVERLAY = (0, 0, 0, 160)
 LEVEL_COMPLETE_OVERLAY = (0, 0, 0, 170)
 BLINK_INTERVAL_SECONDS = 0.1
@@ -284,20 +283,19 @@ class Game:
         return int(self.invulnerable_timer / BLINK_INTERVAL_SECONDS) % 2 == 0
 
     def _draw_hud(self):
-        # A semi-transparent dark backing keeps the HUD readable
-        # regardless of how bright or dark the current world's sky is
-        # (a plain dark text color would vanish against a night sky).
-        backing = pygame.Surface(HUD_BACKING_RECT.size, pygame.SRCALPHA)
-        backing.fill(HUD_BACKING_COLOR)
-        self.screen.blit(backing, HUD_BACKING_RECT.topleft)
-
-        level_label = self.hud_font.render(f"Level {self.level_number} - {self.jlpt_level}", True, HUD_TEXT_COLOR)
-        score_label = self.hud_font.render(f"Score: {self.score}", True, HUD_TEXT_COLOR)
-        lives_label = self.hud_font.render(f"Lives: {self.lives}", True, HUD_TEXT_COLOR)
-        self.screen.blit(level_label, (12, 10))
-        self.screen.blit(score_label, (12, 36))
-        self.screen.blit(lives_label, (12, 62))
+        # No background panel -- an outline around each glyph (instead
+        # of a solid color) is what keeps the HUD readable against any
+        # world's sky, bright or dark, without covering the scene.
+        self._draw_outlined_text(f"Level {self.level_number} - {self.jlpt_level}", self.hud_font, (12, 10))
+        self._draw_outlined_text(f"Score: {self.score}", self.hud_font, (12, 36))
+        self._draw_outlined_text(f"Lives: {self.lives}", self.hud_font, (12, 62))
         self._draw_gauge_bar()
+
+    def _draw_outlined_text(self, text, font, pos, color=HUD_TEXT_COLOR, outline_color=HUD_TEXT_OUTLINE):
+        outline = font.render(text, True, outline_color)
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)):
+            self.screen.blit(outline, (pos[0] + dx, pos[1] + dy))
+        self.screen.blit(font.render(text, True, color), pos)
 
     def _draw_gauge_bar(self):
         width, height = GAUGE_BAR_SIZE
@@ -309,8 +307,10 @@ class Game:
             pygame.draw.rect(self.screen, GAUGE_BAR_FILL, (*bar_rect.topleft, fill_width, height))
         pygame.draw.rect(self.screen, GAUGE_BAR_BORDER, bar_rect, width=2)
 
-        label = self.hud_font_small.render("Gauge", True, HUD_TEXT_COLOR)
-        self.screen.blit(label, (bar_rect.right + 8, bar_rect.centery - label.get_height() // 2))
+        label_height = self.hud_font_small.get_height()
+        self._draw_outlined_text(
+            "Gauge", self.hud_font_small, (bar_rect.right + 8, bar_rect.centery - label_height // 2)
+        )
 
     def _draw_game_over(self):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
