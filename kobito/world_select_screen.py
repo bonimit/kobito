@@ -1,0 +1,89 @@
+import pygame
+
+from kobito.background import Background
+from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.fonts import get_font
+from kobito.themes import THEMES
+
+TEXT_COLOR = (255, 255, 255)
+TEXT_SHADOW = (20, 20, 20)
+HINT_COLOR = (235, 235, 235)
+
+WORLD_ORDER = ["forest", "desert", "arabian_night", "underwater", "sky"]
+
+
+class WorldSelectScreen:
+    """Lets the player pick which themed world to play, showing a live
+    preview of that world's actual background (same Background class
+    Game uses, just with no camera movement) rather than a static
+    thumbnail -- so what you see here is exactly what you'll get.
+    """
+
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("Kobito - Choose your world")
+        self.clock = pygame.time.Clock()
+
+        self.index = 0
+        self.font_title = get_font(40)
+        self.font_hint = get_font(22)
+
+        # One preview Background per world, built once up front (same
+        # reasoning as SelectScreen preloading animations: switching
+        # worlds with left/right should never stutter).
+        preview_ground_segments = [(0, SCREEN_WIDTH)]
+        self.previews = {
+            world_id: Background(SCREEN_WIDTH, SCREEN_HEIGHT - 60, preview_ground_segments, THEMES[world_id])
+            for world_id in WORLD_ORDER
+        }
+
+    def run(self):
+        """Blocks until the player confirms a world, then returns its id."""
+        while True:
+            self.clock.tick(FPS)
+            chosen_id = self._handle_events()
+            if chosen_id is not None:
+                return chosen_id
+
+            self._draw()
+
+    def _handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                raise SystemExit
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_LEFT, pygame.K_a):
+                    self.index = (self.index - 1) % len(WORLD_ORDER)
+                elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                    self.index = (self.index + 1) % len(WORLD_ORDER)
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    return WORLD_ORDER[self.index]
+                elif event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    raise SystemExit
+        return None
+
+    def _draw(self):
+        world_id = WORLD_ORDER[self.index]
+        theme = THEMES[world_id]
+        self.previews[world_id].draw(self.screen, camera_x=0)
+
+        self._draw_shadowed_text(theme.name, self.font_title, centerx=SCREEN_WIDTH // 2, y=30)
+
+        position = f"{self.index + 1} / {len(WORLD_ORDER)}"
+        self._draw_shadowed_text(position, self.font_hint, centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 90)
+
+        hint = "<- / -> to choose    Enter to confirm    Esc to quit"
+        self._draw_shadowed_text(hint, self.font_hint, centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 55)
+
+        pygame.display.flip()
+
+    def _draw_shadowed_text(self, text, font, centerx, y):
+        # A drop shadow keeps the title/hint text readable regardless of
+        # how bright or busy the world's own background is behind it.
+        shadow = font.render(text, True, TEXT_SHADOW)
+        self.screen.blit(shadow, shadow.get_rect(centerx=centerx + 2, y=y + 2))
+        label = font.render(text, True, TEXT_COLOR)
+        self.screen.blit(label, label.get_rect(centerx=centerx, y=y))

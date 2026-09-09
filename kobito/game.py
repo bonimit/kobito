@@ -12,7 +12,6 @@ from kobito.constants import (
     KNOCKBACK_SPEED_Y,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
-    SKY_BLUE,
     STARTING_LIVES,
 )
 from kobito.entities.player import Player
@@ -22,7 +21,9 @@ from kobito.levels.level1 import build_level1
 from kobito.questions import QuestionBank
 from kobito.quiz_screen import QuizScreen
 
-HUD_TEXT_COLOR = (30, 30, 30)
+HUD_TEXT_COLOR = (255, 255, 255)
+HUD_BACKING_COLOR = (20, 20, 25, 130)
+HUD_BACKING_RECT = pygame.Rect(4, 4, 210, 82)
 GAME_OVER_OVERLAY = (0, 0, 0, 160)
 BLINK_INTERVAL_SECONDS = 0.1
 
@@ -42,7 +43,7 @@ class Game:
     result. Nothing moves or gets checked outside of this loop.
     """
 
-    def __init__(self, character_id="capybara"):
+    def __init__(self, character_id="capybara", theme_id="forest"):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito")
@@ -50,12 +51,12 @@ class Game:
         self.running = True
         self.game_over = False
 
-        level = build_level1()
+        level = build_level1(theme_id)
         self.platforms = level.platforms
         self.question_blocks = level.question_blocks
         self.enemies = level.enemies
         self.collectibles = level.collectibles
-        self.background = Background(level.width_px, level.ground_y, level.ground_segments_px)
+        self.background = Background(level.width_px, level.ground_y, level.ground_segments_px, level.theme)
 
         character = get_character(character_id)
         self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
@@ -196,7 +197,6 @@ class Game:
             self.game_over = True
 
     def _draw(self):
-        self.screen.fill(SKY_BLUE)
         self.background.draw(self.screen, self.camera_x)
 
         for sprite in self.all_sprites:
@@ -226,6 +226,13 @@ class Game:
         return int(self.invulnerable_timer / BLINK_INTERVAL_SECONDS) % 2 == 0
 
     def _draw_hud(self):
+        # A semi-transparent dark backing keeps the HUD readable
+        # regardless of how bright or dark the current world's sky is
+        # (a plain dark text color would vanish against a night sky).
+        backing = pygame.Surface(HUD_BACKING_RECT.size, pygame.SRCALPHA)
+        backing.fill(HUD_BACKING_COLOR)
+        self.screen.blit(backing, HUD_BACKING_RECT.topleft)
+
         score_label = self.hud_font.render(f"Score: {self.score}", True, HUD_TEXT_COLOR)
         lives_label = self.hud_font.render(f"Lives: {self.lives}", True, HUD_TEXT_COLOR)
         self.screen.blit(score_label, (12, 10))

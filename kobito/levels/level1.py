@@ -7,6 +7,7 @@ from kobito.entities.collectible import Collectible
 from kobito.entities.enemy import Enemy
 from kobito.entities.platform import Platform
 from kobito.entities.question_block import QuestionBlock
+from kobito.themes import get_theme
 
 LEVEL_WIDTH_TILES = 40
 
@@ -20,37 +21,44 @@ class Level:
     player_start: tuple
     width_px: int
     ground_y: int
+    theme: object
     ground_segments_px: list = field(default_factory=list)
 
 
-def build_level1():
-    """Builds and returns the first level.
+def build_level1(theme_id="forest"):
+    """Builds and returns the first level, skinned with the given world
+    theme (see kobito/themes.py).
 
     Positions are specified in tile coordinates (col, row) and converted
     to pixels here, so the layout below is easy to read/edit as a grid.
+    The layout itself (platforms, blocks, enemies, collectibles) is the
+    same regardless of theme -- only the colors and background scenery
+    change.
 
     Question blocks and enemies are added to `platforms` too (so the
     player collides with them like any solid tile) as well as their own
     groups (so Game can tell what kind of solid it touched).
     """
+    theme = get_theme(theme_id)
     platforms = pygame.sprite.Group()
     question_blocks = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
     collectibles = pygame.sprite.Group()
     ground_segments_px = []
 
-    def add_platform(col, row, width_in_tiles=1, height_in_tiles=1):
+    def add_platform(col, row, width_in_tiles=1, height_in_tiles=1, color=None):
         platforms.add(
             Platform(
                 col * TILE_SIZE,
                 row * TILE_SIZE,
                 width_in_tiles * TILE_SIZE,
                 height_in_tiles * TILE_SIZE,
+                color=color or theme.platform_color,
             )
         )
 
     def add_ground(col, row, width_in_tiles):
-        add_platform(col, row, width_in_tiles=width_in_tiles, height_in_tiles=2)
+        add_platform(col, row, width_in_tiles=width_in_tiles, height_in_tiles=2, color=theme.ground_color)
         ground_segments_px.append((col * TILE_SIZE, (col + width_in_tiles) * TILE_SIZE))
 
     def add_question_block(col, row):
@@ -72,7 +80,7 @@ def build_level1():
 
     # Ground strip along the bottom of the level, split into two segments
     # with a gap between tiles 10-13 to force a jump. Recorded in
-    # ground_segments_px so decorative trees (see kobito/background.py)
+    # ground_segments_px so decorative props (see kobito/background.py)
     # only get placed on solid ground, never floating over the gap.
     ground_row = 15
     add_ground(0, ground_row, width_in_tiles=10)
@@ -116,5 +124,6 @@ def build_level1():
         player_start=player_start,
         width_px=LEVEL_WIDTH_TILES * TILE_SIZE,
         ground_y=ground_row * TILE_SIZE,
+        theme=theme,
         ground_segments_px=ground_segments_px,
     )

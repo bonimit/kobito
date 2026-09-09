@@ -11,8 +11,8 @@ python main.py
 
 ## Controls
 
-- **Left/Right arrows or A/D** — choose mascot (select screen) / run (in-level)
-- **Space / W / Up** — jump; **Enter/Space** — confirm mascot
+- **Left/Right arrows or A/D** — choose mascot/world (select screens) / run (in-level)
+- **Space / W / Up** — jump; **Enter/Space** — confirm mascot/world
 - **1-4** — answer a question block's quiz
 - **Esc** — quit
 
@@ -47,13 +47,26 @@ the next bonus life, not just the life you lose. Add more collectibles
 by calling `add_collectible(col, row, kind=...)` in
 `kobito/levels/level1.py`.
 
-The backdrop is layered for depth (back to front): distant mountains,
-two rolling-hill layers, clouds, then trees/bushes/flowers rooted in
-the actual ground. Each layer scrolls at its own rate relative to the
-camera (parallax — mountains barely move, hills a bit more, trees
-scroll in lockstep since they're planted in the ground); trees, bushes,
-and flowers are only ever placed on solid ground segments, never
-floating over a gap. All of it is in `kobito/background.py`.
+## Worlds
+
+Before a level starts, a world-select screen (mirroring the mascot
+select screen) lets you pick from 5 themed worlds: Whispering Forest,
+Sunfall Desert, Arabian Night, Coral Deep (underwater), and Cloud
+Kingdom (sky). Each world has its own sky, ground/platform color, and
+layered scenery (mountains/dunes/reef/cloud-hills in back; clouds/
+stars+moon/bubbles/birds in the sky; trees/cacti/coral/floating-islands
+rooted in the ground) — but the same gameplay layout underneath
+(platforms, question blocks, enemies, collectibles).
+
+A world is just data in `kobito/themes.py` (colors + which decorations
+to draw, from the small shape library in `kobito/scenery_shapes.py`) —
+adding a 6th world doesn't require touching the rendering code, only a
+new `Theme(...)` entry. The backdrop is layered for depth (back to
+front): mountains, two rolling-hill layers, the sky layer (clouds/
+stars/bubbles/...), then ground props. Each layer scrolls at its own
+rate relative to the camera (parallax); ground props are only ever
+placed on solid ground segments, never floating over a gap. All of it
+is rendered generically by `kobito/background.py`.
 
 ## Adding real sprite art
 
