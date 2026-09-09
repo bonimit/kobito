@@ -107,6 +107,7 @@ class Game:
 
         self.player.update(dt, self.platforms)
         self.enemies.update(dt, self.platforms)
+        self.background.update(dt)
 
         # Keep the player roughly centered horizontally by shifting the
         # camera, but never scroll past the left edge of the level.

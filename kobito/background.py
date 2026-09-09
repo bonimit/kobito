@@ -1,3 +1,4 @@
+import math
 import random
 
 import pygame
@@ -21,12 +22,15 @@ def _build_sky_surface(top_color, bottom_color):
 class Background:
     """Renders one world Theme's scenery: a sky gradient, several
     rolling-silhouette layers (mountains/dunes/reef/...), a "floaty"
-    layer (clouds/stars/bubbles/...), and ground-rooted props (trees/
-    cacti/coral/...). None of this is theme-specific code -- everything
-    about *what* a theme looks like lives in kobito/themes.py; this
-    class only knows how to place and scroll whatever it's handed.
+    layer (clouds/stars/bubbles/...), ground-rooted props (trees/cacti/
+    coral/...), and living creatures that actually move over time
+    (birds, fish, crabs, ...). None of this is theme-specific code --
+    everything about *what* a theme looks like lives in
+    kobito/themes.py; this class only knows how to place, scroll, and
+    animate whatever it's handed.
 
-    Purely decorative -- no collision, no gameplay effect.
+    Purely decorative -- no collision, no gameplay effect. Call
+    update(dt) once per frame (to advance creature motion) before draw().
     """
 
     def __init__(self, level_width, ground_y, ground_segments_px, theme, seed=7):
@@ -34,6 +38,7 @@ class Background:
 
         self.level_width = level_width
         self.ground_y = ground_y
+        self.ground_segments_px = ground_segments_px
         self.theme = theme
         self.sky_surface = _build_sky_surface(theme.sky_top, theme.sky_bottom)
 
@@ -48,6 +53,14 @@ class Background:
         self.ground_props = [
             (prop, self._place_on_ground(ground_segments_px, rng, prop.spacing_range, prop.margin))
             for prop in theme.ground_props
+        ]
+        self.flying_creatures = [
+            (creature, self._place_flying_creatures(level_width, rng, creature))
+            for creature in theme.flying_creatures
+        ]
+        self.ground_creatures = [
+            (creature, self._place_ground_creatures(ground_segments_px, rng, creature))
+            for creature in theme.ground_creatures
         ]
 
     def _place_bumps(self, level_width, rng, spacing, radius):
@@ -83,6 +96,69 @@ class Background:
                 x += rng.randint(*spacing_range)
         return placed
 
+    def _place_flying_creatures(self, level_width, rng, creature):
+        instances = []
+        for i in range(creature.count(level_width)):
+            speed = rng.uniform(*creature.speed_range)
+            instances.append({
+                "x": rng.uniform(0, level_width),
+                "y_base": rng.randint(*creature.y_range),
+                "size": rng.randint(*creature.size_range),
+                "color": creature.colors[i % len(creature.colors)],
+                "vx": speed if rng.random() < 0.5 else -speed,
+                "phase": rng.uniform(0, 2 * math.pi),
+            })
+        return instances
+
+    def _place_ground_creatures(self, ground_segments_px, rng, creature):
+        if not ground_segments_px:
+            return []
+
+        instances = []
+        for i in range(creature.count(self.level_width)):
+            seg_start, seg_end = rng.choice(ground_segments_px)
+            patrol_width = min(rng.randint(*creature.patrol_width_range), max(20, seg_end - seg_start - 40))
+            usable_start, usable_end = seg_start + 20, seg_end - 20
+            if usable_end <= usable_start:
+                center = (seg_start + seg_end) / 2
+            else:
+                center = rng.uniform(usable_start, usable_end)
+            min_x = max(seg_start + 10, center - patrol_width / 2)
+            max_x = min(seg_end - 10, center + patrol_width / 2)
+            if max_x <= min_x:
+                max_x = min_x + 10
+
+            speed = rng.uniform(*creature.speed_range)
+            instances.append({
+                "x": rng.uniform(min_x, max_x),
+                "min_x": min_x,
+                "max_x": max_x,
+                "size": rng.randint(*creature.size_range),
+                "color": creature.colors[i % len(creature.colors)],
+                "vx": speed if rng.random() < 0.5 else -speed,
+            })
+        return instances
+
+    def update(self, dt):
+        """Advances every living creature's position/animation phase.
+        Call once per frame before draw(). Purely decorative motion --
+        no interaction with the player or level.
+        """
+        for creature, instances in self.flying_creatures:
+            for inst in instances:
+                inst["x"] += inst["vx"] * dt
+                inst["phase"] += dt * (2 * math.pi / creature.bob_period)
+
+        for creature, instances in self.ground_creatures:
+            for inst in instances:
+                inst["x"] += inst["vx"] * dt
+                if inst["x"] <= inst["min_x"]:
+                    inst["x"] = inst["min_x"]
+                    inst["vx"] = abs(inst["vx"])
+                elif inst["x"] >= inst["max_x"]:
+                    inst["x"] = inst["max_x"]
+                    inst["vx"] = -abs(inst["vx"])
+
     def draw(self, screen, camera_x):
         screen.blit(self.sky_surface, (0, 0))
         screen_width = screen.get_width()
@@ -113,6 +189,21 @@ class Background:
                     size = prop.size_range[0] + (i * 37) % max(1, prop.size_range[1] - prop.size_range[0])
                     color = prop.colors[i % len(prop.colors)]
                     prop.draw_fn(screen, draw_x, self.ground_y, size, color)
+
+        for creature, instances in self.flying_creatures:
+            for inst in instances:
+                draw_x = self._wrapped_x(inst["x"], camera_x, creature.parallax, screen_width)
+                if -inst["size"] * 2 < draw_x < screen_width + inst["size"] * 2:
+                    y = inst["y_base"] + math.sin(inst["phase"]) * creature.bob_amplitude
+                    facing = 1 if inst["vx"] >= 0 else -1
+                    creature.draw_fn(screen, draw_x, y, inst["size"], inst["color"], facing=facing)
+
+        for creature, instances in self.ground_creatures:
+            for inst in instances:
+                draw_x = inst["x"] - camera_x
+                if -60 < draw_x < screen_width + 60:
+                    facing = 1 if inst["vx"] >= 0 else -1
+                    creature.draw_fn(screen, draw_x, self.ground_y, inst["size"], inst["color"], facing=facing)
 
     def _wrapped_x(self, world_x, camera_x, parallax, screen_width):
         # Wrapping with % lets a sparse layer still cover an arbitrarily

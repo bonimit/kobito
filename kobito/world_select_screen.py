@@ -41,11 +41,12 @@ class WorldSelectScreen:
     def run(self):
         """Blocks until the player confirms a world, then returns its id."""
         while True:
-            self.clock.tick(FPS)
+            dt = self.clock.tick(FPS) / 1000.0
             chosen_id = self._handle_events()
             if chosen_id is not None:
                 return chosen_id
 
+            self.previews[WORLD_ORDER[self.index]].update(dt)
             self._draw()
 
     def _handle_events(self):

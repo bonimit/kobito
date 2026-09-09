@@ -71,6 +71,16 @@ rate relative to the camera (parallax); ground props are only ever
 placed on solid ground segments, never floating over a gap. All of it
 is rendered generically by `kobito/background.py`.
 
+Each world also has living creatures that actually move over time
+(not just scroll with the camera): Forest has birds and butterflies;
+Desert has a hawk and a scorpion; Arabian Night has bats and a
+scorpion; Coral Deep has fish, a squid, a whale, and a crab crawling
+the seabed; Cloud Kingdom has a variety of birds. Flying/swimming
+creatures wander the level with a gentle bob and wrap around when they
+exit; ground creatures (crab, scorpion) patrol back and forth like a
+decorative, non-colliding cousin of Enemy. A world adds creatures by
+listing `FlyingCreature`/`GroundCreature` entries in its `Theme`.
+
 ## Adding real sprite art
 
 Each mascot has a folder at `assets/sprites/<character_id>/` with `idle/`,
