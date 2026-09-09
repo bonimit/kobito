@@ -14,6 +14,7 @@ from kobito.constants import (
     SCREEN_WIDTH,
     STARTING_LIVES,
 )
+from kobito.difficulty import JLPT_DESCRIPTIONS, next_jlpt_level
 from kobito.entities.player import Player
 from kobito.entities.question_block import QuestionBlock
 from kobito.fonts import get_font
@@ -24,15 +25,21 @@ from kobito.quiz_screen import QuizScreen
 
 HUD_TEXT_COLOR = (255, 255, 255)
 HUD_BACKING_COLOR = (20, 20, 25, 130)
-HUD_BACKING_RECT = pygame.Rect(4, 4, 210, 82)
+HUD_BACKING_RECT = pygame.Rect(4, 4, 210, 100)
 GAME_OVER_OVERLAY = (0, 0, 0, 160)
+LEVEL_COMPLETE_OVERLAY = (0, 0, 0, 170)
 BLINK_INTERVAL_SECONDS = 0.1
+CONTINUE_KEYS = (pygame.K_RETURN, pygame.K_SPACE)
 
 GAUGE_BAR_SIZE = (140, 14)
 GAUGE_BAR_POS = (12, 62)
 GAUGE_BAR_BG = (210, 205, 195)
 GAUGE_BAR_FILL = (90, 190, 110)
 GAUGE_BAR_BORDER = (60, 50, 40)
+
+# Outcomes Game.run() can return, telling main.py what to do next.
+OUTCOME_QUIT = "quit"
+OUTCOME_ADVANCE = "advance"
 
 
 class Game:
@@ -42,21 +49,36 @@ class Game:
     over, as fast as the frame rate allows, it (1) reads input/events,
     (2) advances the simulation by one time step, and (3) draws the
     result. Nothing moves or gets checked outside of this loop.
+
+    One Game instance is one level. Reaching the goal flagpole ends it
+    with outcome OUTCOME_ADVANCE, score, and an adaptively-computed
+    JLPT level for the *next* level (based on this level's answer
+    accuracy); main.py uses that to construct the next Game. Quitting
+    (Esc/window close) or running out of lives instead ends with
+    OUTCOME_QUIT.
     """
 
-    def __init__(self, character_id="capybara", theme_id="forest"):
+    def __init__(self, character_id="capybara", theme_id="forest", jlpt_level="N5", level_number=1, starting_score=0):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito")
         self.clock = pygame.time.Clock()
         self.running = True
+        self.outcome = OUTCOME_QUIT
         self.game_over = False
+        self.level_complete = False
+        self.next_jlpt_level = None
+        self.level_accuracy = None
+
+        self.jlpt_level = jlpt_level
+        self.level_number = level_number
 
         level = build_level1(theme_id)
         self.platforms = level.platforms
         self.question_blocks = level.question_blocks
         self.enemies = level.enemies
         self.collectibles = level.collectibles
+        self.goal = level.goal
         self.background = Background(level.width_px, level.ground_y, level.ground_segments_px, level.theme)
 
         character = get_character(character_id)
@@ -65,9 +87,11 @@ class Game:
         # A "sprite group" is pygame's container for a batch of sprites.
         # It gives us group.draw(screen) and group.update(...) instead of
         # hand-rolled loops, and spritecollide() below checks one sprite
-        # against every sprite in a group in one call.
+        # against every sprite in a group in one call. The goal is drawn
+        # like everything else here but deliberately isn't in
+        # `platforms`, so it's visible without being solid.
         self.all_sprites = pygame.sprite.Group(
-            self.player, *self.platforms, *self.enemies, *self.collectibles
+            self.player, *self.platforms, *self.enemies, *self.collectibles, self.goal
         )
 
         # How far the world has scrolled left, in pixels, so the camera
@@ -76,13 +100,16 @@ class Game:
 
         self.question_bank = QuestionBank()
         self.hint_service = HintService()
-        self.score = 0
+        self.score = starting_score
+        self.correct_count = 0
+        self.wrong_count = 0
         self.lives = STARTING_LIVES
         self.gauge = 0
         self.invulnerable_timer = 0.0
         self.hud_font = get_font(22)
         self.hud_font_small = get_font(16)
         self.game_over_font = get_font(36)
+        self.level_complete_font = get_font(32)
 
     def run(self):
         while self.running:
@@ -94,17 +121,27 @@ class Game:
             self._update(dt)
             self._draw()
 
-        pygame.quit()
+        # Only tear down pygame when the player is truly done (quit or
+        # ran out of lives) -- advancing to the next level reuses the
+        # same window, so main.py can build a fresh Game right after.
+        if self.outcome != OUTCOME_ADVANCE:
+            pygame.quit()
+
+        return self.outcome, self.score, self.next_jlpt_level
 
     def _handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.running = False
+                elif self.level_complete and event.key in CONTINUE_KEYS:
+                    self.outcome = OUTCOME_ADVANCE
+                    self.running = False
 
     def _update(self, dt):
-        if self.game_over:
+        if self.game_over or self.level_complete:
             return
 
         self.player.update(dt, self.platforms)
@@ -118,11 +155,21 @@ class Game:
 
         self._check_question_blocks()
         self._check_collectibles()
+        self._check_goal()
 
         if self.invulnerable_timer > 0:
             self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
         else:
             self._check_enemy_contact()
+
+    def _check_goal(self):
+        if self.level_complete or not self.player.rect.colliderect(self.goal.rect):
+            return
+
+        self.level_complete = True
+        self.next_jlpt_level, self.level_accuracy = next_jlpt_level(
+            self.jlpt_level, self.correct_count, self.wrong_count
+        )
 
     def _check_collectibles(self):
         # dokill=True removes each collected sprite from every group it
@@ -152,7 +199,7 @@ class Game:
 
     def _trigger_question(self, block):
         block.mark_used()
-        question = self.question_bank.random_question()
+        question = self.question_bank.random_question(jlpt=self.jlpt_level)
 
         # Snapshot the level as it looks right now (block already
         # marked used) so the quiz box shows over the actual scene
@@ -168,8 +215,10 @@ class Game:
 
         if correct:
             self.score += CORRECT_ANSWER_SCORE
+            self.correct_count += 1
         else:
             self._take_damage()
+            self.wrong_count += 1
 
         # QuizScreen ran its own loop with its own clock, so the main
         # loop's clock has an artificially large elapsed time queued up
@@ -221,6 +270,8 @@ class Game:
         self._draw_hud()
         if self.game_over:
             self._draw_game_over()
+        elif self.level_complete:
+            self._draw_level_complete()
 
         pygame.display.flip()
 
@@ -240,15 +291,17 @@ class Game:
         backing.fill(HUD_BACKING_COLOR)
         self.screen.blit(backing, HUD_BACKING_RECT.topleft)
 
+        level_label = self.hud_font.render(f"Level {self.level_number} - {self.jlpt_level}", True, HUD_TEXT_COLOR)
         score_label = self.hud_font.render(f"Score: {self.score}", True, HUD_TEXT_COLOR)
         lives_label = self.hud_font.render(f"Lives: {self.lives}", True, HUD_TEXT_COLOR)
-        self.screen.blit(score_label, (12, 10))
-        self.screen.blit(lives_label, (12, 36))
+        self.screen.blit(level_label, (12, 10))
+        self.screen.blit(score_label, (12, 36))
+        self.screen.blit(lives_label, (12, 62))
         self._draw_gauge_bar()
 
     def _draw_gauge_bar(self):
         width, height = GAUGE_BAR_SIZE
-        bar_rect = pygame.Rect(GAUGE_BAR_POS, GAUGE_BAR_SIZE)
+        bar_rect = pygame.Rect(GAUGE_BAR_POS[0], GAUGE_BAR_POS[1] + 26, *GAUGE_BAR_SIZE)
         pygame.draw.rect(self.screen, GAUGE_BAR_BG, bar_rect)
 
         fill_width = round(width * (self.gauge / GAUGE_MAX))
@@ -266,3 +319,21 @@ class Game:
 
         text = self.game_over_font.render(f"Game Over - Score: {self.score}", True, (255, 255, 255))
         self.screen.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
+
+    def _draw_level_complete(self):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill(LEVEL_COMPLETE_OVERLAY)
+        self.screen.blit(overlay, (0, 0))
+
+        center_x = SCREEN_WIDTH // 2
+        lines = [
+            (self.level_complete_font, f"Level {self.level_number} Complete!"),
+            (self.hud_font, f"Score: {self.score}    Accuracy: {round(self.level_accuracy * 100)}%"),
+            (self.hud_font, f"Next up: {self.next_jlpt_level} - {JLPT_DESCRIPTIONS[self.next_jlpt_level]}"),
+            (self.hud_font_small, "Press Enter to continue"),
+        ]
+        y = SCREEN_HEIGHT // 2 - 70
+        for font, text in lines:
+            surface = font.render(text, True, (255, 255, 255))
+            self.screen.blit(surface, surface.get_rect(centerx=center_x, y=y))
+            y += surface.get_height() + 12

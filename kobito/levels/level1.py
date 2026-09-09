@@ -5,6 +5,7 @@ import pygame
 from kobito.constants import TILE_SIZE
 from kobito.entities.collectible import Collectible
 from kobito.entities.enemy import Enemy
+from kobito.entities.goal import Goal
 from kobito.entities.platform import Platform
 from kobito.entities.question_block import QuestionBlock
 from kobito.themes import get_theme
@@ -18,6 +19,7 @@ class Level:
     question_blocks: pygame.sprite.Group
     enemies: pygame.sprite.Group
     collectibles: pygame.sprite.Group
+    goal: pygame.sprite.Sprite
     player_start: tuple
     width_px: int
     ground_y: int
@@ -115,12 +117,17 @@ def build_level1(theme_id="forest"):
         add_collectible(col, 13, kind="coin")
     add_collectible(35, 13, kind="onigiri")
 
+    # Flagpole marking the end of the level, a few tiles before the
+    # right edge of the final ground segment.
+    goal = Goal(37 * TILE_SIZE, ground_row * TILE_SIZE)
+
     player_start = (2 * TILE_SIZE, (ground_row - 3) * TILE_SIZE)
     return Level(
         platforms=platforms,
         question_blocks=question_blocks,
         enemies=enemies,
         collectibles=collectibles,
+        goal=goal,
         player_start=player_start,
         width_px=LEVEL_WIDTH_TILES * TILE_SIZE,
         ground_y=ground_row * TILE_SIZE,

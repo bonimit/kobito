@@ -2,7 +2,7 @@
   {
     "id": "vocab_001",
     "category": "vocabulary",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "犬 (inu) means...",
     "choices": ["Cat", "Dog", "Bird", "Fish"],
     "answer": 1,
@@ -11,7 +11,7 @@
   {
     "id": "vocab_002",
     "category": "vocabulary",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "猫 (neko) means...",
     "choices": ["Cat", "Dog", "Mouse", "Fox"],
     "answer": 0,
@@ -20,7 +20,7 @@
   {
     "id": "vocab_003",
     "category": "vocabulary",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "水 (mizu) means...",
     "choices": ["Fire", "Water", "Earth", "Wind"],
     "answer": 1,
@@ -29,7 +29,7 @@
   {
     "id": "vocab_004",
     "category": "vocabulary",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "学校 (gakkou) means...",
     "choices": ["Hospital", "School", "Station", "Library"],
     "answer": 1,
@@ -38,7 +38,7 @@
   {
     "id": "vocab_005",
     "category": "vocabulary",
-    "difficulty": "medium",
+    "jlpt": "N4",
     "prompt": "火 (hi) means...",
     "choices": ["Water", "Fire", "Tree", "Metal"],
     "answer": 1,
@@ -47,7 +47,7 @@
   {
     "id": "kanji_001",
     "category": "kanji",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "Which kanji means \"big\"?",
     "choices": ["小", "大", "中", "上"],
     "answer": 1,
@@ -56,7 +56,7 @@
   {
     "id": "kanji_002",
     "category": "kanji",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "What is the reading of 山?",
     "choices": ["かわ", "やま", "うみ", "そら"],
     "answer": 1,
@@ -65,7 +65,7 @@
   {
     "id": "kanji_003",
     "category": "kanji",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "Which kanji means \"person\"?",
     "choices": ["人", "入", "八", "大"],
     "answer": 0,
@@ -74,7 +74,7 @@
   {
     "id": "kanji_004",
     "category": "kanji",
-    "difficulty": "medium",
+    "jlpt": "N4",
     "prompt": "Which kanji means \"water\"?",
     "choices": ["氷", "水", "木", "火"],
     "answer": 1,
@@ -83,7 +83,7 @@
   {
     "id": "kanji_005",
     "category": "kanji",
-    "difficulty": "hard",
+    "jlpt": "N3",
     "prompt": "What is the reading of 木曜日 (a day of the week)?",
     "choices": ["すいようび", "もくようび", "きんようび", "かようび"],
     "answer": 1,
@@ -92,7 +92,7 @@
   {
     "id": "grammar_001",
     "category": "grammar",
-    "difficulty": "easy",
+    "jlpt": "N5",
     "prompt": "わたし___がくせいです。 (Fill in the particle: \"I am a student.\")",
     "choices": ["は", "を", "に", "で"],
     "answer": 0,
@@ -101,7 +101,7 @@
   {
     "id": "grammar_002",
     "category": "grammar",
-    "difficulty": "medium",
+    "jlpt": "N4",
     "prompt": "りんご___食べます。 (Fill in the particle: \"I eat an apple.\")",
     "choices": ["は", "を", "に", "と"],
     "answer": 1,
@@ -110,7 +110,7 @@
   {
     "id": "grammar_003",
     "category": "grammar",
-    "difficulty": "medium",
+    "jlpt": "N4",
     "prompt": "ここ___猫がいます。 (Fill in the particle: \"There is a cat here.\")",
     "choices": ["は", "を", "に", "と"],
     "answer": 2,
@@ -119,7 +119,7 @@
   {
     "id": "grammar_004",
     "category": "grammar",
-    "difficulty": "hard",
+    "jlpt": "N3",
     "prompt": "ともだち___行きます。 (Fill in the particle meaning \"to/toward\": \"I'm going to a friend's place.\")",
     "choices": ["へ", "を", "が", "も"],
     "answer": 0,
@@ -128,7 +128,7 @@
   {
     "id": "verb_001",
     "category": "verb_conjugation",
-    "difficulty": "medium",
+    "jlpt": "N4",
     "prompt": "What is the te-form of 食べる (to eat)?",
     "choices": ["食べって", "食べて", "食べいて", "食べた"],
     "answer": 1,
@@ -137,7 +137,7 @@
   {
     "id": "verb_002",
     "category": "verb_conjugation",
-    "difficulty": "medium",
+    "jlpt": "N4",
     "prompt": "What is the past tense of 行く (to go)?",
     "choices": ["行いた", "行った", "行きた", "行くた"],
     "answer": 1,
@@ -146,7 +146,7 @@
   {
     "id": "verb_003",
     "category": "verb_conjugation",
-    "difficulty": "hard",
+    "jlpt": "N3",
     "prompt": "What is the plain negative form of する (to do)?",
     "choices": ["する", "した", "しない", "している"],
     "answer": 2,
@@ -155,10 +155,91 @@
   {
     "id": "verb_004",
     "category": "verb_conjugation",
-    "difficulty": "hard",
+    "jlpt": "N3",
     "prompt": "What is the te-form of 飲む (to drink)?",
     "choices": ["飲んで", "飲みて", "飲むで", "飲んだ"],
     "answer": 0,
     "explanation": "Verbs ending in む/ぶ/ぬ take んで in the te-form: 飲む → 飲んで."
+  },
+  {
+    "id": "kanji_n2_001",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "What is the reading of 経済 (economy)?",
+    "choices": ["けいざい", "けいさい", "きょうざい", "きょうさい"],
+    "answer": 0,
+    "explanation": "経済 (けいざい) means \"economy\"."
+  },
+  {
+    "id": "kanji_n2_002",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "What is the reading of 環境 (environment)?",
+    "choices": ["かんきょう", "かんけい", "げんきょう", "げんけい"],
+    "answer": 0,
+    "explanation": "環境 (かんきょう) means \"environment\"."
+  },
+  {
+    "id": "vocab_n2_001",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "確かに (tashikani) means...",
+    "choices": ["Certainly", "Maybe", "Never", "Suddenly"],
+    "answer": 0,
+    "explanation": "確かに (たしかに) means \"certainly / indeed\"."
+  },
+  {
+    "id": "grammar_n2_001",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "彼は忙しい___、いつも手伝ってくれる。 (Fill in: \"Even though he's busy, he always helps.\")",
+    "choices": ["のに", "ので", "から", "し"],
+    "answer": 0,
+    "explanation": "のに expresses contrast/concession: 忙しいのに = \"even though busy\"."
+  },
+  {
+    "id": "grammar_n2_002",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "食べた___なのに、もうお腹が空いた。 (Fill in: \"Even though I JUST ate, I'm hungry again.\")",
+    "choices": ["ばかり", "だけ", "しか", "のみ"],
+    "answer": 0,
+    "explanation": "Verb-た + ばかり means \"just did ~\": 食べたばかり = \"just ate\"."
+  },
+  {
+    "id": "kanji_n1_001",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "What is the reading of 曖昧 (ambiguous)?",
+    "choices": ["あいまい", "あんまい", "あいまつ", "あんまつ"],
+    "answer": 0,
+    "explanation": "曖昧 (あいまい) means \"ambiguous / vague\"."
+  },
+  {
+    "id": "kanji_n1_002",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "What is the reading of 頻繁 (frequent)?",
+    "choices": ["ひんぱん", "ひんばん", "へいぱん", "へいばん"],
+    "answer": 0,
+    "explanation": "頻繁 (ひんぱん) means \"frequent\"."
+  },
+  {
+    "id": "vocab_n1_001",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "至急 (shikyuu) means...",
+    "choices": ["Urgently", "Slowly", "Rarely", "Eventually"],
+    "answer": 0,
+    "explanation": "至急 (しきゅう) means \"urgently / immediately\"."
+  },
+  {
+    "id": "grammar_n1_001",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "彼の努力___、計画は失敗した。 (Fill in: \"Despite his efforts, the plan failed.\")",
+    "choices": ["にもかかわらず", "によって", "において", "にとって"],
+    "answer": 0,
+    "explanation": "にもかかわらず means \"despite / in spite of\"."
   }
 ]

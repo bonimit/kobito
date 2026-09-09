@@ -21,10 +21,10 @@ category-based canned hint instead of an AI-generated one.
 
 ## Controls
 
-- **Left/Right arrows or A/D** — choose mascot/world (select screens) / run (in-level)
-- **Space / W / Up** — jump; **Enter/Space** — confirm mascot/world
+- **Left/Right arrows or A/D** — choose mascot/world/difficulty (select screens) / run (in-level)
+- **Space / W / Up** — jump; **Enter/Space** — confirm a selection
 - **1-4** — answer a question block's quiz
-- **Enter/Space** — dismiss Kobito's hint after a wrong answer
+- **Enter/Space** — dismiss Kobito's hint after a wrong answer, or continue after completing a level
 - **Esc** — quit
 
 ## Question blocks
@@ -34,11 +34,12 @@ pause gameplay and show a small black box — anchored right next to the
 block, above it if there's room or below otherwise, rest of the level
 still visible — with a multiple-choice Japanese question (vocabulary,
 kanji, grammar, or verb conjugation) drawn from
-`assets/data/questions.json`. A correct answer adds to your score; a
+`assets/data/questions.json`, filtered to the level's current JLPT
+level (see Difficulty below). A correct answer adds to your score; a
 wrong answer costs a life. Each block only fires once. Add more
 questions by appending objects to that JSON file — each needs `category`,
-`difficulty`, `prompt`, a `choices` list, an `answer` index, and an
-optional `explanation` shown on a wrong answer.
+`jlpt` (`N5`-`N1`), `prompt`, a `choices` list, an `answer` index, and
+an optional `explanation` shown on a wrong answer.
 
 Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
 IPA Font License v1.0) since pygame's default font has no CJK glyphs.
@@ -112,6 +113,24 @@ creatures wander the level with a gentle bob and wrap around when they
 exit; ground creatures (crab, scorpion) patrol back and forth like a
 decorative, non-colliding cousin of Enemy. A world adds creatures by
 listing `FlyingCreature`/`GroundCreature` entries in its `Theme`.
+
+## Difficulty and level progression
+
+Before the first level, a difficulty-select screen (`kobito/difficulty_select_screen.py`)
+lets you pick a starting **JLPT level** — N5 (beginner) through N1
+(advanced) — or **AI Random**, which has Kobito pick one for you via a
+Claude call (`kobito/difficulty.py`), falling back to a locally weighted
+random pick (skewed toward beginner levels) if no API key/network.
+
+A flagpole (`kobito/entities/goal.py`) marks the end of the level —
+non-solid, the player runs straight through it. Reaching it ends the
+level with a summary (score, answer accuracy) and adaptively picks the
+*next* level's JLPT level: answer most questions right (≥80% accuracy)
+and it steps up to a harder level; answer most wrong (≤40%) and it
+steps down to an easier one; anything in between holds steady, clamped
+to N5..N1. Score carries over between levels; `main.py` loops, building
+a fresh `Game` for each level with the adjusted JLPT level until you
+quit or run out of lives.
 
 ## Adding real sprite art
 
