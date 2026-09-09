@@ -125,8 +125,10 @@ class QuizScreen:
         box_height = content_height + 2 * BOX_PADDING
         # Once Kobito's RPG dialogue box is showing (or about to), reserve
         # its footprint at the bottom of the screen so the question box
-        # never gets positioned underneath/behind it.
-        reserving_rpg_box = phase == PHASE_HINT or kobito_state == "thinking"
+        # never gets positioned underneath/behind it. Kobito is present
+        # for the whole reveal -> (thinking ->) hint arc, i.e. any time
+        # an answer has been picked.
+        reserving_rpg_box = selected is not None
         bottom_reserve = (RPG_BOX_HEIGHT + RPG_BOX_MARGIN * 2) if reserving_rpg_box else 0
         box, side = self._position_box(BOX_WIDTH, box_height, bottom_reserve)
 
@@ -168,17 +170,18 @@ class QuizScreen:
             self._draw_rpg_dialogue(hint_text, expression="talking", show_continue=True)
         elif kobito_state == "thinking":
             self._draw_rpg_dialogue("...", expression="thinking", show_continue=False)
+        elif phase == PHASE_REVEAL and selected is not None:
+            if selected == self.question["answer"]:
+                self._draw_rpg_dialogue("Correct! Nice work.", expression="happy", show_continue=False)
+            else:
+                self._draw_rpg_dialogue("Not quite... let me think.", expression="sympathetic", show_continue=False)
 
         pygame.display.flip()
 
     def _footer_text(self, phase, selected):
         if phase == PHASE_ANSWERING:
             return "Press 1-4 to answer"
-        if selected == self.question["answer"]:
-            return "Correct!"
-        if phase == PHASE_REVEAL:
-            return "Not quite..."
-        return None  # PHASE_HINT: Kobito's speech bubble carries the message instead
+        return None  # once answered, Kobito's dialogue box carries the message instead
 
     def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False):
         """A full-width textbox docked at the bottom of the screen,
