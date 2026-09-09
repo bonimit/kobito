@@ -3,7 +3,10 @@ import pygame
 from kobito import input as game_input
 from kobito.background import Background
 from kobito.characters import get_character
+from kobito.badges import badge_for_level, draw_badge
 from kobito.constants import (
+    BADGE_MIN_QUESTIONS,
+    BADGE_PASS_ACCURACY,
     CORRECT_ANSWER_SCORE,
     FPS,
     GAUGE_DAMAGE,
@@ -71,6 +74,8 @@ class Game:
         self.level_complete = False
         self.next_jlpt_level = None
         self.level_accuracy = None
+        self.badge = badge_for_level(level_number)
+        self.badge_earned = False
 
         self.jlpt_level = jlpt_level
         self.level_number = level_number
@@ -182,6 +187,17 @@ class Game:
         self.next_jlpt_level, self.level_accuracy = next_jlpt_level(
             self.jlpt_level, self.correct_count, self.wrong_count
         )
+        self.badge_earned = self._badge_earned()
+
+    def _badge_earned(self):
+        """The level's badge needs a decent sample answered *and* most of
+        it right -- 7 of 10. Requiring the minimum count too stops a
+        player claiming the badge off a single lucky answer.
+        """
+        answered = self.correct_count + self.wrong_count
+        if answered < BADGE_MIN_QUESTIONS:
+            return False
+        return self.correct_count / answered >= BADGE_PASS_ACCURACY
 
     def _check_collectibles(self):
         # dokill=True removes each collected sprite from every group it
@@ -241,7 +257,9 @@ class Game:
             self._add_gauge(points)
             self.correct_count += 1
         else:
-            self._take_damage(gauge_cost=penalty)
+            # Costs XP but not a life -- the badge only asks for 70%
+            # accuracy, so getting a few wrong has to be survivable.
+            self.gauge = max(0, self.gauge - penalty)
             self.wrong_count += 1
 
         # QuizScreen ran its own loop with its own clock, so the main
@@ -317,6 +335,21 @@ class Game:
         self._draw_outlined_text(f"Score: {self.score}", self.hud_font, (12, 36))
         self._draw_outlined_text(f"Lives: {self.lives}", self.hud_font, (12, 62))
         self._draw_gauge_bar()
+        self._draw_quiz_progress()
+
+    def _draw_quiz_progress(self):
+        """Shows progress toward the badge (e.g. "Quiz 6/8  -  badge at
+        7/10"), so the 70% bar is something the player can actually aim
+        at mid-level rather than a surprise at the castle.
+        """
+        answered = self.correct_count + self.wrong_count
+        needed = round(BADGE_MIN_QUESTIONS * BADGE_PASS_ACCURACY)
+        text = f"Quiz {self.correct_count}/{answered}"
+        if not self._badge_earned():
+            text += f"    badge at {needed}/{BADGE_MIN_QUESTIONS}"
+        else:
+            text += "    badge ready!"
+        self._draw_outlined_text(text, self.hud_font_small, (12, 104))
 
     def _draw_outlined_text(self, text, font, pos, color=HUD_TEXT_COLOR, outline_color=HUD_TEXT_OUTLINE):
         outline = font.render(text, True, outline_color)
@@ -355,14 +388,37 @@ class Game:
         self.screen.blit(overlay, (0, 0))
 
         center_x = SCREEN_WIDTH // 2
+        answered = self.correct_count + self.wrong_count
+        needed = round(BADGE_MIN_QUESTIONS * BADGE_PASS_ACCURACY)
+
+        title = self.level_complete_font.render(f"Level {self.level_number} Complete!", True, (255, 255, 255))
+        self.screen.blit(title, title.get_rect(centerx=center_x, y=42))
+
+        # The badge is the prize, so it gets the visual center of the
+        # screen -- shown greyed out when it wasn't earned, so the player
+        # can see exactly what they just missed.
+        draw_badge(self.screen, center_x, 190, 128, self.badge, earned=self.badge_earned)
+
+        if self.badge_earned:
+            headline = f"Badge earned:  {self.badge.name}"
+            sub = self.badge.caption
+            headline_color = (255, 226, 140)
+        else:
+            headline = f"Badge locked:  {self.badge.name}"
+            sub = f"Answer {needed} of {BADGE_MIN_QUESTIONS} correctly to claim it -- so close!"
+            headline_color = (215, 215, 220)
+
         lines = [
-            (self.level_complete_font, f"Level {self.level_number} Complete!"),
-            (self.hud_font, f"Score: {self.score}    Accuracy: {round(self.level_accuracy * 100)}%"),
-            (self.hud_font, f"Next up: {self.next_jlpt_level} - {JLPT_DESCRIPTIONS[self.next_jlpt_level]}"),
-            (self.hud_font_small, "Press Enter to continue"),
+            (self.hud_font, headline, headline_color),
+            (self.hud_font_small, sub, (225, 225, 230)),
+            (self.hud_font, f"Score: {self.score}    Quiz: {self.correct_count}/{answered}"
+                            f"    Accuracy: {round(self.level_accuracy * 100)}%", (255, 255, 255)),
+            (self.hud_font, f"Next up: {self.next_jlpt_level} - {JLPT_DESCRIPTIONS[self.next_jlpt_level]}",
+             (255, 255, 255)),
+            (self.hud_font_small, "Press Enter to continue", (215, 215, 220)),
         ]
-        y = SCREEN_HEIGHT // 2 - 70
-        for font, text in lines:
-            surface = font.render(text, True, (255, 255, 255))
+        y = 288
+        for font, text, color in lines:
+            surface = font.render(text, True, color)
             self.screen.blit(surface, surface.get_rect(centerx=center_x, y=y))
-            y += surface.get_height() + 12
+            y += surface.get_height() + 10

@@ -29,6 +29,14 @@ CORRECT_ANSWER_SCORE = 10
 JLPT_QUESTION_POINTS = {"N5": 10, "N4": 15, "N3": 20, "N2": 30, "N1": 40}
 JLPT_GAUGE_PENALTY = {"N5": 4, "N4": 6, "N3": 8, "N2": 11, "N1": 15}
 
+# Earning a level's badge means answering most questions right, not all
+# of them: at least BADGE_MIN_QUESTIONS answered, with BADGE_PASS_ACCURACY
+# of those correct -- i.e. 7 out of 10. A wrong answer therefore costs XP
+# but deliberately NOT a life, otherwise three mistakes would end the run
+# before the player could ever reach a 70% bar.
+BADGE_MIN_QUESTIONS = 10
+BADGE_PASS_ACCURACY = 0.7
+
 # Life gauge: fills from coin/onigiri pickups (by their value), same
 # idea as classic "100 coins = 1UP" -- reaching/exceeding GAUGE_MAX
 # grants a bonus life and the gauge carries over its remainder. A wrong

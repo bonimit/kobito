@@ -10,7 +10,7 @@ from kobito.entities.platform import Platform
 from kobito.entities.question_block import QuestionBlock
 from kobito.themes import get_theme
 
-LEVEL_WIDTH_TILES = 40
+LEVEL_WIDTH_TILES = 120
 
 
 @dataclass
@@ -82,46 +82,64 @@ def build_level1(theme_id="forest"):
     def add_collectible(col, row, kind="coin"):
         collectibles.add(Collectible(col * TILE_SIZE, row * TILE_SIZE, kind=kind))
 
-    # Ground strip along the bottom of the level, split into two segments
-    # with a gap between tiles 10-13 to force a jump. Recorded in
-    # ground_segments_px so decorative props (see kobito/background.py)
-    # only get placed on solid ground, never floating over the gap.
+    # Ground strip along the bottom, split into segments with 4-tile
+    # gaps between them. A 4-tile gap is comfortably clearable: the jump
+    # arc lasts ~0.7s at this gravity, which carries the player ~5.5
+    # tiles at run speed. Recorded in ground_segments_px so decorative
+    # props (see kobito/background.py) only get placed on solid ground,
+    # never floating over a gap.
     ground_row = 15
-    add_ground(0, ground_row, width_in_tiles=10)
-    add_ground(14, ground_row, width_in_tiles=26)
+    for start_col, width in ((0, 10), (14, 12), (30, 14), (48, 14), (66, 14), (84, 14), (102, 18)):
+        add_ground(start_col, ground_row, width_in_tiles=width)
 
-    # Floating platforms to practice jumping between.
-    add_platform(6, 11, width_in_tiles=3)
-    add_platform(11, 8, width_in_tiles=3)
-    add_platform(16, 11, width_in_tiles=4)
+    # Floating platforms: the wider ones carry a question block three
+    # tiles above them, the 2-tile ones are stepping stones over gaps.
+    for col, row, width in (
+        (19, 11, 3), (36, 11, 3), (57, 9, 3), (69, 11, 3), (90, 10, 3), (110, 11, 3),
+        (11, 12, 2), (45, 12, 2), (81, 12, 2),
+    ):
+        add_platform(col, row, width_in_tiles=width)
 
-    # Question blocks, each placed ~3 tiles above a reachable surface
-    # (about the height of this game's jump arc).
-    add_question_block(4, 12)
-    add_question_block(7, 8)
-    add_question_block(17, 8)
+    # Twelve question blocks spread across the level -- enough that a
+    # player can miss a few and still clear the badge's 70% bar (see
+    # BADGE_MIN_QUESTIONS in kobito/constants.py). Each sits ~3 tiles
+    # above a reachable surface, which is about this game's jump height.
+    for col, row in (
+        (5, 12), (8, 12), (17, 12), (20, 8), (33, 12), (37, 8),
+        (51, 12), (55, 12), (70, 8), (73, 12), (88, 12), (105, 12),
+    ):
+        add_question_block(col, row)
 
-    # Patrol enemies: one on the ground, one on the row-11 platform, one
-    # further along the ground past the gap.
-    add_enemy(spawn_col=5, row=ground_row - 1, patrol_start_col=3, patrol_end_col=9)
-    add_enemy(spawn_col=7, row=10, patrol_start_col=6, patrol_end_col=9)
-    add_enemy(spawn_col=20, row=ground_row - 1, patrol_start_col=15, patrol_end_col=25)
+    # Patrol enemies along the ground segments and on a couple of the
+    # platforms, so neither route through the level is a free run.
+    for spawn, row, patrol_start, patrol_end in (
+        (6, ground_row - 1, 3, 9),
+        (20, 10, 19, 21),
+        (34, ground_row - 1, 31, 43),
+        (52, ground_row - 1, 49, 61),
+        (58, 8, 57, 59),
+        (70, 10, 69, 71),
+        (74, ground_row - 1, 67, 79),
+        (90, ground_row - 1, 85, 97),
+        (108, ground_row - 1, 103, 113),
+    ):
+        add_enemy(spawn_col=spawn, row=row, patrol_start_col=patrol_start, patrol_end_col=patrol_end)
 
-    # Collectibles: mostly coins tracing the path a player would
-    # naturally run/jump through, with rarer, higher-value shiitake and
-    # onigiri tucked in trickier or out-of-the-way spots.
-    for col in (2, 3, 8):
+    # Collectibles: coins tracing the route a player naturally runs and
+    # jumps through, with rarer shiitake (an extra life) and onigiri
+    # tucked into the trickier, out-of-the-way spots.
+    for col in (2, 3, 9, 16, 18, 32, 34, 50, 54, 68, 72, 86, 89, 104, 106, 113):
         add_collectible(col, 13, kind="coin")
-    add_collectible(7, 7, kind="shiitake")
-    for col in (17, 18, 19):
+    for col in (19, 20, 21, 57, 58, 59):
         add_collectible(col, 7, kind="coin")
-    for col in (22, 23):
-        add_collectible(col, 13, kind="coin")
-    add_collectible(35, 13, kind="onigiri")
+    add_collectible(37, 7, kind="shiitake")
+    add_collectible(70, 7, kind="shiitake")
+    add_collectible(45, 11, kind="onigiri")
+    add_collectible(81, 11, kind="onigiri")
 
-    # Flagpole marking the end of the level, a few tiles before the
-    # right edge of the final ground segment.
-    goal = Goal(37 * TILE_SIZE, ground_row * TILE_SIZE)
+    # The castle the player runs into to finish the level, near the
+    # right-hand end of the final ground segment.
+    goal = Goal(116 * TILE_SIZE, ground_row * TILE_SIZE)
 
     player_start = (2 * TILE_SIZE, (ground_row - 3) * TILE_SIZE)
     return Level(
