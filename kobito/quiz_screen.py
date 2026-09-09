@@ -1,5 +1,6 @@
 import pygame
 
+from kobito import input as game_input
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 from kobito.hint_service import HintService
@@ -64,6 +65,7 @@ class QuizScreen:
         self.anchor_rect = anchor_rect or pygame.Rect(SCREEN_WIDTH // 2, 80, 1, 1)
         self.hint_service = hint_service or HintService()
         self.clock = pygame.time.Clock()
+        game_input.get_joysticks()
         self.font_prompt = get_font(18)
         self.font_choice = get_font(16)
         self.font_hint = get_font(14)
@@ -83,13 +85,24 @@ class QuizScreen:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
-                if event.type != pygame.KEYDOWN:
-                    continue
-                if phase == PHASE_ANSWERING and event.key in ANSWER_KEYS:
-                    selected = ANSWER_KEYS[event.key]
-                    phase = PHASE_REVEAL
-                elif phase == PHASE_HINT and event.key in CONTINUE_KEYS:
-                    return False
+                game_input.handle_hotplug(event)
+
+                if event.type == pygame.KEYDOWN:
+                    if phase == PHASE_ANSWERING and event.key in ANSWER_KEYS:
+                        selected = ANSWER_KEYS[event.key]
+                        phase = PHASE_REVEAL
+                    elif phase == PHASE_HINT and event.key in CONTINUE_KEYS:
+                        return False
+
+                elif event.type == pygame.JOYBUTTONDOWN:
+                    # Face buttons (A/B/X/Y) double as answer choices
+                    # 1-4 while answering, and as "continue" (any of
+                    # them) once Kobito's hint is showing.
+                    if phase == PHASE_ANSWERING and event.button in game_input.FACE_BUTTONS:
+                        selected = game_input.FACE_BUTTONS.index(event.button)
+                        phase = PHASE_REVEAL
+                    elif phase == PHASE_HINT and event.button in game_input.FACE_BUTTONS:
+                        return False
 
             if phase == PHASE_REVEAL:
                 reveal_timer += dt

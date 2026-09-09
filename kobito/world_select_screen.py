@@ -1,5 +1,6 @@
 import pygame
 
+from kobito import input as game_input
 from kobito.background import Background
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
@@ -28,6 +29,8 @@ class WorldSelectScreen:
         self.index = 0
         self.font_title = get_font(40)
         self.font_hint = get_font(22)
+        game_input.get_joysticks()
+        self.joy_nav = game_input.MenuNav()
 
         # One preview Background per world, built once up front (same
         # reasoning as SelectScreen preloading animations: switching
@@ -54,6 +57,8 @@ class WorldSelectScreen:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 raise SystemExit
+            game_input.handle_hotplug(event)
+
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_LEFT, pygame.K_a):
                     self.index = (self.index - 1) % len(WORLD_ORDER)
@@ -64,6 +69,17 @@ class WorldSelectScreen:
                 elif event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     raise SystemExit
+
+            action = self.joy_nav.handle_event(event)
+            if action == "left":
+                self.index = (self.index - 1) % len(WORLD_ORDER)
+            elif action == "right":
+                self.index = (self.index + 1) % len(WORLD_ORDER)
+            elif action == "confirm":
+                return WORLD_ORDER[self.index]
+            elif action == "cancel":
+                pygame.quit()
+                raise SystemExit
         return None
 
     def _draw(self):

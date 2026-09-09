@@ -1,5 +1,6 @@
 import pygame
 
+from kobito import input as game_input
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SKY_BLUE
 from kobito.difficulty import AI_RANDOM, JLPT_DESCRIPTIONS, JLPT_LEVELS, pick_ai_random_level
 from kobito.fonts import get_font
@@ -32,6 +33,8 @@ class DifficultySelectScreen:
         self.font_title = get_font(40)
         self.font_level = get_font(32)
         self.font_hint = get_font(22)
+        game_input.get_joysticks()
+        self.joy_nav = game_input.MenuNav()
 
     def run(self):
         """Blocks until the player confirms, then returns a concrete
@@ -53,6 +56,8 @@ class DifficultySelectScreen:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 raise SystemExit
+            game_input.handle_hotplug(event)
+
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_LEFT, pygame.K_a):
                     self.index = (self.index - 1) % len(OPTIONS)
@@ -63,6 +68,17 @@ class DifficultySelectScreen:
                 elif event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     raise SystemExit
+
+            action = self.joy_nav.handle_event(event)
+            if action == "left":
+                self.index = (self.index - 1) % len(OPTIONS)
+            elif action == "right":
+                self.index = (self.index + 1) % len(OPTIONS)
+            elif action == "confirm":
+                return OPTIONS[self.index]
+            elif action == "cancel":
+                pygame.quit()
+                raise SystemExit
         return None
 
     def _draw(self, kobito_state="idle", status=None):

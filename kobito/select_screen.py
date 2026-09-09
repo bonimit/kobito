@@ -1,5 +1,6 @@
 import pygame
 
+from kobito import input as game_input
 from kobito.assets import load_character_animations
 from kobito.characters import CHARACTERS
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SKY_BLUE
@@ -27,6 +28,8 @@ class SelectScreen:
         self.index = 0
         self.font_title = get_font(40)
         self.font_hint = get_font(22)
+        game_input.get_joysticks()
+        self.joy_nav = game_input.MenuNav()
 
         # Preload one idle animation per character up front rather than
         # on-demand, so switching characters with left/right never
@@ -57,6 +60,8 @@ class SelectScreen:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 raise SystemExit
+            game_input.handle_hotplug(event)
+
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_LEFT, pygame.K_a):
                     self.index = (self.index - 1) % len(CHARACTERS)
@@ -67,6 +72,17 @@ class SelectScreen:
                 elif event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     raise SystemExit
+
+            action = self.joy_nav.handle_event(event)
+            if action == "left":
+                self.index = (self.index - 1) % len(CHARACTERS)
+            elif action == "right":
+                self.index = (self.index + 1) % len(CHARACTERS)
+            elif action == "confirm":
+                return CHARACTERS[self.index]["id"]
+            elif action == "cancel":
+                pygame.quit()
+                raise SystemExit
         return None
 
     def _draw(self, character, frame):

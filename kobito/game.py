@@ -1,5 +1,6 @@
 import pygame
 
+from kobito import input as game_input
 from kobito.background import Background
 from kobito.characters import get_character
 from kobito.constants import (
@@ -71,6 +72,7 @@ class Game:
 
         self.jlpt_level = jlpt_level
         self.level_number = level_number
+        game_input.get_joysticks()
 
         level = build_level1(theme_id)
         self.platforms = level.platforms
@@ -137,6 +139,15 @@ class Game:
                     self.running = False
                 elif self.level_complete and event.key in CONTINUE_KEYS:
                     self.outcome = OUTCOME_ADVANCE
+                    self.running = False
+
+            game_input.handle_hotplug(event)
+
+            if event.type == pygame.JOYBUTTONDOWN:
+                if self.level_complete and event.button in game_input.CONFIRM_BUTTONS:
+                    self.outcome = OUTCOME_ADVANCE
+                    self.running = False
+                elif event.button in game_input.CANCEL_BUTTONS:
                     self.running = False
 
     def _update(self, dt):

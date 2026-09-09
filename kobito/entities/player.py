@@ -1,5 +1,6 @@
 import pygame
 
+from kobito import input as game_input
 from kobito.assets import load_character_animations
 from kobito.constants import (
     GRAVITY,
@@ -52,7 +53,16 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.velocity_x = RUN_SPEED
 
-        if (keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]) and self.on_ground:
+        # Gamepad d-pad/left stick, on top of (not instead of) keyboard --
+        # whichever the player is actually using just works.
+        joy_axis = game_input.move_axis()
+        if joy_axis < 0:
+            self.velocity_x = -RUN_SPEED
+        elif joy_axis > 0:
+            self.velocity_x = RUN_SPEED
+
+        jump_pressed = keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP] or game_input.jump_held()
+        if jump_pressed and self.on_ground:
             self.velocity_y = -JUMP_SPEED
             self.on_ground = False
 

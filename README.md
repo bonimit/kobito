@@ -27,6 +27,16 @@ category-based canned hint instead of an AI-generated one.
 - **Enter/Space** — dismiss Kobito's hint after a wrong answer, or continue after completing a level
 - **Esc** — quit
 
+A gamepad works everywhere alongside the keyboard — plug one in before or
+during play, it's picked up automatically (hot-plug supported):
+
+- **D-pad / left stick** — move / navigate menus
+- **A** (button 0) — jump; confirm a selection; continue after Kobito's hint or a level
+- **B** (button 1) — cancel / quit
+- **A/B/X/Y** (buttons 0-3) — answer a question block's quiz (choices 1-4)
+
+Button numbers follow the common Xbox-style layout most gamepads report.
+
 ## Question blocks
 
 Yellow "?" blocks (drawn slightly larger than a tile, Mario-block style)
