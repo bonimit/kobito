@@ -1,0 +1,164 @@
+[
+  {
+    "id": "vocab_001",
+    "category": "vocabulary",
+    "difficulty": "easy",
+    "prompt": "犬 (inu) means...",
+    "choices": ["Cat", "Dog", "Bird", "Fish"],
+    "answer": 1,
+    "explanation": "犬 (いぬ) means \"dog\"."
+  },
+  {
+    "id": "vocab_002",
+    "category": "vocabulary",
+    "difficulty": "easy",
+    "prompt": "猫 (neko) means...",
+    "choices": ["Cat", "Dog", "Mouse", "Fox"],
+    "answer": 0,
+    "explanation": "猫 (ねこ) means \"cat\"."
+  },
+  {
+    "id": "vocab_003",
+    "category": "vocabulary",
+    "difficulty": "easy",
+    "prompt": "水 (mizu) means...",
+    "choices": ["Fire", "Water", "Earth", "Wind"],
+    "answer": 1,
+    "explanation": "水 (みず) means \"water\"."
+  },
+  {
+    "id": "vocab_004",
+    "category": "vocabulary",
+    "difficulty": "easy",
+    "prompt": "学校 (gakkou) means...",
+    "choices": ["Hospital", "School", "Station", "Library"],
+    "answer": 1,
+    "explanation": "学校 (がっこう) means \"school\"."
+  },
+  {
+    "id": "vocab_005",
+    "category": "vocabulary",
+    "difficulty": "medium",
+    "prompt": "火 (hi) means...",
+    "choices": ["Water", "Fire", "Tree", "Metal"],
+    "answer": 1,
+    "explanation": "火 (ひ) means \"fire\"."
+  },
+  {
+    "id": "kanji_001",
+    "category": "kanji",
+    "difficulty": "easy",
+    "prompt": "Which kanji means \"big\"?",
+    "choices": ["小", "大", "中", "上"],
+    "answer": 1,
+    "explanation": "大 means \"big/large\"; 小 means \"small\"."
+  },
+  {
+    "id": "kanji_002",
+    "category": "kanji",
+    "difficulty": "easy",
+    "prompt": "What is the reading of 山?",
+    "choices": ["かわ", "やま", "うみ", "そら"],
+    "answer": 1,
+    "explanation": "山 is read \"やま\" (yama), meaning \"mountain\"."
+  },
+  {
+    "id": "kanji_003",
+    "category": "kanji",
+    "difficulty": "easy",
+    "prompt": "Which kanji means \"person\"?",
+    "choices": ["人", "入", "八", "大"],
+    "answer": 0,
+    "explanation": "人 means \"person\"; 入 means \"enter\"."
+  },
+  {
+    "id": "kanji_004",
+    "category": "kanji",
+    "difficulty": "medium",
+    "prompt": "Which kanji means \"water\"?",
+    "choices": ["氷", "水", "木", "火"],
+    "answer": 1,
+    "explanation": "水 means \"water\"; 氷 means \"ice\"."
+  },
+  {
+    "id": "kanji_005",
+    "category": "kanji",
+    "difficulty": "hard",
+    "prompt": "What is the reading of 木曜日 (a day of the week)?",
+    "choices": ["すいようび", "もくようび", "きんようび", "かようび"],
+    "answer": 1,
+    "explanation": "木曜日 (もくようび) means \"Thursday\"."
+  },
+  {
+    "id": "grammar_001",
+    "category": "grammar",
+    "difficulty": "easy",
+    "prompt": "わたし___がくせいです。 (Fill in the particle: \"I am a student.\")",
+    "choices": ["は", "を", "に", "で"],
+    "answer": 0,
+    "explanation": "は marks the topic: わたしはがくせいです = \"I am a student.\""
+  },
+  {
+    "id": "grammar_002",
+    "category": "grammar",
+    "difficulty": "medium",
+    "prompt": "りんご___食べます。 (Fill in the particle: \"I eat an apple.\")",
+    "choices": ["は", "を", "に", "と"],
+    "answer": 1,
+    "explanation": "を marks the direct object: りんごを食べます = \"I eat an apple.\""
+  },
+  {
+    "id": "grammar_003",
+    "category": "grammar",
+    "difficulty": "medium",
+    "prompt": "ここ___猫がいます。 (Fill in the particle: \"There is a cat here.\")",
+    "choices": ["は", "を", "に", "と"],
+    "answer": 2,
+    "explanation": "に marks the location of existence: ここに猫がいます = \"There is a cat here.\""
+  },
+  {
+    "id": "grammar_004",
+    "category": "grammar",
+    "difficulty": "hard",
+    "prompt": "ともだち___行きます。 (Fill in the particle meaning \"to/toward\": \"I'm going to a friend's place.\")",
+    "choices": ["へ", "を", "が", "も"],
+    "answer": 0,
+    "explanation": "へ marks direction: ともだちへ行きます = \"I'm going to my friend's place.\""
+  },
+  {
+    "id": "verb_001",
+    "category": "verb_conjugation",
+    "difficulty": "medium",
+    "prompt": "What is the te-form of 食べる (to eat)?",
+    "choices": ["食べって", "食べて", "食べいて", "食べた"],
+    "answer": 1,
+    "explanation": "Ru-verbs drop る and add て: 食べる → 食べて."
+  },
+  {
+    "id": "verb_002",
+    "category": "verb_conjugation",
+    "difficulty": "medium",
+    "prompt": "What is the past tense of 行く (to go)?",
+    "choices": ["行いた", "行った", "行きた", "行くた"],
+    "answer": 1,
+    "explanation": "行く is an irregular u-verb: its past tense is 行った, not 行いた."
+  },
+  {
+    "id": "verb_003",
+    "category": "verb_conjugation",
+    "difficulty": "hard",
+    "prompt": "What is the plain negative form of する (to do)?",
+    "choices": ["する", "した", "しない", "している"],
+    "answer": 2,
+    "explanation": "する is irregular: its plain negative is しない."
+  },
+  {
+    "id": "verb_004",
+    "category": "verb_conjugation",
+    "difficulty": "hard",
+    "prompt": "What is the te-form of 飲む (to drink)?",
+    "choices": ["飲んで", "飲みて", "飲むで", "飲んだ"],
+    "answer": 0,
+    "explanation": "Verbs ending in む/ぶ/ぬ take んで in the te-form: 飲む → 飲んで."
+  }
+]

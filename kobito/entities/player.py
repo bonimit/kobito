@@ -35,6 +35,14 @@ class Player(pygame.sprite.Sprite):
         self.velocity_y = 0.0
         self.on_ground = False
 
+        # Every solid the player overlapped *during* collision
+        # resolution this frame (before rects get snapped apart so they
+        # no longer overlap). Game reads this after update() to detect
+        # things like "did I just bump a question block" -- checking
+        # for overlap *after* resolution wouldn't work, since by then
+        # the rects are touching but not overlapping.
+        self.touched = set()
+
     def handle_input(self):
         keys = pygame.key.get_pressed()
 
@@ -54,6 +62,7 @@ class Player(pygame.sprite.Sprite):
             self.velocity_y = MAX_FALL_SPEED
 
     def update(self, dt, platforms):
+        self.touched = set()
         self.handle_input()
         self.apply_gravity(dt)
         self._move_and_collide_x(dt, platforms)
@@ -63,7 +72,9 @@ class Player(pygame.sprite.Sprite):
     def _move_and_collide_x(self, dt, platforms):
         self.rect.x += round(self.velocity_x * dt)
 
-        for platform in pygame.sprite.spritecollide(self, platforms, dokill=False):
+        colliding = pygame.sprite.spritecollide(self, platforms, dokill=False)
+        self.touched.update(colliding)
+        for platform in colliding:
             if self.velocity_x > 0:
                 self.rect.right = platform.rect.left
             elif self.velocity_x < 0:
@@ -74,7 +85,9 @@ class Player(pygame.sprite.Sprite):
         self.rect.y += round(self.velocity_y * dt)
         self.on_ground = False
 
-        for platform in pygame.sprite.spritecollide(self, platforms, dokill=False):
+        colliding = pygame.sprite.spritecollide(self, platforms, dokill=False)
+        self.touched.update(colliding)
+        for platform in colliding:
             if self.velocity_y > 0:
                 self.rect.bottom = platform.rect.top
                 self.on_ground = True

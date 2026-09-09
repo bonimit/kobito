@@ -13,7 +13,21 @@ python main.py
 
 - **Left/Right arrows or A/D** — choose mascot (select screen) / run (in-level)
 - **Space / W / Up** — jump; **Enter/Space** — confirm mascot
+- **1-4** — answer a question block's quiz
 - **Esc** — quit
+
+## Question blocks
+
+Yellow "?" blocks in the level pause the game with a multiple-choice
+Japanese question (vocabulary, kanji, grammar, or verb conjugation) drawn
+from `assets/data/questions.json`. A correct answer adds to your score;
+a wrong answer costs a life. Each block only fires once. Add more
+questions by appending objects to that JSON file — each needs `category`,
+`difficulty`, `prompt`, a `choices` list, an `answer` index, and an
+optional `explanation` shown on a wrong answer.
+
+Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
+IPA Font License v1.0) since pygame's default font has no CJK glyphs.
 
 ## Adding real sprite art
 

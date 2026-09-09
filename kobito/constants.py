@@ -16,3 +16,7 @@ JUMP_SPEED = 620.0
 # Colors (placeholder art uses flat colors until real sprites exist)
 SKY_BLUE = (135, 206, 235)
 GROUND_BROWN = (139, 90, 43)
+
+# Question blocks / scoring
+STARTING_LIVES = 3
+CORRECT_ANSWER_SCORE = 10

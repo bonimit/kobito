@@ -3,6 +3,7 @@ import pygame
 from kobito.assets import load_character_animations
 from kobito.characters import CHARACTERS
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SKY_BLUE
+from kobito.fonts import get_font
 
 TEXT_COLOR = (30, 30, 30)
 HINT_COLOR = (70, 70, 70)
@@ -24,8 +25,8 @@ class SelectScreen:
         self.clock = pygame.time.Clock()
 
         self.index = 0
-        self.font_title = pygame.font.SysFont(None, 48)
-        self.font_hint = pygame.font.SysFont(None, 26)
+        self.font_title = get_font(40)
+        self.font_hint = get_font(22)
 
         # Preload one idle animation per character up front rather than
         # on-demand, so switching characters with left/right never

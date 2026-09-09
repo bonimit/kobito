@@ -1,0 +1,9 @@
+IPAGothic (ipag.ttf)
+
+Copyright (c) 2007-2011 Information-technology Promotion Agency, Japan.
+Licensed under the IPA Font License Agreement v1.0, which permits free
+use, redistribution, and modification (including embedding in software
+distributions such as this game).
+
+Full license text: https://ipafont.ipa.go.jp/old/ipafont/license.html
+Source: https://ipafont.ipa.go.jp/old/
