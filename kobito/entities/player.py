@@ -1,42 +1,38 @@
 import pygame
 
+from kobito.assets import load_character_animations
 from kobito.constants import (
     GRAVITY,
     JUMP_SPEED,
     MAX_FALL_SPEED,
-    PLAYER_PLACEHOLDER,
     RUN_SPEED,
     TILE_SIZE,
 )
 
 
 class Player(pygame.sprite.Sprite):
-    """The mascot character.
+    """The mascot character: physics/collision plus animation state."""
 
-    Phase 1 uses a flat-color rectangle as a stand-in for real sprite
-    sheets, which get added in Phase 2. Everything about the movement
-    and collision logic below stays the same once real art is swapped in.
-    """
-
-    def __init__(self, x, y):
+    def __init__(self, x, y, character_id="capybara", color=(200, 200, 200)):
         super().__init__()
 
-        # Placeholder art: a rectangle a bit smaller than one tile, so
-        # the player has visible clearance from tile edges.
-        width, height = TILE_SIZE - 4, TILE_SIZE * 1.5
-        self.image = pygame.Surface((width, height))
-        self.image.fill(PLAYER_PLACEHOLDER)
-        self.rect = self.image.get_rect(topleft=(x, y))
+        self.animations = load_character_animations(character_id, color)
+        self.state = "idle"
+        self.facing_right = True
+        self.image = self.animations[self.state].current_frame
 
-        # Velocity in pixels/second. x is set directly from input each
-        # frame; y accumulates gravity and gets reset by jumps/landing.
+        # The hitbox used for movement/collision is a fixed size,
+        # independent of whatever the current animation frame's pixel
+        # dimensions happen to be (a run frame might be a different
+        # width than an idle frame). Keeping physics on a stable rect
+        # avoids jittery collisions as frames change; `draw_rect()`
+        # below positions the (possibly different-sized) visual frame
+        # relative to this hitbox purely for drawing.
+        self.rect = pygame.Rect(0, 0, TILE_SIZE - 4, round(TILE_SIZE * 1.5))
+        self.rect.topleft = (x, y)
+
         self.velocity_x = 0.0
         self.velocity_y = 0.0
-
-        # Whether the player is currently resting on top of a platform.
-        # Needed so jumping is only allowed from the ground (no
-        # double/air jumps), and to know when to stop applying gravity's
-        # downward push.
         self.on_ground = False
 
     def handle_input(self):
@@ -53,9 +49,6 @@ class Player(pygame.sprite.Sprite):
             self.on_ground = False
 
     def apply_gravity(self, dt):
-        # Gravity is acceleration: it increases downward speed every
-        # frame rather than being an instant snap, which is what makes
-        # jump arcs feel natural instead of teleport-y.
         self.velocity_y += GRAVITY * dt
         if self.velocity_y > MAX_FALL_SPEED:
             self.velocity_y = MAX_FALL_SPEED
@@ -63,22 +56,15 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt, platforms):
         self.handle_input()
         self.apply_gravity(dt)
-
-        # Move and resolve collisions on one axis at a time. Doing X and
-        # Y together makes it ambiguous which side of a block you hit;
-        # separating them means "did I hit something moving sideways?"
-        # and "did I hit something moving up/down?" are two simple,
-        # independent questions.
         self._move_and_collide_x(dt, platforms)
         self._move_and_collide_y(dt, platforms)
+        self._update_animation(dt)
 
     def _move_and_collide_x(self, dt, platforms):
         self.rect.x += round(self.velocity_x * dt)
 
         for platform in pygame.sprite.spritecollide(self, platforms, dokill=False):
             if self.velocity_x > 0:
-                # Moving right: our right edge is inside the platform,
-                # so snap it back to the platform's left edge.
                 self.rect.right = platform.rect.left
             elif self.velocity_x < 0:
                 self.rect.left = platform.rect.right
@@ -90,10 +76,40 @@ class Player(pygame.sprite.Sprite):
 
         for platform in pygame.sprite.spritecollide(self, platforms, dokill=False):
             if self.velocity_y > 0:
-                # Falling: land on top of the platform.
                 self.rect.bottom = platform.rect.top
                 self.on_ground = True
             elif self.velocity_y < 0:
-                # Jumping: bonked our head on a platform above us.
                 self.rect.top = platform.rect.bottom
             self.velocity_y = 0
+
+    def _update_animation(self, dt):
+        if not self.on_ground:
+            new_state = "jump"
+        elif self.velocity_x != 0:
+            new_state = "run"
+        else:
+            new_state = "idle"
+
+        if new_state != self.state:
+            self.state = new_state
+            self.animations[self.state].reset()
+
+        if self.velocity_x > 0:
+            self.facing_right = True
+        elif self.velocity_x < 0:
+            self.facing_right = False
+
+        animation = self.animations[self.state]
+        animation.update(dt)
+        frame = animation.current_frame
+        self.image = frame if self.facing_right else pygame.transform.flip(frame, True, False)
+
+    def draw_rect(self):
+        """Where to blit `self.image`, in world space.
+
+        Frames can vary in size between animations/states, so this
+        anchors the *bottom-center* of whatever frame is current to the
+        bottom-center of the fixed hitbox — feet stay planted on the
+        ground regardless of frame size.
+        """
+        return self.image.get_rect(midbottom=self.rect.midbottom)

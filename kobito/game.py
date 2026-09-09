@@ -1,5 +1,6 @@
 import pygame
 
+from kobito.characters import get_character
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SKY_BLUE
 from kobito.entities.player import Player
 from kobito.levels.level1 import build_level1
@@ -14,7 +15,7 @@ class Game:
     result. Nothing moves or gets checked outside of this loop.
     """
 
-    def __init__(self):
+    def __init__(self, character_id="capybara"):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito")
@@ -22,7 +23,8 @@ class Game:
         self.running = True
 
         self.platforms, player_start = build_level1()
-        self.player = Player(*player_start)
+        character = get_character(character_id)
+        self.player = Player(*player_start, character_id=character["id"], color=character["color"])
 
         # A "sprite group" is pygame's container for a batch of sprites.
         # It gives us group.draw(screen) and group.update(...) instead of
@@ -65,7 +67,12 @@ class Game:
         self.screen.fill(SKY_BLUE)
 
         for sprite in self.all_sprites:
-            draw_pos = (sprite.rect.x - self.camera_x, sprite.rect.y)
+            # Most sprites (platforms) are drawn at their own rect.
+            # The player overrides this with draw_rect() because its
+            # visual frame size can differ from its fixed collision
+            # hitbox (see Player.draw_rect).
+            rect = sprite.draw_rect() if hasattr(sprite, "draw_rect") else sprite.rect
+            draw_pos = (rect.x - self.camera_x, rect.y)
             self.screen.blit(sprite.image, draw_pos)
 
         pygame.display.flip()

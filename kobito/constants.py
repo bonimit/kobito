@@ -16,4 +16,3 @@ JUMP_SPEED = 620.0
 # Colors (placeholder art uses flat colors until real sprites exist)
 SKY_BLUE = (135, 206, 235)
 GROUND_BROWN = (139, 90, 43)
-PLAYER_PLACEHOLDER = (220, 60, 60)
