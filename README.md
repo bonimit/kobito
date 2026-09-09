@@ -29,6 +29,16 @@ optional `explanation` shown on a wrong answer.
 Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
 IPA Font License v1.0) since pygame's default font has no CJK glyphs.
 
+## Enemies and scenery
+
+Simple patrol enemies (Goomba-style: walk back and forth, fall under
+gravity, turn at their patrol bounds) roam the level; touching one costs
+a life, with a brief blinking invulnerability window and knockback
+afterward. Clouds and trees scroll behind the level at a slower rate
+than the camera (parallax) for a sense of depth — purely decorative, no
+collision. Both are defined in `kobito/levels/level1.py` and
+`kobito/background.py`.
+
 ## Adding real sprite art
 
 Each mascot has a folder at `assets/sprites/<character_id>/` with `idle/`,

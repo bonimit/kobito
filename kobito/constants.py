@@ -20,3 +20,10 @@ GROUND_BROWN = (139, 90, 43)
 # Question blocks / scoring
 STARTING_LIVES = 3
 CORRECT_ANSWER_SCORE = 10
+
+# Enemy contact: a brief invulnerability window (with knockback) after
+# getting hit, so touching an enemy costs exactly one life instead of
+# draining several in the few frames it takes to separate.
+INVULNERABILITY_SECONDS = 1.2
+KNOCKBACK_SPEED_X = 220.0
+KNOCKBACK_SPEED_Y = -300.0

@@ -1,9 +1,13 @@
 import pygame
 
+from kobito.background import Background
 from kobito.characters import get_character
 from kobito.constants import (
     CORRECT_ANSWER_SCORE,
     FPS,
+    INVULNERABILITY_SECONDS,
+    KNOCKBACK_SPEED_X,
+    KNOCKBACK_SPEED_Y,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     SKY_BLUE,
@@ -18,6 +22,7 @@ from kobito.quiz_screen import QuizScreen
 
 HUD_TEXT_COLOR = (30, 30, 30)
 GAME_OVER_OVERLAY = (0, 0, 0, 160)
+BLINK_INTERVAL_SECONDS = 0.1
 
 
 class Game:
@@ -37,15 +42,20 @@ class Game:
         self.running = True
         self.game_over = False
 
-        self.platforms, self.question_blocks, player_start = build_level1()
+        level = build_level1()
+        self.platforms = level.platforms
+        self.question_blocks = level.question_blocks
+        self.enemies = level.enemies
+        self.background = Background(level.width_px, level.ground_y)
+
         character = get_character(character_id)
-        self.player = Player(*player_start, character_id=character["id"], color=character["color"])
+        self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
 
         # A "sprite group" is pygame's container for a batch of sprites.
         # It gives us group.draw(screen) and group.update(...) instead of
         # hand-rolled loops, and spritecollide() below checks one sprite
         # against every sprite in a group in one call.
-        self.all_sprites = pygame.sprite.Group(self.player, *self.platforms)
+        self.all_sprites = pygame.sprite.Group(self.player, *self.platforms, *self.enemies)
 
         # How far the world has scrolled left, in pixels, so the camera
         # can follow the player through a level wider than the screen.
@@ -54,6 +64,7 @@ class Game:
         self.question_bank = QuestionBank()
         self.score = 0
         self.lives = STARTING_LIVES
+        self.invulnerable_timer = 0.0
         self.hud_font = get_font(22)
         self.game_over_font = get_font(36)
 
@@ -81,6 +92,7 @@ class Game:
             return
 
         self.player.update(dt, self.platforms)
+        self.enemies.update(dt, self.platforms)
 
         # Keep the player roughly centered horizontally by shifting the
         # camera, but never scroll past the left edge of the level.
@@ -88,6 +100,11 @@ class Game:
         self.camera_x = max(0.0, target_camera_x)
 
         self._check_question_blocks()
+
+        if self.invulnerable_timer > 0:
+            self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
+        else:
+            self._check_enemy_contact()
 
     def _check_question_blocks(self):
         # player.touched is whatever solids collision resolution found
@@ -101,14 +118,19 @@ class Game:
     def _trigger_question(self, block):
         block.mark_used()
         question = self.question_bank.random_question()
-        correct = QuizScreen(self.screen, question).run()
+
+        # Snapshot the level as it looks right now (block already
+        # marked used) so the quiz can show it dimmed behind the
+        # dialog, instead of blanking to a plain color.
+        self._draw()
+        background = self.screen.copy()
+
+        correct = QuizScreen(self.screen, question, background=background).run()
 
         if correct:
             self.score += CORRECT_ANSWER_SCORE
         else:
-            self.lives -= 1
-            if self.lives <= 0:
-                self.game_over = True
+            self._lose_a_life()
 
         # QuizScreen ran its own loop with its own clock, so the main
         # loop's clock has an artificially large elapsed time queued up
@@ -116,13 +138,39 @@ class Game:
         # one huge dt (e.g. a sudden gravity jump) on the next frame.
         self.clock.tick(FPS)
 
+    def _check_enemy_contact(self):
+        hit_enemies = pygame.sprite.spritecollide(self.player, self.enemies, dokill=False)
+        if not hit_enemies:
+            return
+
+        self._lose_a_life()
+        self.invulnerable_timer = INVULNERABILITY_SECONDS
+
+        # Knock the player up and away from whichever enemy they hit,
+        # so they don't just immediately re-collide once invulnerability
+        # ends, and so the hit reads clearly (same idea as classic
+        # platformers bouncing you back on damage).
+        enemy = hit_enemies[0]
+        direction = -1 if self.player.rect.centerx < enemy.rect.centerx else 1
+        self.player.velocity_x = direction * KNOCKBACK_SPEED_X
+        self.player.velocity_y = KNOCKBACK_SPEED_Y
+
+    def _lose_a_life(self):
+        self.lives -= 1
+        if self.lives <= 0:
+            self.game_over = True
+
     def _draw(self):
         self.screen.fill(SKY_BLUE)
+        self.background.draw(self.screen, self.camera_x)
 
         for sprite in self.all_sprites:
-            # Most sprites (platforms) are drawn at their own rect.
-            # The player overrides this with draw_rect() because its
-            # visual frame size can differ from its fixed collision
+            if sprite is self.player and self._player_should_blink_off():
+                continue
+
+            # Most sprites (platforms, enemies) are drawn at their own
+            # rect. The player overrides this with draw_rect() because
+            # its visual frame size can differ from its fixed collision
             # hitbox (see Player.draw_rect).
             rect = sprite.draw_rect() if hasattr(sprite, "draw_rect") else sprite.rect
             draw_pos = (rect.x - self.camera_x, rect.y)
@@ -133,6 +181,14 @@ class Game:
             self._draw_game_over()
 
         pygame.display.flip()
+
+    def _player_should_blink_off(self):
+        # While invulnerable, skip drawing the player on alternating
+        # short intervals -- a blinking sprite is the classic signal
+        # that you're briefly safe after taking a hit.
+        if self.invulnerable_timer <= 0:
+            return False
+        return int(self.invulnerable_timer / BLINK_INTERVAL_SECONDS) % 2 == 0
 
     def _draw_hud(self):
         score_label = self.hud_font.render(f"Score: {self.score}", True, HUD_TEXT_COLOR)
