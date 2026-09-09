@@ -3,46 +3,47 @@ import pygame
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 
-DIM_OVERLAY_COLOR = (10, 15, 30, 130)
+BOX_COLOR = (12, 12, 16, 220)
+BOX_BORDER = (230, 230, 230)
+TEXT_COLOR = (240, 240, 240)
+CATEGORY_COLOR = (200, 175, 110)
+CORRECT_COLOR = (140, 220, 140)
+WRONG_COLOR = (235, 120, 110)
+HINT_COLOR = (180, 180, 180)
 
-OUTLINE_COLOR = (46, 30, 15)
-FRAME_COLOR = (139, 90, 43)  # matches the ground tiles, for continuity
-PANEL_COLOR = (238, 224, 190)  # parchment, warmer than plain white
-TEXT_COLOR = (40, 28, 16)
-CATEGORY_COLOR = (150, 105, 40)
-CHOICE_COLOR = (250, 241, 216)
-CORRECT_COLOR = (150, 205, 120)
-WRONG_COLOR = (215, 110, 95)
-HINT_COLOR = (95, 75, 50)
+BOX_WIDTH = 360
+BOX_PADDING = 14
+LINE_GAP = 4
+CHOICE_HEIGHT = 24
+GAP_TO_ANCHOR = 10
+SCREEN_MARGIN = 10
 
 RESULT_DISPLAY_SECONDS = 1.0
 ANSWER_KEYS = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3}
 
 
 class QuizScreen:
-    """A question-block encounter: shows one question, waits for the
-    player to press 1-4, briefly highlights right/wrong, then returns
-    whether they got it correct.
+    """A question-block encounter: a small black box next to the block
+    itself shows the question, waits for the player to press 1-4,
+    briefly highlights right/wrong, then returns whether they got it
+    correct.
 
-    Self-contained loop, same shape as SelectScreen and Game: this is
-    the pattern for any "pause the main game and show a full screen"
-    moment (Kobito hints in Phase 4 will look similar).
-
-    `background` is a snapshot of the level at the moment the question
-    block was hit -- drawing that behind a dim overlay (rather than a
-    flat color) keeps the quiz feeling like part of the same world
-    instead of a separate app screen.
+    Self-contained loop, same shape as SelectScreen and Game. Unlike a
+    full-screen dialog, the rest of the level stays fully visible and
+    undimmed behind the box -- it's a callout next to the block, not a
+    takeover.
     """
 
-    def __init__(self, screen, question, background=None):
+    def __init__(self, screen, question, background=None, anchor_rect=None):
         self.screen = screen
         self.question = question
         self.background = background
+        self.anchor_rect = anchor_rect or pygame.Rect(SCREEN_WIDTH // 2, 80, 1, 1)
         self.clock = pygame.time.Clock()
-        self.font_prompt = get_font(28)
-        self.font_choice = get_font(24)
-        self.font_hint = get_font(18)
-        self.font_category = get_font(16)
+        self.font_prompt = get_font(18)
+        self.font_choice = get_font(16)
+        self.font_hint = get_font(14)
+        self.font_category = get_font(13)
 
     def run(self):
         selected = None
@@ -72,58 +73,85 @@ class QuizScreen:
         else:
             self.screen.fill((25, 25, 40))
 
-        dim = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        dim.fill(DIM_OVERLAY_COLOR)
-        self.screen.blit(dim, (0, 0))
+        prompt_lines = self._wrap_text(self.question["prompt"], self.font_prompt, BOX_WIDTH - 2 * BOX_PADDING)
+        hint_text = self._hint_text(selected)
+        hint_lines = self._wrap_text(hint_text, self.font_hint, BOX_WIDTH - 2 * BOX_PADDING) if hint_text else []
 
-        panel = pygame.Rect(0, 0, SCREEN_WIDTH - 160, SCREEN_HEIGHT - 120)
-        panel.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-        self._draw_signpost(panel)
+        content_height = (
+            self.font_category.get_height() + LINE_GAP
+            + len(prompt_lines) * (self.font_prompt.get_height() + LINE_GAP)
+            + len(self.question["choices"]) * (CHOICE_HEIGHT + LINE_GAP)
+            + len(hint_lines) * (self.font_hint.get_height() + LINE_GAP)
+        )
+        box_height = content_height + 2 * BOX_PADDING
+        box = self._position_box(BOX_WIDTH, box_height)
+
+        box_surface = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
+        box_surface.fill(BOX_COLOR)
+        self.screen.blit(box_surface, box.topleft)
+        pygame.draw.rect(self.screen, BOX_BORDER, box, width=1)
+
+        y = box.y + BOX_PADDING
+        x = box.x + BOX_PADDING
 
         category = self.font_category.render(self.question["category"].upper(), True, CATEGORY_COLOR)
-        self.screen.blit(category, (panel.x + 28, panel.y + 20))
+        self.screen.blit(category, (x, y))
+        y += category.get_height() + LINE_GAP
 
-        prompt = self.font_prompt.render(self.question["prompt"], True, TEXT_COLOR)
-        self.screen.blit(prompt, prompt.get_rect(centerx=panel.centerx, y=panel.y + 56))
+        for line in prompt_lines:
+            surface = self.font_prompt.render(line, True, TEXT_COLOR)
+            self.screen.blit(surface, (x, y))
+            y += surface.get_height() + LINE_GAP
 
-        choice_top = panel.y + 140
-        choice_height = 52
-        choice_gap = 12
         for index, choice_text in enumerate(self.question["choices"]):
-            rect = pygame.Rect(
-                panel.x + 36,
-                choice_top + index * (choice_height + choice_gap),
-                panel.width - 72,
-                choice_height,
-            )
-            color = CHOICE_COLOR
+            color = TEXT_COLOR
             if selected is not None:
                 if index == self.question["answer"]:
                     color = CORRECT_COLOR
                 elif index == selected:
                     color = WRONG_COLOR
+            label = self.font_choice.render(f"{index + 1}. {choice_text}", True, color)
+            self.screen.blit(label, (x, y))
+            y += CHOICE_HEIGHT + LINE_GAP
 
-            pygame.draw.rect(self.screen, color, rect)
-            pygame.draw.rect(self.screen, FRAME_COLOR, rect, width=3)
-
-            label = self.font_choice.render(f"{index + 1}. {choice_text}", True, TEXT_COLOR)
-            self.screen.blit(label, label.get_rect(x=rect.x + 16, centery=rect.centery))
-
-        if selected is None:
-            hint = self.font_hint.render("Press 1-4 to answer", True, HINT_COLOR)
-        elif selected == self.question["answer"]:
-            hint = self.font_hint.render("Correct!", True, TEXT_COLOR)
-        else:
-            hint = self.font_hint.render(self.question.get("explanation", "Not quite."), True, TEXT_COLOR)
-        self.screen.blit(hint, hint.get_rect(centerx=panel.centerx, y=panel.bottom - 34))
+        for line in hint_lines:
+            surface = self.font_hint.render(line, True, HINT_COLOR)
+            self.screen.blit(surface, (x, y))
+            y += surface.get_height() + LINE_GAP
 
         pygame.display.flip()
 
-    def _draw_signpost(self, panel):
-        """A blocky, layered wood-and-parchment frame instead of a
-        rounded UI card, to read as an in-world signpost rather than a
-        generic app dialog.
-        """
-        pygame.draw.rect(self.screen, OUTLINE_COLOR, panel.inflate(16, 16))
-        pygame.draw.rect(self.screen, FRAME_COLOR, panel.inflate(8, 8))
-        pygame.draw.rect(self.screen, PANEL_COLOR, panel)
+    def _hint_text(self, selected):
+        if selected is None:
+            return "Press 1-4 to answer"
+        if selected == self.question["answer"]:
+            return "Correct!"
+        return self.question.get("explanation", "Not quite.")
+
+    def _position_box(self, width, height):
+        box = pygame.Rect(0, 0, width, height)
+        box.centerx = self.anchor_rect.centerx
+        box.centerx = max(SCREEN_MARGIN + width // 2, min(box.centerx, SCREEN_WIDTH - SCREEN_MARGIN - width // 2))
+
+        room_above = self.anchor_rect.top - GAP_TO_ANCHOR - SCREEN_MARGIN
+        if room_above >= height:
+            box.bottom = self.anchor_rect.top - GAP_TO_ANCHOR
+        else:
+            box.top = self.anchor_rect.bottom + GAP_TO_ANCHOR
+        box.top = max(SCREEN_MARGIN, min(box.top, SCREEN_HEIGHT - SCREEN_MARGIN - height))
+        return box
+
+    def _wrap_text(self, text, font, max_width):
+        words = text.split(" ")
+        lines = []
+        current = ""
+        for word in words:
+            candidate = f"{current} {word}".strip()
+            if font.size(candidate)[0] <= max_width or not current:
+                current = candidate
+            else:
+                lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        return lines

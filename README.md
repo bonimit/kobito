@@ -18,10 +18,13 @@ python main.py
 
 ## Question blocks
 
-Yellow "?" blocks in the level pause the game with a multiple-choice
-Japanese question (vocabulary, kanji, grammar, or verb conjugation) drawn
-from `assets/data/questions.json`. A correct answer adds to your score;
-a wrong answer costs a life. Each block only fires once. Add more
+Yellow "?" blocks (drawn slightly larger than a tile, Mario-block style)
+pause gameplay and show a small black box — anchored right next to the
+block, above it if there's room or below otherwise, rest of the level
+still visible — with a multiple-choice Japanese question (vocabulary,
+kanji, grammar, or verb conjugation) drawn from
+`assets/data/questions.json`. A correct answer adds to your score; a
+wrong answer costs a life. Each block only fires once. Add more
 questions by appending objects to that JSON file — each needs `category`,
 `difficulty`, `prompt`, a `choices` list, an `answer` index, and an
 optional `explanation` shown on a wrong answer.

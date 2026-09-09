@@ -8,7 +8,7 @@ USED_COLOR = (120, 108, 90)
 MARK_COLOR = (90, 60, 0)
 
 
-SIZE_RATIO = 0.7  # fraction of a full tile cell the block actually occupies
+SIZE_RATIO = 1.15  # fraction of a full tile cell the block occupies -- a bit bigger than the grid cell
 
 
 class QuestionBlock(Platform):
@@ -20,10 +20,10 @@ class QuestionBlock(Platform):
     physics code. `used` just tracks whether this particular block has
     already been answered, so it doesn't fire again.
 
-    Drawn smaller than a full tile cell (see SIZE_RATIO) and centered
-    within it, rather than filling the cell like a platform tile --
-    this reads visually as a distinct object rather than another
-    ground/wall block, and its hitbox shrinks to match.
+    Drawn slightly larger than a full tile cell (see SIZE_RATIO) and
+    centered on it, rather than filling the cell exactly like a
+    platform tile -- reads as a distinct, chunky "hit this" object,
+    Mario block-style, and its hitbox grows to match.
     """
 
     def __init__(self, cell_x, cell_y, cell_size):

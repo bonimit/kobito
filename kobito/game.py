@@ -152,12 +152,14 @@ class Game:
         question = self.question_bank.random_question()
 
         # Snapshot the level as it looks right now (block already
-        # marked used) so the quiz can show it dimmed behind the
-        # dialog, instead of blanking to a plain color.
+        # marked used) so the quiz box shows over the actual scene
+        # instead of a plain color, and anchor the box to the block's
+        # current on-screen position so it appears right next to it.
         self._draw()
         background = self.screen.copy()
+        anchor_rect = block.rect.move(-self.camera_x, 0)
 
-        correct = QuizScreen(self.screen, question, background=background).run()
+        correct = QuizScreen(self.screen, question, background=background, anchor_rect=anchor_rect).run()
 
         if correct:
             self.score += CORRECT_ANSWER_SCORE
