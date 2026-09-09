@@ -574,3 +574,278 @@ def draw_camel(screen, x, ground_y, size, color=(190, 150, 100), facing=1):
             (x + dx * size, ground_y),
             max(2, round(size * 0.13)),
         )
+
+
+# --- City / regional landmarks ----------------------------------------
+
+
+def draw_skyscraper(screen, x, ground_y, size, color, window_color=(255, 224, 150)):
+    """A lit office tower. Window rows are what sell it as a city
+    building rather than a plain rectangle, so they scale with size.
+    """
+    width = max(12, size * 0.34)
+    body = pygame.Rect(0, 0, width, size)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body)
+
+    # A slimmer setback storey on top, plus an antenna.
+    cap = pygame.Rect(0, 0, width * 0.55, size * 0.14)
+    cap.midbottom = (x, body.top)
+    pygame.draw.rect(screen, color, cap)
+    pygame.draw.line(screen, color, (x, cap.top), (x, cap.top - size * 0.12), max(1, round(size * 0.02)))
+    pygame.draw.circle(screen, (240, 90, 80), (x, cap.top - size * 0.12), max(1, size * 0.025))
+
+    pane = max(2, round(width * 0.16))
+    gap_x = max(3, round(width * 0.28))
+    gap_y = max(4, round(size * 0.09))
+    for row_y in range(int(body.top + gap_y), int(body.bottom - gap_y), int(gap_y)):
+        for col_x in range(int(body.left + gap_x * 0.6), int(body.right - pane), int(gap_x)):
+            # Deterministic "some lights are off" pattern -- no rng here,
+            # so a building looks identical frame to frame.
+            if (row_y // gap_y + col_x // gap_x) % 3:
+                pygame.draw.rect(screen, window_color, (col_x, row_y, pane, pane))
+
+
+def draw_tokyo_tower(screen, x, ground_y, size, color=(232, 96, 62), light_color=(255, 226, 150)):
+    """The lattice tower silhouette: a wide splayed base narrowing to a
+    mast, with two observation decks.
+    """
+    half = size * 0.30
+    waist_y = ground_y - size * 0.52
+    tip_y = ground_y - size
+
+    for side in (-1, 1):
+        pygame.draw.line(screen, color, (x + side * half, ground_y), (x + side * half * 0.30, waist_y), 3)
+        pygame.draw.line(screen, color, (x + side * half * 0.30, waist_y), (x, tip_y + size * 0.14), 2)
+    # Cross-bracing, the detail that reads as steel lattice.
+    for t in (0.25, 0.5, 0.75):
+        y = ground_y - size * 0.52 * t
+        w = half * (1 - t * 0.70)
+        pygame.draw.line(screen, color, (x - w, y), (x + w, y), 1)
+
+    for deck_t, deck_w in ((0.52, 0.34), (0.78, 0.18)):
+        deck = pygame.Rect(0, 0, size * deck_w, size * 0.06)
+        deck.center = (x, ground_y - size * deck_t)
+        pygame.draw.rect(screen, color, deck)
+        pygame.draw.rect(screen, light_color, deck.inflate(-size * 0.06, -size * 0.03))
+
+    pygame.draw.line(screen, color, (x, tip_y + size * 0.14), (x, tip_y), 2)
+
+
+def draw_machiya(screen, x, ground_y, size, color=(198, 176, 148), roof_color=(72, 66, 66)):
+    """A Kyoto townhouse: low, wide, dark tiled roof, warm lattice front."""
+    body = pygame.Rect(0, 0, size * 1.25, size * 0.62)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body)
+
+    # Wooden lattice (koshi) across the frontage.
+    for i in range(1, 8):
+        lx = body.left + body.width * i / 8
+        pygame.draw.line(screen, roof_color, (lx, body.top + size * 0.12), (lx, body.bottom - size * 0.06), 1)
+
+    pygame.draw.polygon(screen, roof_color, [
+        (body.left - size * 0.16, body.top),
+        (body.right + size * 0.16, body.top),
+        (body.right - size * 0.10, body.top - size * 0.28),
+        (body.left + size * 0.10, body.top - size * 0.28),
+    ])
+    noren = pygame.Rect(0, 0, size * 0.30, size * 0.16)
+    noren.midtop = (x, body.top + size * 0.10)
+    pygame.draw.rect(screen, (168, 68, 60), noren)
+
+
+def draw_bamboo(screen, x, ground_y, size, color=(126, 186, 96), node_color=(96, 152, 70)):
+    """A bamboo culm: a tall stalk with segment nodes and a few leaves."""
+    width = max(3, round(size * 0.10))
+    pygame.draw.line(screen, color, (x, ground_y), (x, ground_y - size), width)
+
+    segments = 5
+    for i in range(1, segments):
+        y = ground_y - size * i / segments
+        pygame.draw.line(screen, node_color, (x - width / 2, y), (x + width / 2, y), max(1, width // 3))
+
+    for i, (side, height_t) in enumerate(((-1, 0.62), (1, 0.78), (-1, 0.90))):
+        leaf_y = ground_y - size * height_t
+        pygame.draw.line(screen, color, (x, leaf_y), (x + side * size * 0.26, leaf_y - size * 0.10), 2)
+
+
+def draw_maple_tree(screen, x, ground_y, size, color=(214, 88, 58), trunk_color=(92, 68, 56)):
+    trunk_top = ground_y - size * 0.48
+    pygame.draw.line(screen, trunk_color, (x, ground_y), (x, trunk_top), max(3, round(size * 0.09)))
+    for side in (-1, 1):
+        pygame.draw.line(
+            screen, trunk_color,
+            (x, trunk_top + size * 0.06),
+            (x + side * size * 0.22, ground_y - size * 0.66),
+            max(2, round(size * 0.05)),
+        )
+    for dx, dy, r in ((0, 0.78, 0.32), (-0.28, 0.66, 0.24), (0.28, 0.66, 0.24), (0, 0.98, 0.20)):
+        pygame.draw.circle(screen, color, (x + dx * size, ground_y - dy * size), max(2, r * size))
+
+
+def draw_lavender(screen, x, ground_y, size, color=(150, 118, 206), stem_color=(110, 148, 96)):
+    for dx in (-0.5, 0, 0.5):
+        base_x = x + dx * size * 0.5
+        top_y = ground_y - size
+        pygame.draw.line(screen, stem_color, (base_x, ground_y), (base_x, top_y + size * 0.35), 1)
+        # Flower spike: stacked dots tapering toward the tip.
+        for i in range(4):
+            t = i / 4
+            pygame.draw.circle(
+                screen, color,
+                (base_x, top_y + size * 0.35 * t),
+                max(1, size * 0.13 * (1 - t * 0.5)),
+            )
+
+
+def draw_hibiscus(screen, x, ground_y, size, color=(238, 82, 96), center_color=(255, 214, 110)):
+    stem_top = ground_y - size * 0.72
+    pygame.draw.line(screen, (88, 150, 92), (x, ground_y), (x, stem_top), max(1, round(size * 0.10)))
+    for i in range(5):
+        angle = -math.pi / 2 + i * 2 * math.pi / 5
+        pygame.draw.circle(
+            screen, color,
+            (x + math.cos(angle) * size * 0.24, stem_top + math.sin(angle) * size * 0.24),
+            max(2, size * 0.20),
+        )
+    pygame.draw.circle(screen, center_color, (x, stem_top), max(1, size * 0.13))
+    pygame.draw.line(screen, center_color, (x, stem_top), (x + size * 0.22, stem_top - size * 0.20), 1)
+
+
+def draw_shisa(screen, x, ground_y, size, color=(206, 186, 158)):
+    """An Okinawan shisa guardian lion on a plinth."""
+    plinth = pygame.Rect(0, 0, size * 0.62, size * 0.24)
+    plinth.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, plinth)
+
+    body = pygame.Rect(0, 0, size * 0.44, size * 0.42)
+    body.midbottom = (x, plinth.top)
+    pygame.draw.ellipse(screen, color, body)
+
+    head_y = body.top - size * 0.10
+    pygame.draw.circle(screen, color, (x, head_y), max(2, size * 0.20))
+    for side in (-1, 1):
+        pygame.draw.circle(screen, color, (x + side * size * 0.16, head_y - size * 0.14), max(1, size * 0.08))
+        pygame.draw.circle(screen, (60, 50, 46), (x + side * size * 0.07, head_y - size * 0.02), max(1, size * 0.03))
+    # Open mouth -- the shisa that keeps good spirits in.
+    pygame.draw.circle(screen, (110, 70, 60), (x, head_y + size * 0.10), max(1, size * 0.05))
+    pygame.draw.line(screen, color, (x + size * 0.20, body.centery), (x + size * 0.34, body.top), 2)
+
+
+def draw_snowflake(screen, x, y, size, color=(255, 255, 255)):
+    for i in range(3):
+        angle = i * math.pi / 3
+        dx, dy = math.cos(angle) * size, math.sin(angle) * size
+        pygame.draw.line(screen, color, (x - dx, y - dy), (x + dx, y + dy), 1)
+
+
+def draw_maple_leaf(screen, x, y, size, color=(226, 112, 62)):
+    """A drifting momiji leaf -- a small five-lobed star."""
+    points = []
+    for i in range(10):
+        angle = -math.pi / 2 + i * math.pi / 5
+        r = size if i % 2 == 0 else size * 0.42
+        points.append((x + math.cos(angle) * r, y + math.sin(angle) * r))
+    pygame.draw.polygon(screen, color, points)
+
+
+def draw_crane(screen, x, y, size, color=(250, 250, 250), facing=1):
+    """A red-crowned crane in flight: long neck forward, long legs
+    trailing behind -- the silhouette that makes a crane a crane.
+    """
+    body = pygame.Rect(0, 0, size * 1.1, size * 0.46)
+    body.center = (x, y)
+    pygame.draw.ellipse(screen, color, body)
+
+    neck_tip = (x + facing * size * 1.05, y - size * 0.26)
+    pygame.draw.line(screen, color, (x + facing * size * 0.42, y - size * 0.05), neck_tip, max(1, round(size * 0.11)))
+    pygame.draw.circle(screen, (216, 62, 58), neck_tip, max(1, size * 0.10))
+
+    for dy in (-1, 1):
+        pygame.draw.polygon(screen, color, [
+            (x, y),
+            (x - facing * size * 0.34, y + dy * size * 0.72),
+            (x + facing * size * 0.30, y + dy * size * 0.30),
+        ])
+    pygame.draw.line(screen, (60, 56, 52), (x - facing * size * 0.5, y + size * 0.10),
+                     (x - facing * size * 1.15, y + size * 0.24), max(1, round(size * 0.07)))
+
+
+def draw_plane(screen, x, y, size, color=(238, 240, 246), facing=1):
+    fuselage = pygame.Rect(0, 0, size * 2.0, size * 0.34)
+    fuselage.center = (x, y)
+    pygame.draw.ellipse(screen, color, fuselage)
+    pygame.draw.polygon(screen, color, [
+        (x, y), (x - facing * size * 0.30, y - size * 0.62), (x + facing * size * 0.16, y - size * 0.04),
+    ])
+    pygame.draw.polygon(screen, color, [
+        (x, y), (x - facing * size * 0.30, y + size * 0.62), (x + facing * size * 0.16, y + size * 0.04),
+    ])
+    pygame.draw.polygon(screen, color, [
+        (x - facing * size * 0.86, y), (x - facing * size * 1.06, y - size * 0.44),
+        (x - facing * size * 0.70, y - size * 0.04),
+    ])
+
+
+def draw_fox(screen, x, ground_y, size, color=(214, 128, 62), tip_color=(250, 246, 240), facing=1):
+    """An Inari fox / Ezo red fox: pointed ears, bushy white-tipped tail."""
+    body = pygame.Rect(0, 0, size * 0.98, size * 0.42)
+    body.midbottom = (x, ground_y - size * 0.18)
+    pygame.draw.ellipse(screen, color, body)
+
+    for dx in (-0.34, -0.12, 0.16, 0.34):
+        pygame.draw.line(
+            screen, color,
+            (x + dx * size, body.bottom - 2), (x + dx * size, ground_y),
+            max(2, round(size * 0.10)),
+        )
+
+    # Bushy tail, angled up and back, with the white tip on its far edge.
+    tail_x = x - facing * size * 0.52
+    tail_y = body.centery - size * 0.10
+    pygame.draw.circle(screen, color, (tail_x, tail_y), max(2, size * 0.21))
+    pygame.draw.circle(
+        screen, tip_color,
+        (tail_x - facing * size * 0.15, tail_y - size * 0.10), max(1, size * 0.10),
+    )
+
+    head_x = x + facing * size * 0.44
+    head_y = body.top - size * 0.03
+    pygame.draw.circle(screen, color, (head_x, head_y), max(2, size * 0.21))
+    # Snout.
+    pygame.draw.polygon(screen, color, [
+        (head_x + facing * size * 0.10, head_y - size * 0.02),
+        (head_x + facing * size * 0.40, head_y + size * 0.08),
+        (head_x + facing * size * 0.10, head_y + size * 0.14),
+    ])
+    # Two upright pointed ears.
+    for offset in (-0.13, 0.11):
+        base_x = head_x + facing * offset * size
+        pygame.draw.polygon(screen, color, [
+            (base_x, head_y - size * 0.14),
+            (base_x + facing * size * 0.05, head_y - size * 0.40),
+            (base_x + facing * size * 0.13, head_y - size * 0.12),
+        ])
+    pygame.draw.circle(
+        screen, (56, 44, 40),
+        (head_x + facing * size * 0.10, head_y), max(1, size * 0.035),
+    )
+
+
+def draw_snow_monkey(screen, x, ground_y, size, color=(176, 158, 148), face_color=(228, 138, 130), facing=1):
+    """A Jigokudani macaque, sitting the way they do in the onsen.
+
+    Symmetrical, so `facing` is ignored -- it's accepted only to match
+    the creature drawing signature Background calls every shape with.
+    """
+    body = pygame.Rect(0, 0, size * 0.86, size * 0.70)
+    body.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, color, body)
+
+    head_y = body.top - size * 0.04
+    pygame.draw.circle(screen, color, (x, head_y), max(2, size * 0.30))
+    for side in (-1, 1):
+        pygame.draw.circle(screen, color, (x + side * size * 0.30, head_y), max(1, size * 0.11))
+    pygame.draw.circle(screen, face_color, (x, head_y + size * 0.04), max(1, size * 0.19))
+    for side in (-1, 1):
+        pygame.draw.circle(screen, (50, 44, 42), (x + side * size * 0.08, head_y - size * 0.01), max(1, size * 0.035))

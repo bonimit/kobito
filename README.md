@@ -44,12 +44,28 @@ pause gameplay and show a small black box — anchored right next to the
 block, above it if there's room or below otherwise, rest of the level
 still visible — with a multiple-choice Japanese question (vocabulary,
 kanji, grammar, or verb conjugation) drawn from
-`assets/data/questions.json`, filtered to the level's current JLPT
-level (see Difficulty below). A correct answer adds to your score; a
-wrong answer costs a life. Each block only fires once. Add more
-questions by appending objects to that JSON file — each needs `category`,
-`jlpt` (`N5`-`N1`), `prompt`, a `choices` list, an `answer` index, and
-an optional `explanation` shown on a wrong answer.
+`assets/data/questions.json` (**150 questions** — 30 per JLPT level,
+spread evenly across the four categories), filtered to the level's
+current JLPT level (see Difficulty below).
+
+A question's worth scales with its level, shown up front in the quiz box
+as e.g. `N3 · GRAMMAR · 20 XP`:
+
+| Level | Correct | Wrong |
+| --- | --- | --- |
+| N5 | +10 | −4 XP |
+| N4 | +15 | −6 XP |
+| N3 | +20 | −8 XP |
+| N2 | +30 | −11 XP |
+| N1 | +40 | −15 XP |
+
+Correct answers feed the XP gauge as well as the score, so studying —
+not just coin collecting — is what earns bonus lives. Each block only
+fires once. Add more questions by appending objects to that JSON file — each needs `category`,
+`jlpt` (`N5`-`N1`), `prompt`, a `choices` list, an `answer` index, an
+`explanation`, and a `hint` — a nudge pointing at the useful clue (a
+radical, a particle's role, a stem change) without giving the answer
+away. Both feed Kobito's hint below.
 
 Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
 IPA Font License v1.0) since pygame's default font has no CJK glyphs.
@@ -84,45 +100,53 @@ afterward.
 
 Collectibles — coins, shiitake mushrooms, and onigiri — are picked up on
 touch (`kobito/entities/collectible.py`). Coins and onigiri add to your
-score *and* fill a Life Gauge (0-100, shown under the score); a shiitake
-instead grants an extra life outright. Reaching/exceeding a full gauge
-grants a bonus life too (classic "100 coins = 1UP", just gauge-shaped),
-carrying over any remainder. A wrong quiz answer or an enemy hit costs a
-life *and* knocks the gauge back by 5 — mistakes cost progress toward
-the next bonus life, not just the life you lose. Add more collectibles
+score *and* fill an XP gauge (0-100, shown under the score); a shiitake
+instead grants an extra life outright. Correct quiz answers fill it too.
+Reaching/exceeding a full gauge grants a bonus life (classic "100 coins
+= 1UP", just gauge-shaped), carrying over any remainder. An enemy hit
+costs a life and knocks the gauge back by 5; a wrong quiz answer costs
+XP only (scaled by JLPT level — see the table above). Add more collectibles
 by calling `add_collectible(col, row, kind=...)` in
 `kobito/levels/level1.py`.
 
 ## Worlds
 
 Before a level starts, a world-select screen (mirroring the mascot
-select screen) lets you pick from 5 themed worlds: Whispering Forest,
-Sunfall Desert, Arabian Night, Coral Deep (underwater), and Cloud
-Kingdom (sky). Each world has its own sky, ground/platform color, and
-layered scenery (mountains/dunes/reef/cloud-hills in back; clouds/
-stars+moon/bubbles/birds in the sky; trees/cacti/coral/floating-islands
-rooted in the ground) — but the same gameplay layout underneath
-(platforms, question blocks, enemies, collectibles).
+select screen) lets you pick from 10 themed worlds — 5 fantasy and 5
+built on real Japanese places:
+
+| Fantasy | Real places |
+| --- | --- |
+| Whispering Forest — torii, sakura, stone lanterns, drifting petals | **Neon Tokyo** — lit skyline, Tokyo Tower, crows, night planes |
+| Sunfall Desert — pyramids, cacti, camels, scorpions | **Nagano Snowfield** — snowy alps, falling snow, snow monkeys |
+| Arabian Night — minarets, pagodas, bats under a hazy moon | **Okinawa Shore** — turquoise sea, palms, hibiscus, shisa, crabs |
+| Coral Deep — reef, fish, jellyfish, turtles, a whale | **Hokkaido Lavender** — Furano rows, red-crowned cranes, Ezo foxes |
+| Cloud Kingdom — cloud hills, floating islands, balloons | **Kyoto Autumn** — bamboo grove, momiji maples, machiya, Inari foxes |
+
+Each world has its own sky gradient, ground/platform colors and layered
+scenery, but the same gameplay layout underneath (platforms, question
+blocks, enemies, collectibles).
 
 A world is just data in `kobito/themes.py` (colors + which decorations
-to draw, from the small shape library in `kobito/scenery_shapes.py`) —
-adding a 6th world doesn't require touching the rendering code, only a
-new `Theme(...)` entry. The backdrop is layered for depth (back to
-front): mountains, two rolling-hill layers, the sky layer (clouds/
-stars/bubbles/...), then ground props. Each layer scrolls at its own
-rate relative to the camera (parallax); ground props are only ever
-placed on solid ground segments, never floating over a gap. All of it
-is rendered generically by `kobito/background.py`.
+to draw, from the shape library in `kobito/scenery_shapes.py`) — adding
+an 11th world doesn't require touching the rendering code, only a new
+`Theme(...)` entry. The backdrop is layered for depth (back to front):
+rolling silhouette layers, the sky layer (clouds/stars/snow/petals/...),
+then ground props. Each layer scrolls at its own rate relative to the
+camera (parallax); silhouette layers are clipped to the horizon so they
+never hang into a ground gap, and ground props are only ever placed on
+solid ground segments. Solid tiles get a lit top cap, a shaded underside
+and tile seams. All of it is rendered generically by
+`kobito/background.py`.
 
-Each world also has living creatures that actually move over time
-(not just scroll with the camera): Forest has birds and butterflies;
-Desert has a hawk and a scorpion; Arabian Night has bats and a
-scorpion; Coral Deep has fish, a squid, a whale, and a crab crawling
-the seabed; Cloud Kingdom has a variety of birds. Flying/swimming
+Each world also has living creatures that actually move over time (not
+just scroll with the camera) — birds, butterflies and dragonflies;
+camels, scorpions and lizards; fish, jellyfish, turtles and a whale;
+snow monkeys, cranes and foxes; planes over Tokyo. Flying/swimming
 creatures wander the level with a gentle bob and wrap around when they
-exit; ground creatures (crab, scorpion) patrol back and forth like a
-decorative, non-colliding cousin of Enemy. A world adds creatures by
-listing `FlyingCreature`/`GroundCreature` entries in its `Theme`.
+exit; ground creatures patrol back and forth like a decorative,
+non-colliding cousin of Enemy. A world adds creatures by listing
+`FlyingCreature`/`GroundCreature` entries in its `Theme`.
 
 ## Difficulty and level progression
 
@@ -132,15 +156,32 @@ lets you pick a starting **JLPT level** — N5 (beginner) through N1
 Claude call (`kobito/difficulty.py`), falling back to a locally weighted
 random pick (skewed toward beginner levels) if no API key/network.
 
-A flagpole (`kobito/entities/goal.py`) marks the end of the level —
-non-solid, the player runs straight through it. Reaching it ends the
-level with a summary (score, answer accuracy) and adaptively picks the
-*next* level's JLPT level: answer most questions right (≥80% accuracy)
-and it steps up to a harder level; answer most wrong (≤40%) and it
-steps down to an easier one; anything in between holds steady, clamped
-to N5..N1. Score carries over between levels; `main.py` loops, building
-a fresh `Game` for each level with the adjusted JLPT level until you
-quit or run out of lives.
+A level holds **12 question blocks** across 120 tiles, and ends at a
+**Japanese castle** (`kobito/entities/goal.py`) — non-solid, the player
+runs straight into it.
+
+### Badges
+
+Reaching the castle awards the level's **badge** — a cute cartoon prize
+(star, shield, hex or flower, with a kanji emblem) from the eight in
+`kobito/badges.py`, cycling by level number: Sakura Seedling, Koi
+Courage, Bamboo Focus, Crane Grace, Fuji Summit, Lantern Light, Tiger
+Spirit, Dragon Mastery.
+
+You don't need a clean sweep — the bar is **7 out of 10**: at least 10
+questions answered with ≥70% correct (`BADGE_MIN_QUESTIONS` and
+`BADGE_PASS_ACCURACY` in `kobito/constants.py`). The HUD tracks progress
+toward it as you play, and a badge you narrowly missed is shown greyed
+out rather than hidden. Because the bar is 70%, a wrong quiz answer
+costs XP but **not** a life — otherwise three mistakes would end the run
+before you could ever reach it.
+
+Reaching the castle also adaptively picks the *next* level's JLPT level:
+answer most questions right (≥80% accuracy) and it steps up to a harder
+level; answer most wrong (≤40%) and it steps down; anything in between
+holds steady, clamped to N5..N1. Score carries over between levels;
+`main.py` loops, building a fresh `Game` for each level with the
+adjusted JLPT level until you quit or run out of lives.
 
 ## Adding real sprite art
 

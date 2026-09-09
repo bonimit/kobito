@@ -310,7 +310,218 @@ SKY = Theme(
     ],
 )
 
-THEMES = {theme.id: theme for theme in (FOREST, DESERT, ARABIAN_NIGHT, UNDERWATER, SKY)}
+# --- Real-place worlds ------------------------------------------------
+# Five worlds built on actual Japanese regions, each carrying the
+# landmarks and wildlife that region is actually known for -- so the
+# scenery teaches a little geography alongside the language.
+
+TOKYO = Theme(
+    id="tokyo",
+    name="Neon Tokyo",
+    sky_top=(16, 20, 46),
+    sky_bottom=(96, 62, 116),
+    ground_color=(62, 64, 72),
+    platform_color=(62, 64, 72),
+    cap_color=(96, 98, 108),
+    shade_color=(40, 42, 48),
+    bump_layers=[
+        # Kept very low-contrast: the skyline itself comes from the
+        # skyscraper props below, so these only suggest distant haze.
+        BumpLayer((34, 38, 68), spacing=(220, 300), radius=(80, 130), parallax=0.08, base_offset=60,
+                  highlight=(42, 46, 78)),
+        BumpLayer((46, 48, 82), spacing=(170, 240), radius=(50, 80), parallax=0.18, base_offset=30,
+                  highlight=(54, 58, 92)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_star, [(255, 255, 235)], lambda w: w // 200, (20, 90), (2, 3), 0.12),
+        FloatyLayer(shapes.draw_glow, [(238, 228, 200)], lambda w: 1, (58, 58), (66, 66), 0.05),
+        FloatyLayer(shapes.draw_moon, [(244, 236, 208)], lambda w: 1, (58, 58), (26, 26), 0.05),
+    ],
+    ground_props=[
+        # Dense and varied, which is what makes a skyline read as a city.
+        GroundProp(shapes.draw_skyscraper, [(48, 54, 86), (58, 62, 96), (40, 46, 76)], (110, 190), (70, 130), 40),
+        GroundProp(shapes.draw_tokyo_tower, [(240, 104, 68)], (120, 160), (1400, 2000), 90),
+        GroundProp(shapes.draw_machiya, [(120, 104, 92)], (34, 46), (300, 440), 45),
+        GroundProp(shapes.draw_stone_lantern, [(128, 122, 132)], (28, 36), (190, 280), 35),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_plane, [(226, 230, 240)], lambda w: 2, (30, 80), (7, 10), (55, 85), 0.15,
+                       bob_amplitude=2, bob_period=5.0),
+        FlyingCreature(shapes.draw_bird, [(26, 26, 32), (36, 34, 40)], lambda w: 5, (60, 160), (9, 13), (35, 60), 0.32),
+    ],
+)
+
+NAGANO = Theme(
+    id="nagano",
+    name="Nagano Snowfield",
+    sky_top=(150, 190, 226),
+    sky_bottom=(236, 244, 252),
+    ground_color=(226, 232, 242),
+    platform_color=(226, 232, 242),
+    cap_color=(255, 255, 255),
+    shade_color=(186, 198, 216),
+    bump_layers=[
+        BumpLayer((186, 200, 220), spacing=(210, 290), radius=(95, 145), parallax=0.09, base_offset=62,
+                  highlight=(212, 224, 238)),
+        BumpLayer((206, 218, 234), spacing=(165, 235), radius=(60, 92), parallax=0.22, base_offset=32,
+                  highlight=(230, 238, 248)),
+        BumpLayer((224, 232, 244), spacing=(125, 190), radius=(38, 60), parallax=0.42, base_offset=16,
+                  highlight=(244, 249, 255)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 252, 236)], lambda w: 1, (66, 66), (60, 60), 0.04),
+        FloatyLayer(shapes.draw_sun, [(255, 250, 214)], lambda w: 1, (66, 66), (26, 26), 0.04),
+        FloatyLayer(shapes.draw_snowflake, [(255, 255, 255)], lambda w: w // 70, (20, 320), (3, 6), 0.5),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_pine_tree, [(28, 74, 52), (36, 90, 62)], (46, 76), (85, 145), 30),
+        GroundProp(shapes.draw_torii, [(186, 62, 54)], (60, 80), (360, 520), 60),
+        GroundProp(shapes.draw_stone_lantern, [(178, 182, 192)], (32, 42), (240, 350), 40),
+        GroundProp(shapes.draw_rock, [(206, 212, 224)], (16, 26), (140, 220), 25),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_bird, [(64, 58, 54), (84, 76, 68)], lambda w: 4, (40, 120), (13, 17), (30, 50), 0.3,
+                       bob_amplitude=4, bob_period=2.6),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_snow_monkey, [(176, 158, 148), (188, 170, 158)], lambda w: 4, (16, 22), (10, 18),
+                       (50, 100)),
+    ],
+)
+
+OKINAWA = Theme(
+    id="okinawa",
+    name="Okinawa Shore",
+    sky_top=(72, 180, 232),
+    sky_bottom=(226, 246, 250),
+    ground_color=(238, 222, 176),
+    platform_color=(238, 222, 176),
+    cap_color=(252, 242, 208),
+    shade_color=(204, 184, 138),
+    bump_layers=[
+        BumpLayer((92, 176, 190), spacing=(220, 300), radius=(85, 135), parallax=0.09, base_offset=58,
+                  highlight=(116, 198, 208)),
+        BumpLayer((72, 190, 198), spacing=(170, 240), radius=(55, 88), parallax=0.22, base_offset=28,
+                  highlight=(102, 212, 216)),
+        BumpLayer((122, 216, 214), spacing=(130, 190), radius=(34, 56), parallax=0.42, base_offset=13,
+                  highlight=(152, 232, 228)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 246, 200)], lambda w: 1, (58, 58), (78, 78), 0.05),
+        FloatyLayer(shapes.draw_sun, [(255, 238, 150)], lambda w: 1, (58, 58), (34, 34), 0.05),
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 320, (28, 100), (20, 32), 0.2),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_palm_tree, [(72, 156, 92), (86, 170, 100)], (52, 76), (110, 180), 35),
+        GroundProp(shapes.draw_shisa, [(212, 192, 164)], (44, 58), (300, 430), 50),
+        GroundProp(shapes.draw_hibiscus, [(238, 82, 96), (250, 140, 90), (252, 196, 92)], (16, 22), (90, 150), 22),
+        GroundProp(shapes.draw_starfish, [(244, 158, 124), (236, 182, 100)], (12, 17), (160, 250), 25),
+        GroundProp(shapes.draw_grass_tuft, [(150, 186, 118)], (10, 14), (50, 85), 15),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_bird, [(252, 252, 252), (240, 240, 244)], lambda w: 6, (40, 140), (11, 16),
+                       (30, 55), 0.32),
+        FlyingCreature(shapes.draw_butterfly, [(255, 210, 90), (250, 130, 170)], lambda w: 4, (160, 260), (7, 10),
+                       (16, 30), 0.5, bob_amplitude=10, bob_period=1.4),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_crab, [(226, 104, 78), (208, 88, 64)], lambda w: 4, (14, 20), (14, 24), (50, 95)),
+    ],
+)
+
+HOKKAIDO = Theme(
+    id="hokkaido",
+    name="Hokkaido Lavender",
+    sky_top=(88, 166, 224),
+    sky_bottom=(218, 238, 250),
+    ground_color=(138, 114, 86),
+    platform_color=(138, 114, 86),
+    cap_color=(126, 176, 102),
+    shade_color=(102, 82, 60),
+    bump_layers=[
+        # Snow-capped peaks far back, rolling farmland nearer.
+        BumpLayer((196, 208, 226), spacing=(230, 310), radius=(100, 150), parallax=0.08, base_offset=66,
+                  highlight=(226, 234, 246)),
+        BumpLayer((132, 174, 132), spacing=(170, 240), radius=(60, 92), parallax=0.22, base_offset=32,
+                  highlight=(158, 196, 152)),
+        BumpLayer((106, 156, 108), spacing=(130, 195), radius=(38, 60), parallax=0.42, base_offset=16,
+                  highlight=(132, 180, 130)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 250, 220)], lambda w: 1, (62, 62), (66, 66), 0.04),
+        FloatyLayer(shapes.draw_sun, [(255, 244, 160)], lambda w: 1, (62, 62), (30, 30), 0.04),
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 280, (26, 110), (22, 36), 0.22),
+    ],
+    ground_props=[
+        # Lavender packed tightly, the way Furano's rows actually look.
+        GroundProp(shapes.draw_lavender, [(150, 118, 206), (166, 132, 216), (134, 104, 192)], (26, 36), (30, 52), 12),
+        GroundProp(shapes.draw_pine_tree, [(60, 112, 78), (72, 126, 88)], (44, 70), (200, 300), 35),
+        GroundProp(shapes.draw_bush, [(112, 162, 104)], (9, 12), (110, 180), 25),
+        GroundProp(shapes.draw_flower, [(255, 255, 255), (255, 226, 120)], (11, 13), (140, 220), 20),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_crane, [(250, 250, 250)], lambda w: 3, (50, 150), (15, 21), (28, 46), 0.26,
+                       bob_amplitude=5, bob_period=3.0),
+        FlyingCreature(shapes.draw_bird, [(78, 70, 64)], lambda w: 4, (40, 120), (10, 14), (32, 55), 0.34),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_fox, [(214, 128, 62), (204, 116, 54)], lambda w: 3, (16, 22), (14, 24), (70, 130)),
+    ],
+)
+
+KYOTO = Theme(
+    id="kyoto",
+    name="Kyoto Autumn",
+    sky_top=(140, 172, 210),
+    sky_bottom=(250, 228, 196),
+    ground_color=(126, 102, 80),
+    platform_color=(126, 102, 80),
+    cap_color=(158, 134, 96),
+    shade_color=(94, 76, 58),
+    bump_layers=[
+        BumpLayer((172, 166, 178), spacing=(215, 295), radius=(92, 140), parallax=0.09, base_offset=62,
+                  highlight=(194, 188, 196)),
+        BumpLayer((162, 126, 92), spacing=(168, 238), radius=(58, 90), parallax=0.22, base_offset=32,
+                  highlight=(186, 148, 108)),
+        BumpLayer((132, 132, 84), spacing=(128, 192), radius=(38, 58), parallax=0.42, base_offset=16,
+                  highlight=(156, 156, 102)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 236, 194)], lambda w: 1, (64, 64), (70, 70), 0.04),
+        FloatyLayer(shapes.draw_sun, [(255, 226, 148)], lambda w: 1, (64, 64), (28, 28), 0.04),
+        FloatyLayer(shapes.draw_maple_leaf, [(226, 112, 62), (236, 156, 70), (198, 74, 58)],
+                    lambda w: w // 80, (50, 310), (4, 6), 0.55),
+    ],
+    ground_props=[
+        # A run of torii (Fushimi Inari), a bamboo grove (Arashiyama)
+        # and momiji maples -- the three things Kyoto is pictured as.
+        # Torii kept small and spaced out: at full size they crowd the
+        # maples into one red-orange smear rather than reading as a row
+        # of gates.
+        GroundProp(shapes.draw_torii, [(206, 62, 52)], (42, 56), (240, 340), 45),
+        GroundProp(shapes.draw_bamboo, [(126, 186, 96), (110, 170, 84)], (60, 92), (38, 62), 15),
+        GroundProp(shapes.draw_maple_tree, [(214, 88, 58), (232, 140, 64), (196, 76, 62)], (44, 64), (230, 330), 40),
+        GroundProp(shapes.draw_pagoda, [(122, 96, 88)], (72, 98), (460, 640), 70),
+        GroundProp(shapes.draw_machiya, [(198, 176, 148)], (34, 46), (280, 400), 45),
+        GroundProp(shapes.draw_stone_lantern, [(158, 152, 144)], (32, 42), (200, 300), 35),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_bird, [(88, 74, 62), (104, 88, 70)], lambda w: 4, (40, 130), (11, 15), (30, 52), 0.34),
+        FlyingCreature(shapes.draw_butterfly, [(240, 190, 110), (226, 140, 170)], lambda w: 4, (150, 260), (7, 10),
+                       (15, 28), 0.5, bob_amplitude=10, bob_period=1.4),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_fox, [(224, 148, 78), (214, 128, 62)], lambda w: 3, (16, 22), (14, 24), (70, 130)),
+    ],
+)
+
+THEMES = {
+    theme.id: theme
+    for theme in (
+        FOREST, DESERT, ARABIAN_NIGHT, UNDERWATER, SKY,
+        TOKYO, NAGANO, OKINAWA, HOKKAIDO, KYOTO,
+    )
+}
 
 
 def get_theme(theme_id):

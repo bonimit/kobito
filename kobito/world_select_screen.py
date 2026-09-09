@@ -10,7 +10,10 @@ TEXT_COLOR = (255, 255, 255)
 TEXT_SHADOW = (20, 20, 20)
 HINT_COLOR = (235, 235, 235)
 
-WORLD_ORDER = ["forest", "desert", "arabian_night", "underwater", "sky"]
+WORLD_ORDER = [
+    "forest", "desert", "arabian_night", "underwater", "sky",
+    "tokyo", "nagano", "okinawa", "hokkaido", "kyoto",
+]
 
 
 class WorldSelectScreen:
