@@ -29,14 +29,21 @@ optional `explanation` shown on a wrong answer.
 Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
 IPA Font License v1.0) since pygame's default font has no CJK glyphs.
 
-## Enemies and scenery
+## Enemies, collectibles, and scenery
 
 Simple patrol enemies (Goomba-style: walk back and forth, fall under
 gravity, turn at their patrol bounds) roam the level; touching one costs
 a life, with a brief blinking invulnerability window and knockback
-afterward. Clouds and trees scroll behind the level at a slower rate
-than the camera (parallax) for a sense of depth — purely decorative, no
-collision. Both are defined in `kobito/levels/level1.py` and
+afterward.
+
+Collectibles — coins, shiitake mushrooms, and onigiri — add to your
+score on touch (`kobito/entities/collectible.py`). Add more by calling
+`add_collectible(col, row, kind=...)` in `kobito/levels/level1.py`.
+
+Clouds drift behind the level at a slower scroll rate than the camera
+(parallax, for a sense of depth); trees scroll at the same rate as the
+ground since they're rooted in it, and are only ever placed on solid
+ground segments — never floating over a gap. Both are in
 `kobito/background.py`.
 
 ## Adding real sprite art

@@ -46,7 +46,8 @@ class Game:
         self.platforms = level.platforms
         self.question_blocks = level.question_blocks
         self.enemies = level.enemies
-        self.background = Background(level.width_px, level.ground_y)
+        self.collectibles = level.collectibles
+        self.background = Background(level.width_px, level.ground_y, level.ground_segments_px)
 
         character = get_character(character_id)
         self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
@@ -55,7 +56,9 @@ class Game:
         # It gives us group.draw(screen) and group.update(...) instead of
         # hand-rolled loops, and spritecollide() below checks one sprite
         # against every sprite in a group in one call.
-        self.all_sprites = pygame.sprite.Group(self.player, *self.platforms, *self.enemies)
+        self.all_sprites = pygame.sprite.Group(
+            self.player, *self.platforms, *self.enemies, *self.collectibles
+        )
 
         # How far the world has scrolled left, in pixels, so the camera
         # can follow the player through a level wider than the screen.
@@ -100,11 +103,19 @@ class Game:
         self.camera_x = max(0.0, target_camera_x)
 
         self._check_question_blocks()
+        self._check_collectibles()
 
         if self.invulnerable_timer > 0:
             self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
         else:
             self._check_enemy_contact()
+
+    def _check_collectibles(self):
+        # dokill=True removes each collected sprite from every group it
+        # belongs to (collectibles *and* all_sprites), so there's no
+        # separate cleanup needed once it's picked up.
+        for item in pygame.sprite.spritecollide(self.player, self.collectibles, dokill=True):
+            self.score += item.value
 
     def _check_question_blocks(self):
         # player.touched is whatever solids collision resolution found
