@@ -30,10 +30,13 @@ PHASE_ANSWERING = "answering"
 PHASE_REVEAL = "reveal"
 PHASE_HINT = "hint"
 
-KOBITO_SIZE = 44
-KOBITO_BUBBLE_WIDTH = 220
-KOBITO_BUBBLE_COLOR = (245, 240, 225, 235)
-KOBITO_TEXT_COLOR = (40, 30, 16)
+RPG_BOX_MARGIN = 24
+RPG_BOX_HEIGHT = 92
+RPG_BOX_COLOR = (15, 15, 15, 175)  # plain translucent black, no border -- classic JRPG textbox
+RPG_NAME_COLOR = (255, 210, 110)
+RPG_TEXT_COLOR = (245, 245, 245)
+RPG_PORTRAIT_SIZE = 48
+RPG_CONTINUE_BLINK_MS = 500
 
 
 class QuizScreen:
@@ -120,7 +123,12 @@ class QuizScreen:
             + len(footer_lines) * (self.font_hint.get_height() + LINE_GAP)
         )
         box_height = content_height + 2 * BOX_PADDING
-        box, side = self._position_box(BOX_WIDTH, box_height)
+        # Once Kobito's RPG dialogue box is showing (or about to), reserve
+        # its footprint at the bottom of the screen so the question box
+        # never gets positioned underneath/behind it.
+        reserving_rpg_box = phase == PHASE_HINT or kobito_state == "thinking"
+        bottom_reserve = (RPG_BOX_HEIGHT + RPG_BOX_MARGIN * 2) if reserving_rpg_box else 0
+        box, side = self._position_box(BOX_WIDTH, box_height, bottom_reserve)
 
         box_surface = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
         box_surface.fill(BOX_COLOR)
@@ -157,9 +165,9 @@ class QuizScreen:
             y += surface.get_height() + LINE_GAP
 
         if phase == PHASE_HINT:
-            self._draw_kobito_hint(box, hint_text)
+            self._draw_rpg_dialogue(hint_text, expression="talking", show_continue=True)
         elif kobito_state == "thinking":
-            self._draw_kobito_hint(box, "...", expression="thinking")
+            self._draw_rpg_dialogue("...", expression="thinking", show_continue=False)
 
         pygame.display.flip()
 
@@ -172,50 +180,72 @@ class QuizScreen:
             return "Not quite..."
         return None  # PHASE_HINT: Kobito's speech bubble carries the message instead
 
-    def _draw_kobito_hint(self, box, hint_text, expression="talking"):
-        """Kobito pops up just below the quiz box with its own small
-        speech bubble holding the hint -- a second, distinct bubble
-        rather than folding the hint into the quiz box's own text, so
-        it reads as Kobito specifically speaking to the player.
+    def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False):
+        """A full-width textbox docked at the bottom of the screen,
+        Kobito's portrait on the left -- the classic RPG dialogue box
+        (Pokemon/Zelda-style) rather than a small floating bubble, so
+        it reads as a character speaking to the player, not a tooltip.
         """
-        kobito_x = box.left + KOBITO_SIZE // 2 + 4
-        kobito_y = min(box.bottom + KOBITO_SIZE // 2 + 6, SCREEN_HEIGHT - KOBITO_SIZE // 2 - SCREEN_MARGIN)
-        draw_kobito(self.screen, kobito_x, kobito_y, KOBITO_SIZE, expression=expression)
+        box = pygame.Rect(
+            RPG_BOX_MARGIN,
+            SCREEN_HEIGHT - RPG_BOX_HEIGHT - RPG_BOX_MARGIN,
+            SCREEN_WIDTH - 2 * RPG_BOX_MARGIN,
+            RPG_BOX_HEIGHT,
+        )
+        # Plain translucent black, no border -- matches a classic JRPG
+        # textbox rather than a bordered UI panel.
+        box_surface = pygame.Surface(box.size, pygame.SRCALPHA)
+        box_surface.fill(RPG_BOX_COLOR)
+        self.screen.blit(box_surface, box.topleft)
 
-        lines = self._wrap_text(hint_text or "...", self.font_kobito, KOBITO_BUBBLE_WIDTH - 2 * BOX_PADDING)
-        bubble_height = len(lines) * (self.font_kobito.get_height() + LINE_GAP) + 2 * BOX_PADDING
-        bubble = pygame.Rect(0, 0, KOBITO_BUBBLE_WIDTH, bubble_height)
-        bubble.midleft = (kobito_x + KOBITO_SIZE // 2 + 10, kobito_y)
-        bubble.right = min(bubble.right, SCREEN_WIDTH - SCREEN_MARGIN)
-        bubble.bottom = min(bubble.bottom, SCREEN_HEIGHT - SCREEN_MARGIN)
+        portrait_center = (box.x + BOX_PADDING + RPG_PORTRAIT_SIZE // 2, box.centery)
+        draw_kobito(self.screen, portrait_center[0], portrait_center[1], RPG_PORTRAIT_SIZE, expression=expression)
 
-        bubble_surface = pygame.Surface(bubble.size, pygame.SRCALPHA)
-        bubble_surface.fill(KOBITO_BUBBLE_COLOR)
-        self.screen.blit(bubble_surface, bubble.topleft)
-        pygame.draw.rect(self.screen, (90, 70, 40), bubble, width=1)
+        text_x = box.x + BOX_PADDING + RPG_PORTRAIT_SIZE + BOX_PADDING
+        text_width = box.right - BOX_PADDING - text_x
 
-        text_y = bubble.y + BOX_PADDING
-        for line in lines:
-            surface = self.font_kobito.render(line, True, KOBITO_TEXT_COLOR)
-            self.screen.blit(surface, (bubble.x + BOX_PADDING, text_y))
-            text_y += surface.get_height() + LINE_GAP
+        name_label = self.font_category.render("Kobito", True, RPG_NAME_COLOR)
+        self.screen.blit(name_label, (text_x, box.y + BOX_PADDING))
 
-        if hint_text and hint_text != "...":
-            continue_hint = self.font_hint.render("Press Enter to continue", True, HINT_COLOR)
-            self.screen.blit(continue_hint, (bubble.x, bubble.bottom + 6))
+        lines = self._wrap_text(text or "...", self.font_kobito, text_width)
+        line_y = box.y + BOX_PADDING + name_label.get_height() + LINE_GAP
+        for line in lines[:2]:  # the box has room for ~2 lines at this height
+            surface = self.font_kobito.render(line, True, RPG_TEXT_COLOR)
+            self.screen.blit(surface, (text_x, line_y))
+            line_y += surface.get_height() + LINE_GAP
 
-    def _position_box(self, width, height):
+        if show_continue and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
+            marker = self.font_hint.render("Enter ▼", True, RPG_TEXT_COLOR)
+            self.screen.blit(marker, marker.get_rect(bottomright=(box.right - 12, box.bottom - 8)))
+
+    def _position_box(self, width, height, bottom_reserve=0):
         """Picks whichever side (above/below/left/right of the block)
         has room for the box, and places it fully on that side --
         never overlapping the block itself. Falls back to whichever
         side has the *most* room if none fits perfectly (only possible
         in extremely cramped corners), still anchored outside the
         block first.
+
+        `bottom_reserve` keeps the box clear of Kobito's RPG dialogue
+        box at the bottom of the screen when that's showing (or about
+        to).
         """
         anchor = self.anchor_rect
+        screen_bottom_limit = SCREEN_HEIGHT - SCREEN_MARGIN - bottom_reserve
+
+        # "above" placement pins the box's *bottom* edge to a fixed point
+        # (anchor.top - GAP_TO_ANCHOR) regardless of box height, so unlike
+        # every other side it can't be made to fit just by having more
+        # room -- if that fixed point already falls inside the reserved
+        # area, "above" can never satisfy it and must be disqualified
+        # outright (rather than merely deprioritized) so a shorter box
+        # doesn't wrongly get placed there.
+        above_bottom = anchor.top - GAP_TO_ANCHOR
+        above_room = anchor.top - SCREEN_MARGIN - GAP_TO_ANCHOR if above_bottom <= screen_bottom_limit else -1
+
         room = {
-            "above": anchor.top - SCREEN_MARGIN - GAP_TO_ANCHOR,
-            "below": SCREEN_HEIGHT - SCREEN_MARGIN - anchor.bottom - GAP_TO_ANCHOR,
+            "above": above_room,
+            "below": screen_bottom_limit - anchor.bottom - GAP_TO_ANCHOR,
             "left": anchor.left - SCREEN_MARGIN - GAP_TO_ANCHOR,
             "right": SCREEN_WIDTH - SCREEN_MARGIN - anchor.right - GAP_TO_ANCHOR,
         }
@@ -239,14 +269,14 @@ class QuizScreen:
         elif side == "below":
             box.midtop = (anchor.centerx, anchor.bottom + GAP_TO_ANCHOR)
             box.centerx = self._clamp(box.centerx, SCREEN_MARGIN + width // 2, SCREEN_WIDTH - SCREEN_MARGIN - width // 2)
-            box.bottom = min(box.bottom, SCREEN_HEIGHT - SCREEN_MARGIN)
+            box.bottom = min(box.bottom, screen_bottom_limit)
         elif side == "left":
             box.midright = (anchor.left - GAP_TO_ANCHOR, anchor.centery)
-            box.centery = self._clamp(box.centery, SCREEN_MARGIN + height // 2, SCREEN_HEIGHT - SCREEN_MARGIN - height // 2)
+            box.centery = self._clamp(box.centery, SCREEN_MARGIN + height // 2, screen_bottom_limit - height // 2)
             box.left = max(box.left, SCREEN_MARGIN)
         else:
             box.midleft = (anchor.right + GAP_TO_ANCHOR, anchor.centery)
-            box.centery = self._clamp(box.centery, SCREEN_MARGIN + height // 2, SCREEN_HEIGHT - SCREEN_MARGIN - height // 2)
+            box.centery = self._clamp(box.centery, SCREEN_MARGIN + height // 2, screen_bottom_limit - height // 2)
             box.right = min(box.right, SCREEN_WIDTH - SCREEN_MARGIN)
 
         return box, side
