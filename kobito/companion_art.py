@@ -1,53 +1,63 @@
-"""Kobito, the AI hint companion's art. Loads real sprite frames from
-assets/sprites/kobito/<expression>.png when present, falling back to a
-simple placeholder shape (same idea as kobito/assets.py's fallback for
-mascot animations) for any expression that isn't there yet.
+"""AI hint companion art. Loads real sprite frames from
+assets/sprites/<companion_id>/<expression>.png when present, falling
+back to a simple placeholder shape (same idea as kobito/assets.py's
+fallback for mascot animations) shaded with that companion's `color`
+for any expression that isn't there yet.
+
+Generalizes what was originally kobito-only art (kobito_companion.py)
+to any companion in kobito/companions.py, since the player now picks
+one of several companions rather than always getting Kobito.
 """
 
 from pathlib import Path
 
 import pygame
 
-SPRITES_DIR = Path(__file__).resolve().parent.parent / "assets" / "sprites" / "kobito"
+from kobito.companions import get_companion
+
+SPRITES_DIR = Path(__file__).resolve().parent.parent / "assets" / "sprites"
 EXPRESSIONS = ("idle", "thinking", "talking", "happy", "sympathetic")
 
-BODY_COLOR = (139, 195, 116)
-BODY_SHADE = (108, 165, 90)
 CAP_COLOR = (92, 64, 40)
 EYE_COLOR = (40, 32, 24)
 
 _image_cache = {}
 
 
-def _load_image(expression):
-    if expression not in _image_cache:
-        path = SPRITES_DIR / f"{expression}.png"
-        _image_cache[expression] = pygame.image.load(str(path)).convert_alpha() if path.is_file() else None
-    return _image_cache[expression]
+def _load_image(companion_id, expression):
+    key = (companion_id, expression)
+    if key not in _image_cache:
+        path = SPRITES_DIR / companion_id / f"{expression}.png"
+        _image_cache[key] = pygame.image.load(str(path)).convert_alpha() if path.is_file() else None
+    return _image_cache[key]
 
 
-def draw_kobito(screen, x, y, size, expression="idle"):
+def draw_companion(screen, companion_id, x, y, size, expression="idle"):
     if expression not in EXPRESSIONS:
         expression = "idle"
 
-    image = _load_image(expression)
+    image = _load_image(companion_id, expression)
     if image is not None:
         scale = size / image.get_height()
         scaled = pygame.transform.smoothscale(image, (max(1, round(image.get_width() * scale)), size))
         screen.blit(scaled, scaled.get_rect(center=(x, y)))
         return
 
-    _draw_placeholder(screen, x, y, size, expression)
+    _draw_placeholder(screen, companion_id, x, y, size, expression)
 
 
-def _draw_placeholder(screen, x, y, size, expression):
-    """Flat-shape fallback for any expression without a real frame yet
-    -- same green/leaf-cap forest-spirit design brief as the real art.
+def _draw_placeholder(screen, companion_id, x, y, size, expression):
+    """Flat-shape fallback for any companion/expression without a real
+    frame yet -- same leaf-cap forest-spirit silhouette as Kobito's
+    original design, recolored per companion.
     """
+    body_color = get_companion(companion_id)["color"]
+    body_shade = tuple(max(0, round(channel * 0.78)) for channel in body_color)
+
     body_rect = pygame.Rect(0, 0, size, size)
     body_rect.center = (x, y)
-    pygame.draw.ellipse(screen, BODY_COLOR, body_rect)
-    pygame.draw.ellipse(screen, BODY_SHADE, body_rect, width=max(1, round(size * 0.06)))
+    pygame.draw.ellipse(screen, body_color, body_rect)
+    pygame.draw.ellipse(screen, body_shade, body_rect, width=max(1, round(size * 0.06)))
 
     cap_points = [
         (x, y - size * 0.75),

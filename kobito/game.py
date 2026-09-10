@@ -63,7 +63,15 @@ class Game:
     OUTCOME_QUIT.
     """
 
-    def __init__(self, character_id="capybara", theme_id="forest", jlpt_level="N5", level_number=1, starting_score=0):
+    def __init__(
+        self,
+        character_id="capybara",
+        theme_id="forest",
+        companion_id="kobito",
+        jlpt_level="N5",
+        level_number=1,
+        starting_score=0,
+    ):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito")
@@ -107,7 +115,7 @@ class Game:
         self.camera_x = 0.0
 
         self.question_bank = QuestionBank()
-        self.hint_service = HintService()
+        self.hint_service = HintService(companion_id=companion_id)
         self.score = starting_score
         self.correct_count = 0
         self.wrong_count = 0

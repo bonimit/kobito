@@ -1,10 +1,16 @@
-"""Kobito's hint brain: asks Claude for a short, encouraging nudge after
-a missed question, without spelling out the answer. Falls back to a
-canned, category-based hint (no network needed) whenever no API
-credentials are configured or the request fails for any reason, so a
-hint is always available -- the game must never hang or crash on a
+"""The AI hint companion's brain: asks Claude for a short, encouraging
+nudge after a missed question, without spelling out the answer. Falls
+back to a canned, category-based hint (no network needed) whenever no
+API credentials are configured or the request fails for any reason, so
+a hint is always available -- the game must never hang or crash on a
 network hiccup during a quiz.
+
+The prompt is flavored with whichever companion the player picked (see
+kobito/companions.py) so Ushi, Hana, Ume-shu, Kinoko and Kobito each
+come back sounding like themselves, not interchangeable narrators.
 """
+
+from kobito.companions import get_companion
 
 MODEL = "claude-opus-5"
 MAX_HINT_TOKENS = 200
@@ -25,7 +31,8 @@ class HintService:
     back to a local hint in that case.
     """
 
-    def __init__(self, model=MODEL):
+    def __init__(self, companion_id="kobito", model=MODEL):
+        self.companion = get_companion(companion_id)
         self.model = model
         self._client = self._build_client()
 
@@ -75,7 +82,7 @@ class HintService:
             lines.append(f"The student incorrectly chose: {question['choices'][chosen_index]}")
         lines += [
             "",
-            "You are Kobito, a small, warm, encouraging forest-spirit companion.",
+            f"You are {self.companion['name']}, {self.companion['personality']}.",
             "Give ONE short hint (at most 2 sentences) that guides the student to",
             f"reason out the answer themselves, pitched at {question['jlpt']} level.",
             "Rules:",

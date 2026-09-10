@@ -1,33 +1,35 @@
 import pygame
 
 from kobito import input as game_input
+from kobito.companion_art import draw_companion
+from kobito.companions import get_companion
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SKY_BLUE
 from kobito.difficulty import AI_RANDOM, JLPT_DESCRIPTIONS, JLPT_LEVELS, pick_ai_random_level
 from kobito.fonts import get_font
-from kobito.kobito_companion import draw_kobito
 
 TEXT_COLOR = (30, 30, 30)
 HINT_COLOR = (70, 70, 70)
 
 OPTIONS = JLPT_LEVELS + [AI_RANDOM]
-KOBITO_SIZE = 120
+COMPANION_SIZE = 120
 
 
 class DifficultySelectScreen:
     """Lets the player pick a starting JLPT level (N5 easiest -> N1
-    hardest), or "AI Random" to have Kobito pick one via the same
-    Claude call used for hints (kobito/difficulty.py), falling back to
-    a locally weighted random pick if no credentials/network.
+    hardest), or "AI Random" to have their chosen companion pick one via
+    the same Claude call used for hints (kobito/difficulty.py), falling
+    back to a locally weighted random pick if no credentials/network.
 
     Always returns a concrete JLPT level string ("N5".."N1") -- the
     AI Random resolution happens here, not downstream.
     """
 
-    def __init__(self):
+    def __init__(self, companion_id="kobito"):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito - Choose your difficulty")
         self.clock = pygame.time.Clock()
+        self.companion = get_companion(companion_id)
 
         self.index = 0
         self.font_title = get_font(40)
@@ -45,7 +47,7 @@ class DifficultySelectScreen:
             chosen = self._handle_events()
             if chosen is not None:
                 if chosen == AI_RANDOM:
-                    self._draw(kobito_state="thinking", status="Kobito is choosing...")
+                    self._draw(companion_state="thinking", status=f"{self.companion['name']} is choosing...")
                     return pick_ai_random_level()
                 return chosen
 
@@ -81,19 +83,22 @@ class DifficultySelectScreen:
                 raise SystemExit
         return None
 
-    def _draw(self, kobito_state="idle", status=None):
+    def _draw(self, companion_state="idle", status=None):
         self.screen.fill(SKY_BLUE)
 
         option = OPTIONS[self.index]
         is_ai_random = option == AI_RANDOM
-        expression = "happy" if is_ai_random else kobito_state
-        draw_kobito(self.screen, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60, KOBITO_SIZE, expression=expression)
+        expression = "happy" if is_ai_random else companion_state
+        draw_companion(
+            self.screen, self.companion["id"], SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60, COMPANION_SIZE,
+            expression=expression,
+        )
 
         title = self.font_title.render("Choose your difficulty", True, TEXT_COLOR)
         self.screen.blit(title, title.get_rect(centerx=SCREEN_WIDTH // 2, y=30))
 
         if is_ai_random:
-            name, description = "AI Random", "Let Kobito pick a level for you!"
+            name, description = "AI Random", f"Let {self.companion['name']} pick a level for you!"
         else:
             name, description = option, f"JLPT {option} - {JLPT_DESCRIPTIONS[option]}"
 
