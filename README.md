@@ -174,9 +174,25 @@ lets you pick a starting **JLPT level** — N5 (beginner) through N1
 Claude call (`kobito/difficulty.py`), falling back to a locally weighted
 random pick (skewed toward beginner levels) if no API key/network.
 
-A level holds **12 question blocks** across 120 tiles, and ends at a
-**Japanese castle** (`kobito/entities/goal.py`) — non-solid, the player
-runs straight into it.
+A level is built as a chain of ground segments (`kobito/levels/level1.py`),
+each carrying 2-3 question blocks, two ground patrols and one elevated
+patrol, so enemy density scales with the level's length rather than
+staying fixed. It ends at a **Japanese castle**
+(`kobito/entities/goal.py`) — non-solid, the player runs straight into
+it.
+
+### Question count scales with level
+
+Each JLPT level's question pool holds **30 questions**
+(`assets/data/questions.json`), and how many of them a stage actually
+asks climbs as you advance: level 1 needs 10 questions answered, and it
+climbs by 2 per level (`QUESTIONS_PER_LEVEL_STEP` in
+`kobito/constants.py`) up to that 30-question ceiling at level 11 and
+beyond. The level generator keeps adding segments — and their question
+blocks, enemies, and collectibles — until there are enough blocks to
+comfortably clear that requirement, plus a small buffer
+(`LEVEL_BLOCK_BUFFER`) so a player can skip one or two blocks and still
+reach the bar.
 
 ### Badges
 
@@ -186,13 +202,14 @@ Reaching the castle awards the level's **badge** — a cute cartoon prize
 Courage, Bamboo Focus, Crane Grace, Fuji Summit, Lantern Light, Tiger
 Spirit, Dragon Mastery.
 
-You don't need a clean sweep — the bar is **7 out of 10**: at least 10
-questions answered with ≥70% correct (`BADGE_MIN_QUESTIONS` and
-`BADGE_PASS_ACCURACY` in `kobito/constants.py`). The HUD tracks progress
-toward it as you play, and a badge you narrowly missed is shown greyed
-out rather than hidden. Because the bar is 70%, a wrong quiz answer
-costs XP but **not** a life — otherwise three mistakes would end the run
-before you could ever reach it.
+You don't need a clean sweep — the bar is **70% correct** of that
+level's required question count (`required_question_count()` and
+`BADGE_PASS_ACCURACY` in `kobito/constants.py`) — 7 of 10 at level 1,
+21 of 30 by level 11. The HUD tracks progress toward it as you play, and
+a badge you narrowly missed is shown greyed out rather than hidden.
+Because the bar is 70%, a wrong quiz answer costs XP but **not** a
+life — otherwise a few mistakes would end the run before you could ever
+reach it.
 
 Reaching the castle also adaptively picks the *next* level's JLPT level:
 answer most questions right (≥80% accuracy) and it steps up to a harder

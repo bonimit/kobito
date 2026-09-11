@@ -30,12 +30,35 @@ JLPT_QUESTION_POINTS = {"N5": 10, "N4": 15, "N3": 20, "N2": 30, "N1": 40}
 JLPT_GAUGE_PENALTY = {"N5": 4, "N4": 6, "N3": 8, "N2": 11, "N1": 15}
 
 # Earning a level's badge means answering most questions right, not all
-# of them: at least BADGE_MIN_QUESTIONS answered, with BADGE_PASS_ACCURACY
-# of those correct -- i.e. 7 out of 10. A wrong answer therefore costs XP
-# but deliberately NOT a life, otherwise three mistakes would end the run
-# before the player could ever reach a 70% bar.
-BADGE_MIN_QUESTIONS = 10
+# of them: at least the level's required question count (see
+# required_question_count() below), with BADGE_PASS_ACCURACY of those
+# correct -- i.e. 7 out of 10 at level 1. A wrong answer therefore costs
+# XP but deliberately NOT a life, otherwise a few mistakes would end the
+# run before the player could ever reach a 70% bar.
 BADGE_PASS_ACCURACY = 0.7
+
+# How many questions a level requires climbs as level_number climbs, so
+# later levels demand more practice, not just harder JLPT content.
+# Starts at 10 (level 1) and climbs by 2 per level, capped at 30 -- the
+# size of each JLPT level's question pool (see assets/data/questions.json),
+# so the bar never asks for more distinct questions than actually exist.
+QUESTIONS_PER_LEVEL_START = 10
+QUESTIONS_PER_LEVEL_STEP = 2
+QUESTIONS_PER_LEVEL_MAX = 30
+
+# A level places a couple more question blocks than it strictly
+# requires, so a player can skip one or two (or get unlucky with a
+# tricky one) and still reach the bar rather than needing a clean sweep
+# of every block in the level.
+LEVEL_BLOCK_BUFFER = 2
+
+
+def required_question_count(level_number):
+    """How many questions must be answered (not necessarily correctly --
+    see BADGE_PASS_ACCURACY) to be eligible for the level's badge.
+    """
+    raw = QUESTIONS_PER_LEVEL_START + (level_number - 1) * QUESTIONS_PER_LEVEL_STEP
+    return min(QUESTIONS_PER_LEVEL_MAX, raw)
 
 # Life gauge: fills from coin/onigiri pickups (by their value), same
 # idea as classic "100 coins = 1UP" -- reaching/exceeding GAUGE_MAX

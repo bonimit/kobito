@@ -5,7 +5,6 @@ from kobito.background import Background
 from kobito.characters import get_character
 from kobito.badges import badge_for_level, draw_badge
 from kobito.constants import (
-    BADGE_MIN_QUESTIONS,
     BADGE_PASS_ACCURACY,
     CORRECT_ANSWER_SCORE,
     FPS,
@@ -19,6 +18,7 @@ from kobito.constants import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     STARTING_LIVES,
+    required_question_count,
 )
 from kobito.difficulty import JLPT_DESCRIPTIONS, next_jlpt_level
 from kobito.entities.player import Player
@@ -89,7 +89,7 @@ class Game:
         self.level_number = level_number
         game_input.get_joysticks()
 
-        level = build_level1(theme_id)
+        level = build_level1(theme_id, level_number=level_number)
         self.platforms = level.platforms
         self.question_blocks = level.question_blocks
         self.enemies = level.enemies
@@ -199,11 +199,12 @@ class Game:
 
     def _badge_earned(self):
         """The level's badge needs a decent sample answered *and* most of
-        it right -- 7 of 10. Requiring the minimum count too stops a
-        player claiming the badge off a single lucky answer.
+        it right -- 7 of 10 at level 1, climbing with level_number (see
+        required_question_count). Requiring the minimum count too stops
+        a player claiming the badge off a single lucky answer.
         """
         answered = self.correct_count + self.wrong_count
-        if answered < BADGE_MIN_QUESTIONS:
+        if answered < required_question_count(self.level_number):
             return False
         return self.correct_count / answered >= BADGE_PASS_ACCURACY
 
@@ -351,10 +352,11 @@ class Game:
         at mid-level rather than a surprise at the castle.
         """
         answered = self.correct_count + self.wrong_count
-        needed = round(BADGE_MIN_QUESTIONS * BADGE_PASS_ACCURACY)
+        min_questions = required_question_count(self.level_number)
+        needed = round(min_questions * BADGE_PASS_ACCURACY)
         text = f"Quiz {self.correct_count}/{answered}"
         if not self._badge_earned():
-            text += f"    badge at {needed}/{BADGE_MIN_QUESTIONS}"
+            text += f"    badge at {needed}/{min_questions}"
         else:
             text += "    badge ready!"
         self._draw_outlined_text(text, self.hud_font_small, (12, 104))
@@ -397,7 +399,8 @@ class Game:
 
         center_x = SCREEN_WIDTH // 2
         answered = self.correct_count + self.wrong_count
-        needed = round(BADGE_MIN_QUESTIONS * BADGE_PASS_ACCURACY)
+        min_questions = required_question_count(self.level_number)
+        needed = round(min_questions * BADGE_PASS_ACCURACY)
 
         title = self.level_complete_font.render(f"Level {self.level_number} Complete!", True, (255, 255, 255))
         self.screen.blit(title, title.get_rect(centerx=center_x, y=42))
@@ -413,7 +416,7 @@ class Game:
             headline_color = (255, 226, 140)
         else:
             headline = f"Badge locked:  {self.badge.name}"
-            sub = f"Answer {needed} of {BADGE_MIN_QUESTIONS} correctly to claim it -- so close!"
+            sub = f"Answer {needed} of {min_questions} correctly to claim it -- so close!"
             headline_color = (215, 215, 220)
 
         lines = [
