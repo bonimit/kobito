@@ -196,11 +196,24 @@ reach the bar.
 
 ### Badges
 
-Reaching the castle awards the level's **badge** — a cute cartoon prize
-(star, shield, hex or flower, with a kanji emblem) from the eight in
-`kobito/badges.py`, cycling by level number: Sakura Seedling, Koi
-Courage, Bamboo Focus, Crane Grace, Fuji Summit, Lantern Light, Tiger
-Spirit, Dragon Mastery.
+Reaching the castle awards a **badge** — one of the 20 hexagonal prizes
+in `kobito/badges.py`, grouped **four per JLPT level** so the prize
+tracks proficiency rather than just how far you've played. Clearing at
+N5 hands you an N5-tier badge; an N1 clear hands you an N1-tier one.
+Within a tier the four cycle by level number.
+
+| Level | Badges |
+| --- | --- |
+| **N5** | Hiragana Start (あ) · First Sprout (芽) · First Kanji (木) · Polite Form (礼) |
+| **N4** | Milk Run (牛) · Travel Talk (旅) · Blossom Words (花) · Onsen Break (湯) |
+| **N3** | Rest Day (眠) · Sound and Pitch (音) · Water Song (水) · Bookworm (本) |
+| **N2** | Meadow Walk (草) · Sharp Eye (実) · Sunflower Sun (陽) · Friendship (友) |
+| **N1** | Rain Shelter (雨) · Crab Claws (蟹) · Space Walk (宙) · Fish Rider (魚) |
+
+Badge art loads from `assets/sprites/badges/<badge id>.png`. Any badge
+without art falls back to a drawn hexagon in that badge's colors with
+its kanji emblem — the same silhouette as the real artwork, so a
+part-finished set still reads as one collection.
 
 You don't need a clean sweep — the bar is **70% correct** of that
 level's required question count (`required_question_count()` and

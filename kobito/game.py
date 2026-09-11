@@ -82,7 +82,7 @@ class Game:
         self.level_complete = False
         self.next_jlpt_level = None
         self.level_accuracy = None
-        self.badge = badge_for_level(level_number)
+        self.badge = badge_for_level(jlpt_level, level_number)
         self.badge_earned = False
 
         self.jlpt_level = jlpt_level
