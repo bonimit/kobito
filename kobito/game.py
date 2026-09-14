@@ -237,8 +237,15 @@ class Game:
     def _trigger_question(self, block):
         block.mark_used()
         question = self.question_bank.random_question(jlpt=self.jlpt_level)
-        points = JLPT_QUESTION_POINTS.get(question["jlpt"], CORRECT_ANSWER_SCORE)
-        penalty = JLPT_GAUGE_PENALTY.get(question["jlpt"], GAUGE_DAMAGE)
+        companion = self.hint_service.companion
+        base_points = JLPT_QUESTION_POINTS.get(question["jlpt"], CORRECT_ANSWER_SCORE)
+        # Companion abilities scale the base numbers (see
+        # kobito/companions.py) -- Hana's Bright Spark bumps XP gain,
+        # Kinoko's Playful Streak adds a flat score bonus, Ushi's Steady
+        # Heart softens the penalty. Kobito's multipliers are all 1.0 /
+        # 0, so it's a no-op for the baseline companion.
+        points = round(base_points * companion["xp_gain_multiplier"]) + companion["bonus_score"]
+        penalty = round(JLPT_GAUGE_PENALTY.get(question["jlpt"], GAUGE_DAMAGE) * companion["xp_penalty_multiplier"])
 
         # Snapshot the level as it looks right now (block already
         # marked used) so the quiz box shows over the actual scene

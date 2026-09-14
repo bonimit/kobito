@@ -4,6 +4,13 @@
 # Claude so each companion's hints come back in its own voice; `color`
 # only shades the placeholder art used for any expression without a
 # real frame yet.
+#
+# Each companion also carries a small, concrete gameplay ability
+# (applied in Game._trigger_question and QuizScreen) so "pick a
+# companion" is a real choice, not just a skin -- shown on the
+# companion-select screen as `ability_name` / `ability_description`.
+# Kobito is the baseline with no modifier; every multiplier/bonus below
+# is relative to that.
 COMPANIONS = [
     {
         "id": "kobito",
@@ -11,6 +18,12 @@ COMPANIONS = [
         "tagline": "A gentle forest spirit",
         "personality": "a small, warm, gentle forest-spirit companion who encourages softly",
         "color": (139, 195, 116),
+        "ability_name": "Balanced Guide",
+        "ability_description": "No bonus, no penalty -- steady, reliable hints.",
+        "xp_gain_multiplier": 1.0,
+        "xp_penalty_multiplier": 1.0,
+        "bonus_score": 0,
+        "always_show_explanation": False,
     },
     {
         "id": "ushi",
@@ -18,6 +31,12 @@ COMPANIONS = [
         "tagline": "A calm, motherly cow spirit",
         "personality": "a calm, patient, motherly cow spirit who reassures like an old friend",
         "color": (230, 220, 230),
+        "ability_name": "Steady Heart",
+        "ability_description": "Wrong answers cost 25% less XP -- mistakes sting less.",
+        "xp_gain_multiplier": 1.0,
+        "xp_penalty_multiplier": 0.75,
+        "bonus_score": 0,
+        "always_show_explanation": False,
     },
     {
         "id": "hana",
@@ -25,6 +44,12 @@ COMPANIONS = [
         "tagline": "A bright, cheerful flower spirit",
         "personality": "a bright, bubbly, endlessly cheerful flower spirit, full of energy",
         "color": (235, 90, 150),
+        "ability_name": "Bright Spark",
+        "ability_description": "Correct answers earn 10% more XP.",
+        "xp_gain_multiplier": 1.10,
+        "xp_penalty_multiplier": 1.0,
+        "bonus_score": 0,
+        "always_show_explanation": False,
     },
     {
         "id": "umeshu",
@@ -32,6 +57,12 @@ COMPANIONS = [
         "tagline": "An elegant, quietly wise plum spirit",
         "personality": "an elegant, soft-spoken, quietly wise plum-blossom spirit",
         "color": (200, 150, 200),
+        "ability_name": "Deep Insight",
+        "ability_description": "Hints always include the full explanation -- nothing stays unclear.",
+        "xp_gain_multiplier": 1.0,
+        "xp_penalty_multiplier": 1.0,
+        "bonus_score": 0,
+        "always_show_explanation": True,
     },
     {
         "id": "kinoko",
@@ -39,6 +70,12 @@ COMPANIONS = [
         "tagline": "A playful, quirky mushroom spirit",
         "personality": "a playful, quirky, slightly mischievous mushroom spirit who loves puns",
         "color": (206, 74, 66),
+        "ability_name": "Playful Streak",
+        "ability_description": "Every correct answer earns +2 flat bonus points.",
+        "xp_gain_multiplier": 1.0,
+        "xp_penalty_multiplier": 1.0,
+        "bonus_score": 2,
+        "always_show_explanation": False,
     },
 ]
 

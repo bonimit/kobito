@@ -42,7 +42,9 @@ Button numbers follow the common Xbox-style layout most gamepads report.
 Yellow "?" blocks (drawn slightly larger than a tile, Mario-block style)
 pause gameplay and show a small black box — anchored right next to the
 block, above it if there's room or below otherwise, rest of the level
-still visible — with a multiple-choice Japanese question (vocabulary,
+still visible, with a tooltip-style tail that touches the block itself
+(no floating gap) so the box clearly reads as popping up *from* it —
+with a multiple-choice Japanese question (vocabulary,
 kanji, grammar, or verb conjugation) drawn from
 `assets/data/questions.json` (**150 questions** — 30 per JLPT level,
 spread evenly across the four categories), filtered to the level's
@@ -70,19 +72,36 @@ away. Both feed Kobito's hint below.
 Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
 IPA Font License v1.0) since pygame's default font has no CJK glyphs.
 
+### Read more
+
+If the question or the companion's hint isn't enough, press **R** once
+an answer is locked in (right or wrong) to slide in a detail panel from
+the right edge of the screen: the full question, the correct choice
+spelled out, the complete explanation, and the authored hint, all in
+one place. It's only available after answering, so it can never spoil
+the question, and a small "R · Read more" tab stays visible the whole
+time so it's discoverable without reading this README.
+
 ## Your AI hint companion
 
-Before a run starts, a companion-select screen (mirroring the mascot
-select screen) lets you pick who accompanies you — five companions in
-`kobito/companions.py`, each with real art and its own personality:
+Before a run starts, a companion-select screen shows **all five
+companions at once** in a gallery (`kobito/companions.py`) so you can
+compare them side by side — left/right moves the highlight, and the
+highlighted one's tagline and ability show in a card below the row:
 
-| Companion | Style |
-| --- | --- |
-| **Kobito** | A gentle forest spirit — warm, soft-spoken |
-| **Ushi** | A calm, motherly cow spirit |
-| **Hana** | A bright, bubbly flower spirit |
-| **Ume-shu** | An elegant, quietly wise plum-blossom spirit |
-| **Kinoko** | A playful, quirky mushroom spirit who loves puns |
+| Companion | Style | Ability |
+| --- | --- | --- |
+| **Kobito** | A gentle forest spirit — warm, soft-spoken | Balanced Guide — no bonus, no penalty |
+| **Ushi** | A calm, motherly cow spirit | Steady Heart — wrong answers cost 25% less XP |
+| **Hana** | A bright, bubbly flower spirit | Bright Spark — correct answers earn 10% more XP |
+| **Ume-shu** | An elegant, quietly wise plum-blossom spirit | Deep Insight — hints always include the full explanation |
+| **Kinoko** | A playful, quirky mushroom spirit who loves puns | Playful Streak — +2 flat bonus points per correct answer |
+
+So picking a companion is a real choice, not just a skin: the ability
+applies for the whole run via `Game._trigger_question`, scaling the
+same JLPT-based XP numbers from the table above (Kobito's multipliers
+are all neutral, so it's the baseline every other companion is judged
+against).
 
 Your companion is present for the whole answer -> reveal -> hint arc in
 a classic JRPG-style textbox docked at the bottom of the screen (a
@@ -106,8 +125,10 @@ a network hiccup never hangs or crashes the game. The question box
 above always repositions to stay clear of the companion's textbox.
 
 Add a new companion by adding an entry to `kobito/companions.py` (id,
-name, tagline, personality, placeholder color) and dropping its five
-expression frames into `assets/sprites/<id>/` — nothing else changes.
+name, tagline, personality, placeholder color, and an ability —
+`xp_gain_multiplier`, `xp_penalty_multiplier`, `bonus_score`, and/or
+`always_show_explanation`) and dropping its five expression frames into
+`assets/sprites/<id>/` — nothing else changes.
 
 ## Enemies, collectibles, and scenery
 

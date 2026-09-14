@@ -18,9 +18,20 @@ BOX_WIDTH = 340
 BOX_PADDING = 14
 LINE_GAP = 4
 CHOICE_HEIGHT = 24
-GAP_TO_ANCHOR = 12
+# Tail and gap are equal on purpose: the tail's tip lands exactly on the
+# anchor's edge, so the box reads as touching the block it popped up
+# from -- a classic tooltip pointer, not a panel floating nearby.
+GAP_TO_ANCHOR = 8
 SCREEN_MARGIN = 10
-TAIL_SIZE = 9
+TAIL_SIZE = 8
+
+DETAIL_PANEL_WIDTH = 300
+DETAIL_SLIDE_SPEED = 1600.0  # px/second
+DETAIL_KEY = pygame.K_r
+DETAIL_BG_COLOR = (16, 16, 26, 238)
+DETAIL_LABEL_COLOR = (150, 200, 255)
+DETAIL_TAB_BG = (30, 30, 44, 220)
+DETAIL_TAB_BORDER = (150, 200, 255)
 
 RESULT_DISPLAY_SECONDS = 1.0
 REVEAL_BEFORE_HINT_SECONDS = 0.8  # let the wrong-answer highlight register before the companion shows up
@@ -54,6 +65,13 @@ class QuizScreen:
     credentials are configured or the request fails. The player presses
     Enter/Space to dismiss it.
 
+    Once an answer is locked in (right or wrong), pressing R slides in a
+    "Read more" detail panel from the right edge of the screen with the
+    full explanation, the authored hint, and the correct choice spelled
+    out -- for whenever the question itself or the companion's hint
+    wasn't enough on its own. It never appears before an answer is
+    picked, so it can't spoil the question.
+
     Self-contained loop, same shape as SelectScreen and Game. The rest
     of the level stays fully visible behind the (translucent) box, and
     the box is always positioned so it never covers the block that
@@ -80,6 +98,15 @@ class QuizScreen:
         self.font_hint = get_font(14)
         self.font_category = get_font(13)
         self.font_companion = get_font(15)
+        self.font_detail_title = get_font(20)
+        self.font_detail_label = get_font(14)
+        self.font_detail_body = get_font(15)
+
+        # Read-more panel state: starts fully off-screen (panel_x ==
+        # SCREEN_WIDTH) and slides left/right toward whichever edge
+        # show_details currently points at -- see _update_detail_panel.
+        self.show_details = False
+        self.panel_x = SCREEN_WIDTH
 
     def run(self):
         phase = PHASE_ANSWERING
@@ -102,6 +129,11 @@ class QuizScreen:
                         phase = PHASE_REVEAL
                     elif phase == PHASE_HINT and event.key in CONTINUE_KEYS:
                         return False
+                    elif event.key == DETAIL_KEY and selected is not None:
+                        # Only available once an answer is locked in --
+                        # the panel spells out the correct choice, so
+                        # offering it earlier would spoil the question.
+                        self.show_details = not self.show_details
 
                 elif event.type == pygame.JOYBUTTONDOWN:
                     # Face buttons (A/B/X/Y) double as answer choices
@@ -124,9 +156,24 @@ class QuizScreen:
                     # start working rather than a frozen screen.
                     self._draw(selected, phase, companion_state="thinking")
                     hint_text = self.hint_service.get_hint(self.question, chosen_index=selected)
+                    if self.hint_service.companion["always_show_explanation"]:
+                        # Ume-shu's Deep Insight: never leave the player
+                        # with just a nudge -- append the real answer.
+                        explanation = self.question.get("explanation")
+                        if explanation:
+                            hint_text = f"{hint_text} {explanation}"
                     phase = PHASE_HINT
 
+            self._update_detail_panel(dt)
             self._draw(selected, phase, hint_text=hint_text)
+
+    def _update_detail_panel(self, dt):
+        target = SCREEN_WIDTH - DETAIL_PANEL_WIDTH if self.show_details else SCREEN_WIDTH
+        step = DETAIL_SLIDE_SPEED * dt
+        if self.panel_x < target:
+            self.panel_x = min(target, self.panel_x + step)
+        else:
+            self.panel_x = max(target, self.panel_x - step)
 
     def _draw(self, selected, phase, hint_text=None, companion_state="idle"):
         if self.background is not None:
@@ -202,7 +249,66 @@ class QuizScreen:
                     f"Not quite... let me think.{loss}", expression="sympathetic", show_continue=False
                 )
 
+        if selected is not None:
+            self._draw_detail_tab()
+        if self.panel_x < SCREEN_WIDTH:
+            self._draw_detail_panel()
+
         pygame.display.flip()
+
+    def _draw_detail_tab(self):
+        """A small always-visible affordance once an answer is locked
+        in, so the player knows there's more detail available without
+        having to discover the R key by accident.
+        """
+        label = "R  Close details" if self.show_details else "R  Read more"
+        text = self.font_detail_label.render(label, True, DETAIL_LABEL_COLOR)
+        tab = pygame.Rect(0, 0, text.get_width() + 20, text.get_height() + 12)
+        tab.topright = (min(self.panel_x, SCREEN_WIDTH) - 10, 10)
+
+        tab_surface = pygame.Surface(tab.size, pygame.SRCALPHA)
+        tab_surface.fill(DETAIL_TAB_BG)
+        self.screen.blit(tab_surface, tab.topleft)
+        pygame.draw.rect(self.screen, DETAIL_TAB_BORDER, tab, width=1)
+        self.screen.blit(text, text.get_rect(center=tab.center))
+
+    def _draw_detail_panel(self):
+        """The slide-in "Read more" panel: full explanation, the
+        authored hint, and the correct choice spelled out plainly --
+        for when the question or the companion's hint alone wasn't
+        enough. Anchored to the right edge and only ever open once an
+        answer is locked in, so it can never spoil the question.
+        """
+        panel = pygame.Rect(round(self.panel_x), 0, DETAIL_PANEL_WIDTH, SCREEN_HEIGHT)
+        panel_surface = pygame.Surface(panel.size, pygame.SRCALPHA)
+        panel_surface.fill(DETAIL_BG_COLOR)
+        self.screen.blit(panel_surface, panel.topleft)
+        pygame.draw.line(self.screen, DETAIL_TAB_BORDER, panel.topleft, panel.bottomleft, 2)
+
+        x = panel.x + BOX_PADDING
+        width = panel.width - 2 * BOX_PADDING
+        y = 50
+
+        title = self.font_detail_title.render("Read more", True, (255, 255, 255))
+        self.screen.blit(title, (x, y))
+        y += title.get_height() + LINE_GAP * 3
+
+        rows = [
+            ("QUESTION", self.question["prompt"]),
+            ("CORRECT ANSWER", self.question["choices"][self.question["answer"]]),
+            ("WHY", self.question.get("explanation") or "(no explanation given)"),
+            ("HINT", self.question.get("hint") or "(no hint given)"),
+        ]
+        for label_text, body_text in rows:
+            label_surface = self.font_detail_label.render(label_text, True, DETAIL_LABEL_COLOR)
+            self.screen.blit(label_surface, (x, y))
+            y += label_surface.get_height() + 2
+
+            for line in self._wrap_text(body_text, self.font_detail_body, width):
+                surface = self.font_detail_body.render(line, True, (235, 235, 240))
+                self.screen.blit(surface, (x, y))
+                y += surface.get_height() + 2
+            y += LINE_GAP * 3
 
     def _header_text(self):
         """e.g. "N3 · GRAMMAR · 20 XP" -- level, topic and stake in one

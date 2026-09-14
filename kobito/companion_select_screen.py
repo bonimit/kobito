@@ -9,22 +9,40 @@ from kobito.fonts import get_font
 TEXT_COLOR = (30, 30, 30)
 TAGLINE_COLOR = (90, 70, 40)
 HINT_COLOR = (70, 70, 70)
+ABILITY_LABEL_COLOR = (30, 100, 60)
+ABILITY_TEXT_COLOR = (50, 60, 50)
+DIM_NAME_COLOR = (110, 110, 118)
 
-COMPANION_SIZE = 160
+CARD_BG = (255, 255, 255, 130)
+CARD_BORDER = (255, 255, 255, 200)
+SELECTED_BADGE_COLOR = (255, 240, 200, 210)
+SELECTED_BORDER_COLOR = (255, 190, 60)
+
+GALLERY_Y = 180
+SELECTED_SIZE = 118
+UNSELECTED_SIZE = 76
 IDLE_BLINK_PERIOD = 2.6  # seconds between a quick blink into "happy" and back
 
 
 class CompanionSelectScreen:
     """Lets the player pick which AI hint companion accompanies them --
     Kobito or one of its friends (Ushi, Hana, Ume-shu, Kinoko), each
-    with its own art and personality (see kobito/companions.py). Same
-    self-contained loop shape as SelectScreen (mascot) and
-    WorldSelectScreen.
+    with its own art, personality, and a small gameplay ability (see
+    kobito/companions.py). Same self-contained loop shape as
+    SelectScreen (mascot) and WorldSelectScreen.
+
+    Unlike the mascot select screen, all five companions are shown at
+    once in a gallery row so the player can compare them side by side;
+    left/right moves a highlight between them rather than swapping one
+    portrait for another. The highlighted companion's name, tagline,
+    and ability are shown in a detail card below the gallery.
 
     The chosen companion_id flows into Game -> HintService, so its
-    Claude-generated hints come back in that companion's voice, and into
-    every screen after this one that shows the companion's portrait
-    (DifficultySelectScreen's AI Random pick, QuizScreen's dialogue box).
+    Claude-generated hints come back in that companion's voice and its
+    ability (see Game._trigger_question) applies for the whole run, and
+    into every screen after this one that shows the companion's
+    portrait (DifficultySelectScreen's AI Random pick, QuizScreen's
+    dialogue box).
     """
 
     def __init__(self):
@@ -34,16 +52,19 @@ class CompanionSelectScreen:
         self.clock = pygame.time.Clock()
 
         self.index = 0
-        self.font_title = get_font(40)
-        self.font_name = get_font(30)
-        self.font_tagline = get_font(20)
-        self.font_hint = get_font(22)
+        self.font_title = get_font(36)
+        self.font_name = get_font(26)
+        self.font_gallery_name = get_font(15)
+        self.font_tagline = get_font(18)
+        self.font_ability_label = get_font(15)
+        self.font_ability_text = get_font(17)
+        self.font_hint = get_font(20)
         game_input.get_joysticks()
         self.joy_nav = game_input.MenuNav()
 
-        # A soft blink into "happy" every couple seconds is enough to
-        # make the still portrait feel alive without needing a full
-        # idle animation loop like the mascots have.
+        # A soft blink into "happy" every couple seconds on the
+        # selected portrait -- enough to make the gallery feel alive
+        # without a full idle animation loop like the mascots have.
         self._blink_timer = 0.0
 
     def run(self):
@@ -90,29 +111,85 @@ class CompanionSelectScreen:
     def _draw(self):
         self.screen.fill(SKY_BLUE)
 
-        companion = COMPANIONS[self.index]
-        expression = "happy" if self._blink_timer < 0.3 else "idle"
-        draw_companion(
-            self.screen, companion["id"], SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30, COMPANION_SIZE,
-            expression=expression,
-        )
-
         title = self.font_title.render("Choose your companion", True, TEXT_COLOR)
-        self.screen.blit(title, title.get_rect(centerx=SCREEN_WIDTH // 2, y=30))
+        self.screen.blit(title, title.get_rect(centerx=SCREEN_WIDTH // 2, y=20))
 
-        name = self.font_name.render(companion["name"], True, TEXT_COLOR)
-        self.screen.blit(name, name.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT // 2 + 90))
-
-        tagline = self.font_tagline.render(companion["tagline"], True, TAGLINE_COLOR)
-        self.screen.blit(tagline, tagline.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT // 2 + 130))
+        self._draw_gallery()
+        self._draw_detail_card(COMPANIONS[self.index])
 
         position = f"{self.index + 1} / {len(COMPANIONS)}"
         position_label = self.font_hint.render(position, True, HINT_COLOR)
-        self.screen.blit(
-            position_label, position_label.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 90)
-        )
+        self.screen.blit(position_label, position_label.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 60))
 
-        hint = self.font_hint.render("<- / -> to choose    Enter to confirm    Esc to quit", True, HINT_COLOR)
-        self.screen.blit(hint, hint.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 55))
+        hint = self.font_hint.render("<- / -> to compare    Enter to confirm    Esc to quit", True, HINT_COLOR)
+        self.screen.blit(hint, hint.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 32))
 
         pygame.display.flip()
+
+    def _draw_gallery(self):
+        """All five companions in one row, so the player can gauge and
+        compare them at a glance rather than clicking through one at a
+        time. The selected one is drawn larger, lifted, and ringed.
+        """
+        slot_width = SCREEN_WIDTH / len(COMPANIONS)
+        for i, companion in enumerate(COMPANIONS):
+            center_x = round(slot_width * (i + 0.5))
+            selected = i == self.index
+
+            if selected:
+                size = SELECTED_SIZE
+                center_y = GALLERY_Y - 12  # lifted, so it visibly stands out from the row
+                expression = "happy" if self._blink_timer < 0.3 else "idle"
+
+                badge_radius = size * 0.62
+                badge = pygame.Surface((round(badge_radius * 2), round(badge_radius * 2)), pygame.SRCALPHA)
+                pygame.draw.circle(badge, SELECTED_BADGE_COLOR, (badge_radius, badge_radius), badge_radius)
+                self.screen.blit(badge, (center_x - badge_radius, center_y - badge_radius))
+                pygame.draw.circle(self.screen, SELECTED_BORDER_COLOR, (center_x, center_y), badge_radius, width=3)
+            else:
+                size = UNSELECTED_SIZE
+                center_y = GALLERY_Y
+                expression = "idle"
+
+            draw_companion(self.screen, companion["id"], center_x, center_y, size, expression=expression)
+
+            name_color = TEXT_COLOR if selected else DIM_NAME_COLOR
+            name_font = self.font_name if selected else self.font_gallery_name
+            name_label = name_font.render(companion["name"], True, name_color)
+            self.screen.blit(name_label, name_label.get_rect(centerx=center_x, y=GALLERY_Y + 70))
+
+    def _draw_detail_card(self, companion):
+        """Tagline and ability for the highlighted companion -- this is
+        the "what does picking this one actually do" answer, shown as
+        soon as it's highlighted rather than requiring a separate step.
+        """
+        card = pygame.Rect(0, 0, 560, 130)
+        card.centerx = SCREEN_WIDTH // 2
+        card.y = 330
+
+        card_surface = pygame.Surface(card.size, pygame.SRCALPHA)
+        card_surface.fill(CARD_BG)
+        self.screen.blit(card_surface, card.topleft)
+        pygame.draw.rect(self.screen, CARD_BORDER, card, width=2, border_radius=10)
+
+        y = card.y + 14
+        tagline = self.font_tagline.render(companion["tagline"], True, TAGLINE_COLOR)
+        self.screen.blit(tagline, tagline.get_rect(centerx=card.centerx, y=y))
+        y += tagline.get_height() + 12
+
+        ability_label = self.font_ability_label.render("ABILITY", True, ABILITY_LABEL_COLOR)
+        self.screen.blit(ability_label, ability_label.get_rect(centerx=card.centerx, y=y))
+        y += ability_label.get_height() + 4
+
+        ability_line = f"{companion['ability_name']} — {companion['ability_description']}"
+        ability_text = self.font_ability_text.render(ability_line, True, ABILITY_TEXT_COLOR)
+        if ability_text.get_width() > card.width - 30:
+            # Fall back to two lines (name, then description) if the
+            # combined line would run past the card's edges.
+            name_text = self.font_ability_text.render(companion["ability_name"], True, ABILITY_TEXT_COLOR)
+            self.screen.blit(name_text, name_text.get_rect(centerx=card.centerx, y=y))
+            y += name_text.get_height() + 2
+            desc_text = self.font_ability_text.render(companion["ability_description"], True, ABILITY_TEXT_COLOR)
+            self.screen.blit(desc_text, desc_text.get_rect(centerx=card.centerx, y=y))
+        else:
+            self.screen.blit(ability_text, ability_text.get_rect(centerx=card.centerx, y=y))
