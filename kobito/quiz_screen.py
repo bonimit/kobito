@@ -1,3 +1,5 @@
+import re
+
 import pygame
 
 from kobito import input as game_input
@@ -5,6 +7,13 @@ from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 from kobito.companion_art import draw_companion
 from kobito.hint_service import HintService
+
+# Matches a parenthetical translation trailing the whole string, e.g.
+# "図書館で本を読みます。 (I read books at the library.)" -- but not a
+# short reading gloss stuck mid-sentence right after a word, like
+# "犬 (inu) means...", which has text following the parenthesis.
+TRAILING_TRANSLATION = re.compile(r"^(.*\S)\s*\(([^()]+)\)\s*$")
+DETAIL_TRANSLATION_COLOR = (175, 185, 200)
 
 BOX_COLOR = (18, 18, 30, 175)  # translucent, not flat opaque -- lets the scene show through
 BOX_BORDER = (230, 230, 230)
@@ -304,11 +313,36 @@ class QuizScreen:
             self.screen.blit(label_surface, (x, y))
             y += label_surface.get_height() + 2
 
-            for line in self._wrap_text(body_text, self.font_detail_body, width):
+            main_text, translation = self._split_translation(body_text)
+            for line in self._wrap_text(main_text, self.font_detail_body, width):
                 surface = self.font_detail_body.render(line, True, (235, 235, 240))
                 self.screen.blit(surface, (x, y))
                 y += surface.get_height() + 2
+
+            if translation:
+                y += 2  # a small gap marks it as a separate line, not a wrapped continuation
+                for line in self._wrap_text(f"({translation})", self.font_detail_body, width):
+                    surface = self.font_detail_body.render(line, True, DETAIL_TRANSLATION_COLOR)
+                    self.screen.blit(surface, (x, y))
+                    y += surface.get_height() + 2
+
             y += LINE_GAP * 3
+
+    def _split_translation(self, text):
+        """Splits a trailing "(English translation)" onto its own line
+        rather than letting it wrap as a continuation of the Japanese
+        sentence before it -- e.g. "図書館で本を読みます。 (I read
+        books at the library.)" becomes two separate lines. A short
+        mid-sentence reading gloss like "犬 (inu) means..." doesn't
+        match (there's text after the parenthesis) and stays as one
+        line, since that's a reading, not a translation.
+
+        Returns (main_text, translation_or_None).
+        """
+        match = TRAILING_TRANSLATION.match(text)
+        if match:
+            return match.group(1), match.group(2)
+        return text, None
 
     def _header_text(self):
         """e.g. "N3 · GRAMMAR · 20 XP" -- level, topic and stake in one

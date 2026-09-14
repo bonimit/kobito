@@ -82,6 +82,13 @@ one place. It's only available after answering, so it can never spoil
 the question, and a small "R · Read more" tab stays visible the whole
 time so it's discoverable without reading this README.
 
+Wherever a Japanese sentence is followed by its English translation in
+parentheses (e.g. `図書館で本を読みます。 (I read books at the
+library.)`), the panel splits them onto separate lines instead of
+letting them run together as one wrapped paragraph -- a short reading
+gloss stuck mid-sentence right after a word (`犬 (inu) means...`) is
+left alone, since that's a reading, not a translation.
+
 ## Your AI hint companion
 
 Before a run starts, a companion-select screen shows **all five
