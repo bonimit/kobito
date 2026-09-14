@@ -2,6 +2,7 @@ import re
 
 import pygame
 
+from kobito import furigana
 from kobito import input as game_input
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
@@ -14,6 +15,11 @@ from kobito.hint_service import HintService
 # "犬 (inu) means...", which has text following the parenthesis.
 TRAILING_TRANSLATION = re.compile(r"^(.*\S)\s*\(([^()]+)\)\s*$")
 DETAIL_TRANSLATION_COLOR = (175, 185, 200)
+
+FURIGANA_KEY = pygame.K_f
+TRANSLATION_KEY = pygame.K_t
+TOGGLE_TAB_COLOR = (215, 225, 240)
+TOGGLE_TAB_BG = (30, 30, 44, 190)
 
 BOX_COLOR = (18, 18, 30, 175)  # translucent, not flat opaque -- lets the scene show through
 BOX_BORDER = (230, 230, 230)
@@ -110,6 +116,14 @@ class QuizScreen:
         self.font_detail_title = get_font(20)
         self.font_detail_label = get_font(14)
         self.font_detail_body = get_font(15)
+        self.font_ruby = get_font(10)
+        self.font_toggle_tab = get_font(13)
+
+        # Furigana asks whether the current question's kanji is fair
+        # game to annotate at all -- a "kanji" category question is
+        # literally asking for the reading, so showing it would hand
+        # over the answer regardless of the player's furigana setting.
+        self.suppress_furigana = question.get("category") == "kanji"
 
         # Read-more panel state: starts fully off-screen (panel_x ==
         # SCREEN_WIDTH) and slides left/right toward whichever edge
@@ -143,6 +157,10 @@ class QuizScreen:
                         # the panel spells out the correct choice, so
                         # offering it earlier would spoil the question.
                         self.show_details = not self.show_details
+                    elif event.key == FURIGANA_KEY:
+                        furigana.toggle()
+                    elif event.key == TRANSLATION_KEY:
+                        furigana.toggle_translation()
 
                 elif event.type == pygame.JOYBUTTONDOWN:
                     # Face buttons (A/B/X/Y) double as answer choices
@@ -190,14 +208,23 @@ class QuizScreen:
         else:
             self.screen.fill((25, 25, 40))
 
-        prompt_lines = self._wrap_text(self.question["prompt"], self.font_prompt, BOX_WIDTH - 2 * BOX_PADDING)
+        content_width = BOX_WIDTH - 2 * BOX_PADDING
+        prompt_main, prompt_translation = self._split_translation(self.question["prompt"])
+        prompt_lines = self._wrap_text(prompt_main, self.font_prompt, content_width)
+        show_translation = bool(prompt_translation) and furigana.is_translation_visible()
+        translation_lines = self._wrap_text(prompt_translation, self.font_hint, content_width) if show_translation else []
+
         footer = self._footer_text(phase, selected)
-        footer_lines = self._wrap_text(footer, self.font_hint, BOX_WIDTH - 2 * BOX_PADDING) if footer else []
+        footer_lines = self._wrap_text(footer, self.font_hint, content_width) if footer else []
 
         content_height = (
             self.font_category.get_height() + LINE_GAP
-            + len(prompt_lines) * (self.font_prompt.get_height() + LINE_GAP)
-            + len(self.question["choices"]) * (CHOICE_HEIGHT + LINE_GAP)
+            + sum(self._line_height(line, self.font_prompt) + LINE_GAP for line in prompt_lines)
+            + len(translation_lines) * (self.font_hint.get_height() + LINE_GAP)
+            + sum(
+                self._line_height(f"{i + 1}. {c}", self.font_choice, min_height=CHOICE_HEIGHT) + LINE_GAP
+                for i, c in enumerate(self.question["choices"])
+            )
             + len(footer_lines) * (self.font_hint.get_height() + LINE_GAP)
         )
         box_height = content_height + 2 * BOX_PADDING
@@ -224,7 +251,10 @@ class QuizScreen:
         y += category.get_height() + LINE_GAP
 
         for line in prompt_lines:
-            surface = self.font_prompt.render(line, True, TEXT_COLOR)
+            y += self._draw_annotated_line(line, self.font_prompt, x, y, TEXT_COLOR) + LINE_GAP
+
+        for line in translation_lines:
+            surface = self.font_hint.render(line, True, DETAIL_TRANSLATION_COLOR)
             self.screen.blit(surface, (x, y))
             y += surface.get_height() + LINE_GAP
 
@@ -235,9 +265,8 @@ class QuizScreen:
                     color = CORRECT_COLOR
                 elif index == selected:
                     color = WRONG_COLOR
-            label = self.font_choice.render(f"{index + 1}. {choice_text}", True, color)
-            self.screen.blit(label, (x, y))
-            y += CHOICE_HEIGHT + LINE_GAP
+            line_height = self._draw_annotated_line(f"{index + 1}. {choice_text}", self.font_choice, x, y, color)
+            y += max(line_height, CHOICE_HEIGHT) + LINE_GAP
 
         for line in footer_lines:
             surface = self.font_hint.render(line, True, HINT_COLOR)
@@ -258,12 +287,77 @@ class QuizScreen:
                     f"Not quite... let me think.{loss}", expression="sympathetic", show_continue=False
                 )
 
+        self._draw_toggle_tab()
         if selected is not None:
             self._draw_detail_tab()
         if self.panel_x < SCREEN_WIDTH:
             self._draw_detail_panel()
 
         pygame.display.flip()
+
+    def _draw_toggle_tab(self):
+        """Furigana and translation are both off by default and toggled
+        with F/T -- shown here at all times (not just once answered)
+        so the settings are discoverable before the player needs them,
+        not just after.
+        """
+        parts = []
+        if not self.suppress_furigana:
+            parts.append(f"F Furigana {'ON' if furigana.is_enabled() else 'OFF'}")
+        parts.append(f"T Translation {'ON' if furigana.is_translation_visible() else 'OFF'}")
+        text = self.font_toggle_tab.render("   ".join(parts), True, TOGGLE_TAB_COLOR)
+        tab = pygame.Rect(0, 0, text.get_width() + 20, text.get_height() + 10)
+        tab.topleft = (10, 10)
+
+        tab_surface = pygame.Surface(tab.size, pygame.SRCALPHA)
+        tab_surface.fill(TOGGLE_TAB_BG)
+        self.screen.blit(tab_surface, tab.topleft)
+        self.screen.blit(text, text.get_rect(center=tab.center))
+
+    def _line_needs_ruby(self, text):
+        if self.suppress_furigana or not furigana.is_enabled():
+            return False
+        for word in text.split(" "):
+            for _, reading in furigana.annotate_word(word):
+                if reading:
+                    return True
+        return False
+
+    def _line_height(self, text, font, min_height=0):
+        height = font.get_height()
+        if self._line_needs_ruby(text):
+            height += self.font_ruby.get_height()
+        return max(height, min_height)
+
+    def _draw_annotated_line(self, text, font, x, y, color):
+        """Draws one already-wrapped line at (x, y), annotating kanji
+        with furigana when enabled and not suppressed for this
+        question's category. Returns the total height consumed
+        (including the ruby row above the text, when present) so the
+        caller can advance y to the next line.
+        """
+        if self.suppress_furigana or not furigana.is_enabled():
+            surface = font.render(text, True, color)
+            self.screen.blit(surface, (x, y))
+            return surface.get_height()
+
+        top_offset = self.font_ruby.get_height() if self._line_needs_ruby(text) else 0
+        cursor_x = x
+        words = text.split(" ")
+        for i, word in enumerate(words):
+            for chunk, reading in furigana.annotate_word(word):
+                surface = font.render(chunk, True, color)
+                self.screen.blit(surface, (cursor_x, y + top_offset))
+                if reading:
+                    ruby_surface = self.font_ruby.render(reading, True, color)
+                    ruby_x = cursor_x + (surface.get_width() - ruby_surface.get_width()) // 2
+                    self.screen.blit(ruby_surface, (ruby_x, y))
+                cursor_x += surface.get_width()
+            if i != len(words) - 1:
+                space_surface = font.render(" ", True, color)
+                self.screen.blit(space_surface, (cursor_x, y + top_offset))
+                cursor_x += space_surface.get_width()
+        return font.get_height() + top_offset
 
     def _draw_detail_tab(self):
         """A small always-visible affordance once an answer is locked
@@ -315,9 +409,7 @@ class QuizScreen:
 
             main_text, translation = self._split_translation(body_text)
             for line in self._wrap_text(main_text, self.font_detail_body, width):
-                surface = self.font_detail_body.render(line, True, (235, 235, 240))
-                self.screen.blit(surface, (x, y))
-                y += surface.get_height() + 2
+                y += self._draw_annotated_line(line, self.font_detail_body, x, y, (235, 235, 240)) + 2
 
             if translation:
                 y += 2  # a small gap marks it as a separate line, not a wrapped continuation

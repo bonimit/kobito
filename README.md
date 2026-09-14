@@ -72,6 +72,29 @@ away. Both feed Kobito's hint below.
 Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
 IPA Font License v1.0) since pygame's default font has no CJK glyphs.
 
+### Furigana and translation
+
+Two independent toggles, always shown in a small tab at the top-left of
+the quiz screen:
+
+- **F** — furigana: small kana readings above kanji (`kobito/furigana.py`),
+  on by default. Toggling it off drops back to plain kanji.
+- **T** — translation: the English translation of the prompt, hidden by
+  default so it can't hand you a grammar answer for free (a sentence
+  like "...at the library" gives away that the blank wants a location
+  particle). Off by default; press T to reveal it inline, right below
+  the Japanese line.
+
+Furigana is looked up from a hand-built reading dictionary covering
+every kanji that appears in the question bank in the way it's actually
+used there (not a general-purpose kanji dictionary) — a handful of
+genuinely ambiguous readings (bare "一", "物", and the irregular verb
+"来る", whose reading changes per conjugation: 来い is こい but 来れば
+is くれば) are deliberately left unannotated rather than guessed wrong.
+**Kanji-category questions never show furigana**, regardless of the
+toggle — the question is literally "how do you read this kanji," so
+annotating it would hand over the answer.
+
 ### Read more
 
 If the question or the companion's hint isn't enough, press **R** once
