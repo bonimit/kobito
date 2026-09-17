@@ -2248,5 +2248,605 @@
     "answer": 0,
     "explanation": "んがため attaches to the ない-stem: 行かない → 行か + んがため.",
     "hint": "Same stem rule as 言わんばかり -- find the form that would precede ない."
+  },
+  {
+    "id": "vocab_n5_009",
+    "category": "vocabulary",
+    "jlpt": "N5",
+    "prompt": "高い (takai) means...",
+    "choices": [
+      "Expensive / tall",
+      "Cheap",
+      "Short",
+      "Cold"
+    ],
+    "answer": 0,
+    "explanation": "高い (たかい) means \"expensive\" or \"tall\", depending on context.",
+    "hint": "Think of a skyscraper or a price tag that makes you gasp -- both use this word."
+  },
+  {
+    "id": "vocab_n5_010",
+    "category": "vocabulary",
+    "jlpt": "N5",
+    "prompt": "小さい (chiisai) means...",
+    "choices": [
+      "Small",
+      "Big",
+      "New",
+      "Old"
+    ],
+    "answer": 0,
+    "explanation": "小さい (ちいさい) means \"small\", the opposite of 大きい (big).",
+    "hint": "Picture something tiny enough to fit in your palm."
+  },
+  {
+    "id": "kanji_n5_009",
+    "category": "kanji",
+    "jlpt": "N5",
+    "prompt": "Which kanji means \"fire\"?",
+    "choices": [
+      "火",
+      "水",
+      "木",
+      "金"
+    ],
+    "answer": 0,
+    "explanation": "火 (ひ) means \"fire\".",
+    "hint": "Picture flickering flames -- the kanji's two strokes even look a little like them."
+  },
+  {
+    "id": "kanji_n5_010",
+    "category": "kanji",
+    "jlpt": "N5",
+    "prompt": "How do you read 電車?",
+    "choices": [
+      "でんしゃ",
+      "でんわ",
+      "じてんしゃ",
+      "くるま"
+    ],
+    "answer": 0,
+    "explanation": "電車 (でんしゃ) means \"train\".",
+    "hint": "電 (electric) + 車 (vehicle) = the vehicle that runs on electricity."
+  },
+  {
+    "id": "grammar_n5_009",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "友達＿ 手紙を 書きます。 (I write a letter to my friend.)",
+    "choices": [
+      "に",
+      "を",
+      "が",
+      "と"
+    ],
+    "answer": 0,
+    "explanation": "に marks the recipient or target of an action such as writing or giving.",
+    "hint": "\"To a friend\" -- に marks the direction \"to\"."
+  },
+  {
+    "id": "grammar_n5_010",
+    "category": "grammar",
+    "jlpt": "N5",
+    "prompt": "公園＿ 遊びます。 (I play at the park.)",
+    "choices": [
+      "で",
+      "に",
+      "を",
+      "へ"
+    ],
+    "answer": 0,
+    "explanation": "で marks the location where an action takes place.",
+    "hint": "Playing \"at\" the park -- で marks where something happens."
+  },
+  {
+    "id": "verb_n5_007",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "買う → polite present (masu-form)?",
+    "choices": [
+      "買います",
+      "買みます",
+      "買きます",
+      "買いします"
+    ],
+    "answer": 0,
+    "explanation": "買う is a u-verb: change う to い, then add ます -> 買います.",
+    "hint": "Drop the う, add います."
+  },
+  {
+    "id": "verb_n5_008",
+    "category": "verb_conjugation",
+    "jlpt": "N5",
+    "prompt": "話す → polite negative?",
+    "choices": [
+      "話しません",
+      "話きません",
+      "話さません",
+      "話しないです"
+    ],
+    "answer": 0,
+    "explanation": "話す → 話します (polite present) → 話しません (polite negative).",
+    "hint": "す changes to し, then add ません."
+  },
+  {
+    "id": "vocab_n4_009",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "苦労 (kurou) means...",
+    "choices": [
+      "Hardship / trouble",
+      "Success",
+      "Vacation",
+      "Promise"
+    ],
+    "answer": 0,
+    "explanation": "苦労 (くろう) means \"hardship, trouble, toil\".",
+    "hint": "The effort and struggle behind achieving something the hard way."
+  },
+  {
+    "id": "vocab_n4_010",
+    "category": "vocabulary",
+    "jlpt": "N4",
+    "prompt": "訪問 (houmon) means...",
+    "choices": [
+      "Visit",
+      "Invitation",
+      "Return",
+      "Contract"
+    ],
+    "answer": 0,
+    "explanation": "訪問 (ほうもん) means \"visit\", especially a formal one.",
+    "hint": "What you do when you call on someone at their home or office."
+  },
+  {
+    "id": "kanji_n4_009",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "How do you read 交通?",
+    "choices": [
+      "こうつう",
+      "こうこう",
+      "とおる",
+      "みちじゅん"
+    ],
+    "answer": 0,
+    "explanation": "交通 (こうつう) means \"traffic, transportation\".",
+    "hint": "Think of a 交通渋滞 (traffic jam)."
+  },
+  {
+    "id": "kanji_n4_010",
+    "category": "kanji",
+    "jlpt": "N4",
+    "prompt": "Which kanji means \"to stop\"?",
+    "choices": [
+      "止",
+      "行",
+      "来",
+      "帰"
+    ],
+    "answer": 0,
+    "explanation": "止 appears in 止まる (to stop, intransitive) and 止める (to stop, transitive).",
+    "hint": "Picture a crossing guard's stop sign."
+  },
+  {
+    "id": "grammar_n4_009",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "この 本は 読み＿です。 (This book is easy to read.)",
+    "choices": [
+      "やすい",
+      "にくい",
+      "たい",
+      "そう"
+    ],
+    "answer": 0,
+    "explanation": "～やすい attaches to the masu-stem of a verb to mean \"easy to ~\".",
+    "hint": "やさしい (easy) shrinks down to the やすい suffix."
+  },
+  {
+    "id": "grammar_n4_010",
+    "category": "grammar",
+    "jlpt": "N4",
+    "prompt": "ここで 写真を 撮っ＿いけません。 (You must not take photos here.)",
+    "choices": [
+      "ては",
+      "ても",
+      "とは",
+      "までは"
+    ],
+    "answer": 0,
+    "explanation": "～てはいけない expresses prohibition: \"must not do ~\".",
+    "hint": "て-form + は + いけない = \"not allowed to\"."
+  },
+  {
+    "id": "verb_n4_007",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "遊ぶ → te-form?",
+    "choices": [
+      "遊んで",
+      "遊いで",
+      "遊びて",
+      "遊って"
+    ],
+    "answer": 0,
+    "explanation": "Verbs ending in ぶ, む, or ぬ all take んで in the te-form.",
+    "hint": "ぶ, む, ぬ verbs all become んで."
+  },
+  {
+    "id": "verb_n4_008",
+    "category": "verb_conjugation",
+    "jlpt": "N4",
+    "prompt": "泳ぐ → plain past (ta-form)?",
+    "choices": [
+      "泳いだ",
+      "泳いた",
+      "泳ぎた",
+      "泳った"
+    ],
+    "answer": 0,
+    "explanation": "ぐ-ending verbs become いだ in the plain past (く becomes いた, ぐ becomes いだ).",
+    "hint": "ぐ verbs voice the sound: いだ, not いた."
+  },
+  {
+    "id": "vocab_n3_009",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "面倒 (mendou) means...",
+    "choices": [
+      "Trouble / bothersome",
+      "Convenient",
+      "Cheerful",
+      "Silent"
+    ],
+    "answer": 0,
+    "explanation": "面倒 (めんどう) means \"trouble, a bother\" -- 面倒くさい is the everyday \"what a hassle\".",
+    "hint": "That feeling when a chore is just too much effort."
+  },
+  {
+    "id": "vocab_n3_010",
+    "category": "vocabulary",
+    "jlpt": "N3",
+    "prompt": "工夫 (kufuu) means...",
+    "choices": [
+      "Ingenuity / creative effort",
+      "Mistake",
+      "Apology",
+      "Promotion"
+    ],
+    "answer": 0,
+    "explanation": "工夫 (くふう) means \"ingenuity\" -- devising a clever way to do something.",
+    "hint": "What you do when you find a smarter way to solve a problem."
+  },
+  {
+    "id": "kanji_n3_009",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 状況?",
+    "choices": [
+      "じょうきょう",
+      "じょうけい",
+      "げんじょう",
+      "ようす"
+    ],
+    "answer": 0,
+    "explanation": "状況 (じょうきょう) means \"situation, circumstances\".",
+    "hint": "What a news reporter describes when covering unfolding events."
+  },
+  {
+    "id": "kanji_n3_010",
+    "category": "kanji",
+    "jlpt": "N3",
+    "prompt": "How do you read 割合?",
+    "choices": [
+      "わりあい",
+      "わりびき",
+      "ぶんすう",
+      "かつごう"
+    ],
+    "answer": 0,
+    "explanation": "割合 (わりあい) means \"rate, ratio, proportion\".",
+    "hint": "Used when comparing one part against the whole, like a percentage."
+  },
+  {
+    "id": "grammar_n3_009",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "忙しい＿、手伝ってくれた。 (Even though busy, they helped me.)",
+    "choices": [
+      "のに",
+      "ので",
+      "なら",
+      "たら"
+    ],
+    "answer": 0,
+    "explanation": "～のに expresses contrast: something unexpected happened despite the given condition.",
+    "hint": "It's surprising that help came despite being busy."
+  },
+  {
+    "id": "grammar_n3_010",
+    "category": "grammar",
+    "jlpt": "N3",
+    "prompt": "田中さんは 来る＿ 言っていたのに、来なかった。 (Tanaka said they'd come, but they didn't.)",
+    "choices": [
+      "と",
+      "に",
+      "で",
+      "へ"
+    ],
+    "answer": 0,
+    "explanation": "と marks quoted speech or thought before 言う (\"to say that ~\").",
+    "hint": "\"～と言う\" means \"to say that ~\"."
+  },
+  {
+    "id": "verb_n3_007",
+    "category": "verb_conjugation",
+    "jlpt": "N3",
+    "prompt": "死ぬ → te-form?",
+    "choices": [
+      "死んで",
+      "死にて",
+      "死んだで",
+      "死んいで"
+    ],
+    "answer": 0,
+    "explanation": "死ぬ is the only common verb ending in ぬ; like ぶ and む verbs, it takes んで in the te-form.",
+    "hint": "Only one verb in Japanese ends in ぬ -- this one."
+  },
+  {
+    "id": "verb_n3_008",
+    "category": "verb_conjugation",
+    "jlpt": "N3",
+    "prompt": "立つ → volitional (\"let's stand\")?",
+    "choices": [
+      "立とう",
+      "立ろう",
+      "立つう",
+      "立たう"
+    ],
+    "answer": 0,
+    "explanation": "U-verbs form the volitional by shifting the final sound to its o-row equivalent and adding う: つ → と + う.",
+    "hint": "つ becomes と, then add う."
+  },
+  {
+    "id": "vocab_n2_009",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "潜在 (senzai) means...",
+    "choices": [
+      "Latent / potential",
+      "Obvious",
+      "Temporary",
+      "Official"
+    ],
+    "answer": 0,
+    "explanation": "潜在 (せんざい) means \"latent, potential\" -- present but not yet visible.",
+    "hint": "Think of \"潜在能力\" (latent ability) -- talent that hasn't surfaced yet."
+  },
+  {
+    "id": "vocab_n2_010",
+    "category": "vocabulary",
+    "jlpt": "N2",
+    "prompt": "徹底 (tettei) means...",
+    "choices": [
+      "Thoroughness",
+      "Carelessness",
+      "Shortage",
+      "Surplus"
+    ],
+    "answer": 0,
+    "explanation": "徹底 (てってい) means \"thoroughness\" -- carrying something out completely, leaving nothing out.",
+    "hint": "Doing something so completely there's nothing left undone."
+  },
+  {
+    "id": "kanji_n2_009",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 一致?",
+    "choices": [
+      "いっち",
+      "いちじ",
+      "ひとつ",
+      "ゆいいつ"
+    ],
+    "answer": 0,
+    "explanation": "一致 (いっち) means \"agreement, match, coincidence\".",
+    "hint": "When two opinions perfectly match up."
+  },
+  {
+    "id": "kanji_n2_010",
+    "category": "kanji",
+    "jlpt": "N2",
+    "prompt": "How do you read 展開?",
+    "choices": [
+      "てんかい",
+      "てんじ",
+      "かいてん",
+      "はってん"
+    ],
+    "answer": 0,
+    "explanation": "展開 (てんかい) means \"development, unfolding, deployment\".",
+    "hint": "How a story or a plan unfolds over time."
+  },
+  {
+    "id": "grammar_n2_009",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "収入＿ 税金が 変わる。 (Taxes change according to income.)",
+    "choices": [
+      "に応じて",
+      "について",
+      "に対して",
+      "にとって"
+    ],
+    "answer": 0,
+    "explanation": "～に応じて means \"according to, in response to\" -- taxes vary in response to income level.",
+    "hint": "応じる means \"to respond\" -- so this is \"in response to\"."
+  },
+  {
+    "id": "grammar_n2_010",
+    "category": "grammar",
+    "jlpt": "N2",
+    "prompt": "練習すれ＿するほど、上手になる。 (The more you practice, the better you get.)",
+    "choices": [
+      "ば",
+      "と",
+      "たら",
+      "なら"
+    ],
+    "answer": 0,
+    "explanation": "～ば～ほど means \"the more ~, the more ~\", pairing a ba-conditional with ほど.",
+    "hint": "This set pattern always uses ば before ほど."
+  },
+  {
+    "id": "verb_n2_007",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "頼む → passive form?",
+    "choices": [
+      "頼まれる",
+      "頼むれる",
+      "頼みられる",
+      "頼まさる"
+    ],
+    "answer": 0,
+    "explanation": "U-verb passive: shift to the a-row sound and add れる -- む → ま + れる.",
+    "hint": "む-verbs: change to the あ-row, then add れる."
+  },
+  {
+    "id": "verb_n2_008",
+    "category": "verb_conjugation",
+    "jlpt": "N2",
+    "prompt": "任せる → causative form?",
+    "choices": [
+      "任せさせる",
+      "任せせる",
+      "任さす",
+      "任せらせる"
+    ],
+    "answer": 0,
+    "explanation": "Ichidan (ru-verb) causative: drop る and add させる.",
+    "hint": "Ru-verbs just add させる to the stem."
+  },
+  {
+    "id": "vocab_n1_009",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "円滑 (enkatsu) means...",
+    "choices": [
+      "Smooth / harmonious",
+      "Rough",
+      "Urgent",
+      "Secretive"
+    ],
+    "answer": 0,
+    "explanation": "円滑 (えんかつ) means \"smooth, harmonious\" -- often describing negotiations or relationships going without friction.",
+    "hint": "Think of a meeting that goes off without a single hitch."
+  },
+  {
+    "id": "vocab_n1_010",
+    "category": "vocabulary",
+    "jlpt": "N1",
+    "prompt": "愚痴 (guchi) means...",
+    "choices": [
+      "Complaint / grumbling",
+      "Compliment",
+      "Apology",
+      "Promise"
+    ],
+    "answer": 0,
+    "explanation": "愚痴 (ぐち) means \"complaint, grumbling\" -- venting about something that can't be helped.",
+    "hint": "What friends do over drinks when venting about work."
+  },
+  {
+    "id": "kanji_n1_009",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 円滑?",
+    "choices": [
+      "えんかつ",
+      "まるかつ",
+      "えんかい",
+      "かつえん"
+    ],
+    "answer": 0,
+    "explanation": "円滑 (えんかつ) means \"smooth, harmonious\".",
+    "hint": "円 (round/circle) + 滑 (slippery, glide) -- everything glides smoothly."
+  },
+  {
+    "id": "kanji_n1_010",
+    "category": "kanji",
+    "jlpt": "N1",
+    "prompt": "How do you read 遂に?",
+    "choices": [
+      "ついに",
+      "すいに",
+      "とげに",
+      "なしに"
+    ],
+    "answer": 0,
+    "explanation": "遂に (ついに) means \"finally, at last\", after a long wait or process.",
+    "hint": "The word you'd say the moment a long wait finally ends."
+  },
+  {
+    "id": "grammar_n1_009",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "彼が 来ない＿、会議は 始められない。 (As long as he doesn't come, the meeting can't start.)",
+    "choices": [
+      "かぎり",
+      "うちに",
+      "あいだ",
+      "ばかり"
+    ],
+    "answer": 0,
+    "explanation": "～ないかぎり means \"as long as ~ not, unless\".",
+    "hint": "限り (かぎり) means \"limit\" -- \"as far as this condition holds\"."
+  },
+  {
+    "id": "grammar_n1_010",
+    "category": "grammar",
+    "jlpt": "N1",
+    "prompt": "台風の ため、試合は 中止＿ 余儀なくされた。 (Due to the typhoon, the match was forced to be cancelled.)",
+    "choices": [
+      "を",
+      "に",
+      "が",
+      "と"
+    ],
+    "answer": 0,
+    "explanation": "～を余儀なくされる means \"to be forced into ~, have no choice but to ~\".",
+    "hint": "余儀ない means \"no other way\" -- so this is \"forced into\"."
+  },
+  {
+    "id": "verb_n1_007",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "読む + ざるを得ない → ?",
+    "choices": [
+      "読まざるを得ない",
+      "読むざるを得ない",
+      "読まざる得ない",
+      "読みざるを得ない"
+    ],
+    "answer": 0,
+    "explanation": "～ざるを得ない attaches to the negative stem (as in 読ま-ない) and means \"cannot help but ~\".",
+    "hint": "読む → 読ま(ない-stem) → 読まざるを得ない."
+  },
+  {
+    "id": "verb_n1_008",
+    "category": "verb_conjugation",
+    "jlpt": "N1",
+    "prompt": "帰る → causative-passive (\"be made to go home\")?",
+    "choices": [
+      "帰らされる",
+      "帰えらされる",
+      "帰らさせる",
+      "帰りさせる"
+    ],
+    "answer": 0,
+    "explanation": "U-verb causative-passive contracts ～せられる to ～される: 帰らせられる shortens to 帰らされる, \"to be made to go home\".",
+    "hint": "This is the \"forced to do it\" form -- someone else made this happen."
   }
 ]

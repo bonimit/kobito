@@ -4,11 +4,17 @@ import pygame
 
 from kobito.constants import LEVEL_BLOCK_BUFFER, TILE_SIZE, required_question_count
 from kobito.entities.collectible import Collectible
-from kobito.entities.enemy import Enemy
+from kobito.entities.enemy import Enemy, FlyingEnemy
 from kobito.entities.goal import Goal
 from kobito.entities.platform import Platform
 from kobito.entities.question_block import QuestionBlock
-from kobito.themes import get_theme
+from kobito.themes import ENEMY_PALETTES, FLYING_ENEMY_PALETTES, get_theme
+
+# Ground enemies walk a little faster in later levels -- caps out so it
+# never outruns what the player can react to.
+ENEMY_SPEED_BASE = 70.0
+ENEMY_SPEED_STEP = 2.5
+ENEMY_SPEED_MAX = 110.0
 
 # One repeating "segment" of ground carries up to 3 question blocks (see
 # _build_segment) before a gap forces a jump into the next one. A 4-tile
@@ -53,7 +59,7 @@ def build_level1(theme_id="forest", level_number=1):
     as their own groups (so Game can tell what kind of solid it touched).
     """
     theme = get_theme(theme_id)
-    builder = _LevelBuilder(theme)
+    builder = _LevelBuilder(theme, level_number)
 
     target_blocks = min(32, required_question_count(level_number) + LEVEL_BLOCK_BUFFER)
     segment_index = 0
@@ -67,8 +73,11 @@ def build_level1(theme_id="forest", level_number=1):
 
 
 class _LevelBuilder:
-    def __init__(self, theme):
+    def __init__(self, theme, level_number=1):
         self.theme = theme
+        self.enemy_speed = min(ENEMY_SPEED_MAX, ENEMY_SPEED_BASE + (level_number - 1) * ENEMY_SPEED_STEP)
+        self.enemy_body_color, self.enemy_foot_color = ENEMY_PALETTES.get(theme.id, (None, None))
+        self.flying_palette = FLYING_ENEMY_PALETTES.get(theme.id)
         self.platforms = pygame.sprite.Group()
         self.question_blocks = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
@@ -107,6 +116,21 @@ class _LevelBuilder:
             row * TILE_SIZE,
             patrol_min_x=patrol_start_col * TILE_SIZE,
             patrol_max_x=patrol_end_col * TILE_SIZE,
+            speed=self.enemy_speed,
+            body_color=self.enemy_body_color,
+            foot_color=self.enemy_foot_color,
+        )
+        self.enemies.add(enemy)
+
+    def _add_flying_enemy(self, col, top_row, bottom_row):
+        body_color, wing_color = self.flying_palette or (None, None)
+        enemy = FlyingEnemy(
+            col * TILE_SIZE,
+            top_row * TILE_SIZE,
+            patrol_min_y=top_row * TILE_SIZE,
+            patrol_max_y=bottom_row * TILE_SIZE,
+            body_color=body_color,
+            wing_color=wing_color,
         )
         self.enemies.add(enemy)
 
@@ -159,6 +183,12 @@ class _LevelBuilder:
                 patrol_start_col=seg_start + SEGMENT_WIDTH_TILES - 6, patrol_end_col=seg_start + SEGMENT_WIDTH_TILES - 1,
             )
 
+        # A vertically-patrolling flying hazard guarding the jump across
+        # the gap into the next segment -- a new kind of threat a ground
+        # Enemy never poses, so clearing a gap isn't always a free jump.
+        if segment_index % 3 == 2:
+            self._add_flying_enemy(seg_start + SEGMENT_WIDTH_TILES + 1, top_row=6, bottom_row=13)
+
         self._add_collectible(seg_start + 2, 13, kind="coin")
         self._add_collectible(seg_start + SEGMENT_WIDTH_TILES - 2, 13, kind="coin")
         self._add_collectible(high_col, 7, kind="coin")
@@ -166,6 +196,14 @@ class _LevelBuilder:
             self._add_collectible(support_col + 1, 11, kind="shiitake")
         if segment_index % 6 == 5:
             self._add_collectible(seg_start + 8, 13, kind="onigiri")
+
+        # A risk/reward bonus event every 5th segment: a small coin
+        # cluster floating above the high block, only reachable by
+        # jumping again from on top of it -- a skill-rewarding detour
+        # rather than something free on the main path through.
+        if segment_index % 5 == 4:
+            for i, dy in enumerate((0, 1, 2)):
+                self._add_collectible(high_col + i - 1, 8 - 3 - dy, kind="coin")
 
         self.col = seg_start + SEGMENT_WIDTH_TILES + GAP_WIDTH_TILES
 

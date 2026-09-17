@@ -832,6 +832,278 @@ def draw_fox(screen, x, ground_y, size, color=(214, 128, 62), tip_color=(250, 24
     )
 
 
+def draw_tiki_totem(screen, x, ground_y, size, color=(150, 100, 60), carve_color=(90, 56, 32)):
+    """A stacked tropical tiki totem: two carved faces on a wooden post."""
+    post = pygame.Rect(0, 0, size * 0.42, size)
+    post.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, post, border_radius=4)
+
+    for t in (0.28, 0.72):
+        face_y = post.bottom - size * t
+        pygame.draw.circle(screen, carve_color, (x - size * 0.10, face_y), max(1, size * 0.05))
+        pygame.draw.circle(screen, carve_color, (x + size * 0.10, face_y), max(1, size * 0.05))
+        pygame.draw.arc(screen, carve_color, (x - size * 0.16, face_y, size * 0.32, size * 0.20), 3.5, 6.0, 2)
+    pygame.draw.line(screen, carve_color, (post.left, ground_y - size * 0.5), (post.right, ground_y - size * 0.5), 2)
+
+
+def draw_parrot(screen, x, y, size, color=(60, 190, 90), facing=1):
+    """A bright macaw with a curved beak and a long trailing tail feather."""
+    body = pygame.Rect(0, 0, size * 1.0, size * 0.6)
+    body.center = (x, y)
+    pygame.draw.ellipse(screen, color, body)
+
+    head_x = x + facing * size * 0.42
+    pygame.draw.circle(screen, color, (head_x, y - size * 0.16), max(2, size * 0.24))
+    pygame.draw.polygon(screen, (230, 170, 40), [
+        (head_x + facing * size * 0.18, y - size * 0.14),
+        (head_x + facing * size * 0.42, y - size * 0.04),
+        (head_x + facing * size * 0.18, y),
+    ])
+    tail_color = (230, 90, 70)
+    pygame.draw.polygon(screen, tail_color, [
+        (x - facing * size * 0.42, y),
+        (x - facing * size * 1.05, y - size * 0.16),
+        (x - facing * size * 1.0, y + size * 0.20),
+    ])
+    pygame.draw.line(screen, (255, 220, 90), (x - facing * size * 0.1, y), (x - facing * size * 0.55, y - size * 0.30), 2)
+
+
+def draw_castle(screen, x, ground_y, size, color=(210, 190, 220), roof_color=(150, 70, 140)):
+    """A fairy-tale castle: a wide keep with two flanking round towers,
+    each topped by a pointed cone roof and a tiny pennant.
+    """
+    body = pygame.Rect(0, 0, size * 1.3, size * 0.72)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body)
+
+    for side in (-1, 1):
+        tower = pygame.Rect(0, 0, size * 0.32, size * 0.95)
+        tower.midbottom = (x + side * size * 0.62, ground_y)
+        pygame.draw.rect(screen, color, tower)
+        cone = [(tower.left - 3, tower.top), (tower.right + 3, tower.top), (tower.centerx, tower.top - size * 0.38)]
+        pygame.draw.polygon(screen, roof_color, cone)
+        pygame.draw.line(screen, roof_color, (tower.centerx, cone[2][1]), (tower.centerx, cone[2][1] - size * 0.14), 2)
+
+    keep_cone = [(body.left - 4, body.top), (body.right + 4, body.top), (body.centerx, body.top - size * 0.26)]
+    pygame.draw.polygon(screen, roof_color, keep_cone)
+
+    door = pygame.Rect(0, 0, size * 0.20, size * 0.34)
+    door.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, (90, 60, 44), door)
+    for wx in (-0.4, 0.4):
+        window = pygame.Rect(0, 0, size * 0.08, size * 0.10)
+        window.center = (x + wx * size * 0.62, body.top + size * 0.28)
+        pygame.draw.rect(screen, (255, 236, 150), window)
+
+
+def draw_giant_mushroom(screen, x, ground_y, size, color=(226, 100, 120), spot_color=(255, 250, 240)):
+    """An oversized storybook toadstool with a round little door in the
+    stem -- the "someone lives here" touch that sells the fairy tale.
+    """
+    stem = pygame.Rect(0, 0, size * 0.46, size * 0.6)
+    stem.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, spot_color, stem, border_radius=8)
+
+    door = pygame.Rect(0, 0, size * 0.20, size * 0.26)
+    door.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, (120, 80, 60), door)
+
+    cap = pygame.Rect(0, 0, size * 1.15, size * 0.62)
+    cap.midbottom = (x, stem.top + size * 0.08)
+    pygame.draw.ellipse(screen, color, cap)
+    for dx, dy in ((-0.32, -0.10), (0.30, -0.14), (0, -0.24), (-0.05, 0.05), (0.15, 0.10)):
+        pygame.draw.circle(screen, spot_color, (x + dx * size, cap.centery + dy * size), max(2, size * 0.09))
+
+
+def draw_wishing_well(screen, x, ground_y, size, color=(150, 130, 110), roof_color=(150, 60, 60)):
+    base = pygame.Rect(0, 0, size * 0.7, size * 0.4)
+    base.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, color, base)
+    pygame.draw.rect(screen, color, (base.left, base.top, base.width, base.height / 2))
+
+    for side in (-1, 1):
+        post = pygame.Rect(0, 0, size * 0.08, size * 0.5)
+        post.midbottom = (x + side * size * 0.32, base.top + size * 0.05)
+        pygame.draw.rect(screen, (110, 90, 70), post)
+
+    roof = [(x - size * 0.42, base.top - size * 0.42), (x + size * 0.42, base.top - size * 0.42), (x, base.top - size * 0.68)]
+    pygame.draw.polygon(screen, roof_color, roof)
+    pygame.draw.line(screen, (70, 60, 50), (x, base.top - size * 0.05), (x, base.top - size * 0.36), 1)
+
+
+def draw_fairy(screen, x, y, size, color=(255, 220, 130), facing=1):
+    """A small glowing sprite: a round body, a soft halo of light, and
+    two translucent wings -- reads as magical rather than as an insect.
+    """
+    glow_radius = size * 0.9
+    glow = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+    pygame.draw.circle(glow, (*color, 70), (glow_radius, glow_radius), glow_radius)
+    screen.blit(glow, (x - glow_radius, y - glow_radius))
+
+    for side in (-1, 1):
+        wing = pygame.Rect(0, 0, size * 0.5, size * 0.7)
+        wing.center = (x + side * size * 0.32, y)
+        pygame.draw.ellipse(screen, (255, 255, 255), wing, width=1)
+    pygame.draw.circle(screen, color, (x, y), max(2, size * 0.22))
+
+
+def draw_big_ben(screen, x, ground_y, size, color=(180, 156, 96), face_color=(250, 246, 220)):
+    """The Elizabeth Tower: a tall tan clock tower with a pointed spire
+    and a lit clock face -- London's single most recognizable landmark.
+    """
+    tower = pygame.Rect(0, 0, size * 0.34, size)
+    tower.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, tower)
+
+    clock_y = tower.top + size * 0.18
+    pygame.draw.circle(screen, face_color, (x, clock_y), max(3, size * 0.13))
+    pygame.draw.circle(screen, (40, 34, 26), (x, clock_y), max(3, size * 0.13), width=2)
+    pygame.draw.line(screen, (40, 34, 26), (x, clock_y), (x, clock_y - size * 0.08), 1)
+    pygame.draw.line(screen, (40, 34, 26), (x, clock_y), (x + size * 0.06, clock_y), 1)
+
+    spire = [(tower.left - 2, tower.top), (tower.right + 2, tower.top), (x, tower.top - size * 0.3)]
+    pygame.draw.polygon(screen, (110, 96, 64), spire)
+    pygame.draw.line(screen, (110, 96, 64), (x, spire[2][1]), (x, spire[2][1] - size * 0.08), 2)
+
+
+def draw_phone_booth(screen, x, ground_y, size, color=(196, 40, 40)):
+    """A red British telephone box."""
+    body = pygame.Rect(0, 0, size * 0.5, size)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body, border_radius=2)
+
+    roof = pygame.Rect(0, 0, size * 0.58, size * 0.10)
+    roof.midbottom = (x, body.top + 2)
+    pygame.draw.rect(screen, color, roof)
+
+    pane_color = (220, 235, 235)
+    for row in range(3):
+        for col in (-1, 1):
+            pane = pygame.Rect(0, 0, size * 0.14, size * 0.16)
+            pane.center = (x + col * size * 0.13, body.top + size * 0.18 + row * size * 0.20)
+            pygame.draw.rect(screen, pane_color, pane)
+    pygame.draw.rect(screen, (240, 240, 220), (body.centerx - size * 0.02, body.top + size * 0.55, size * 0.04, size * 0.3))
+
+
+def draw_double_decker_bus(screen, x, ground_y, size, color=(196, 40, 40)):
+    """A red London double-decker, parked at the roadside."""
+    body = pygame.Rect(0, 0, size * 1.4, size * 0.62)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body, border_radius=4)
+    pygame.draw.line(screen, (150, 30, 30), (body.left, body.centery), (body.right, body.centery), 2)
+
+    window_color = (220, 235, 245)
+    for row_y in (body.top + size * 0.08, body.centery + size * 0.08):
+        for i in range(4):
+            window = pygame.Rect(0, 0, size * 0.18, size * 0.14)
+            window.topleft = (body.left + size * 0.12 + i * size * 0.28, row_y)
+            pygame.draw.rect(screen, window_color, window)
+
+    for wheel_dx in (-0.45, 0.45):
+        pygame.draw.circle(screen, (30, 30, 30), (x + wheel_dx * size, body.bottom), max(2, size * 0.11))
+
+
+def draw_statue_of_liberty(screen, x, ground_y, size, color=(110, 170, 150)):
+    """A simplified Lady Liberty: pedestal, robed figure, raised torch arm."""
+    pedestal = pygame.Rect(0, 0, size * 0.4, size * 0.26)
+    pedestal.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, (150, 140, 120), pedestal)
+
+    body = pygame.Rect(0, 0, size * 0.34, size * 0.62)
+    body.midbottom = (x, pedestal.top)
+    pygame.draw.ellipse(screen, color, body)
+
+    head_y = body.top - size * 0.02
+    pygame.draw.circle(screen, color, (x, head_y), max(2, size * 0.10))
+    for i in range(5):
+        angle = -math.pi / 2 - math.pi / 5 + i * math.pi / 10
+        tip = (x + math.cos(angle) * size * 0.16, head_y + math.sin(angle) * size * 0.16 - size * 0.02)
+        pygame.draw.line(screen, color, (x, head_y), tip, 1)
+
+    arm_top = (x + size * 0.22, body.top - size * 0.22)
+    pygame.draw.line(screen, color, (x + size * 0.12, body.top + size * 0.05), arm_top, max(2, round(size * 0.05)))
+    pygame.draw.line(screen, (200, 170, 90), arm_top, (arm_top[0], arm_top[1] - size * 0.14), 2)
+    pygame.draw.circle(screen, (230, 200, 110), (arm_top[0], arm_top[1] - size * 0.17), max(1, size * 0.05))
+
+
+def draw_yellow_cab(screen, x, ground_y, size, color=(240, 200, 40)):
+    """A New York yellow taxi cab, low and boxy."""
+    body = pygame.Rect(0, 0, size * 1.3, size * 0.42)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body, border_radius=6)
+
+    cabin = pygame.Rect(0, 0, size * 0.7, size * 0.28)
+    cabin.midbottom = (x, body.top + 2)
+    pygame.draw.rect(screen, color, cabin, border_radius=4)
+    pygame.draw.rect(screen, (200, 225, 235), cabin.inflate(-size * 0.10, -size * 0.10))
+
+    pygame.draw.rect(screen, (30, 30, 30), (body.centerx - size * 0.10, cabin.top - size * 0.05, size * 0.2, size * 0.05))
+    for wheel_dx in (-0.42, 0.42):
+        pygame.draw.circle(screen, (25, 25, 25), (x + wheel_dx * size, body.bottom), max(2, size * 0.10))
+
+
+def draw_hanok(screen, x, ground_y, size, color=(230, 220, 200), roof_color=(60, 90, 100)):
+    """A traditional Korean hanok house, with the sweeping curved-eave
+    tiled roof that distinguishes it from Japan's machiya/pagoda silhouettes.
+    """
+    body = pygame.Rect(0, 0, size * 1.1, size * 0.5)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body)
+
+    for i in range(1, 5):
+        lx = body.left + body.width * i / 5
+        pygame.draw.line(screen, (150, 110, 70), (lx, body.top), (lx, body.bottom), 1)
+
+    roof_points = [
+        (body.left - size * 0.30, body.top + size * 0.06),
+        (x, body.top - size * 0.30),
+        (body.right + size * 0.30, body.top + size * 0.06),
+        (body.right + size * 0.10, body.top + size * 0.14),
+        (x, body.top - size * 0.14),
+        (body.left - size * 0.10, body.top + size * 0.14),
+    ]
+    pygame.draw.polygon(screen, roof_color, roof_points)
+
+
+def draw_palace_gate(screen, x, ground_y, size, color=(200, 60, 50), roof_color=(50, 100, 90)):
+    """A Korean palace gate (like Gwanghwamun): a stone base pierced by
+    an arch, two vermillion pillars, and a dark tiled crossbeam roof.
+    """
+    base = pygame.Rect(0, 0, size * 1.0, size * 0.30)
+    base.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, (150, 140, 130), base)
+
+    arch = pygame.Rect(0, 0, size * 0.42, size * 0.30)
+    arch.midbottom = (x, ground_y)
+    pygame.draw.ellipse(screen, (60, 50, 46), arch)
+
+    for side in (-1, 1):
+        pillar = pygame.Rect(0, 0, size * 0.10, size * 0.62)
+        pillar.midbottom = (x + side * size * 0.42, base.top)
+        pygame.draw.rect(screen, color, pillar)
+
+    roof = pygame.Rect(0, 0, size * 1.2, size * 0.14)
+    roof.midbottom = (x, base.top - size * 0.62 + size * 0.06)
+    pygame.draw.rect(screen, roof_color, roof)
+    eave = [(roof.left - size * 0.14, roof.bottom), (roof.left, roof.top), (roof.right, roof.top), (roof.right + size * 0.14, roof.bottom)]
+    pygame.draw.polygon(screen, roof_color, eave)
+
+
+def draw_paper_lantern(screen, x, ground_y, size, color=(230, 90, 70)):
+    """A round Korean paper lantern (cheongsachorong-style), hung from a
+    short post -- warm color pop against a hanok village street.
+    """
+    post = pygame.Rect(0, 0, max(2, size * 0.06), size * 0.5)
+    post.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, (90, 70, 55), post)
+
+    body_center = (x, post.top - size * 0.20)
+    pygame.draw.circle(screen, color, body_center, max(3, size * 0.20))
+    pygame.draw.circle(screen, (255, 230, 200), body_center, max(3, size * 0.20), width=1)
+    pygame.draw.line(screen, (90, 70, 55), (x, post.top), body_center, 1)
+    pygame.draw.line(screen, (255, 220, 150), body_center, (x, body_center[1] - size * 0.32), 1)
+
+
 def draw_snow_monkey(screen, x, ground_y, size, color=(176, 158, 148), face_color=(228, 138, 130), facing=1):
     """A Jigokudani macaque, sitting the way they do in the onsen.
 

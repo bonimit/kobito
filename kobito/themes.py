@@ -515,14 +515,235 @@ KYOTO = Theme(
     ],
 )
 
+# --- Second wave of worlds --------------------------------------------
+# A tropical island, a storybook fairy-tale kingdom, and three
+# international cities -- broadening the set beyond Japan while keeping
+# every prop rooted in something the place is actually known for.
+
+ISLAND = Theme(
+    id="island",
+    name="Coconut Island",
+    sky_top=(70, 170, 226),
+    sky_bottom=(180, 236, 232),
+    ground_color=(238, 220, 176),
+    platform_color=(238, 220, 176),
+    cap_color=(252, 240, 206),
+    shade_color=(202, 180, 132),
+    bump_layers=[
+        BumpLayer((90, 190, 200), spacing=(220, 300), radius=(85, 135), parallax=0.09, base_offset=56,
+                  highlight=(120, 210, 214)),
+        BumpLayer((66, 200, 200), spacing=(170, 240), radius=(55, 88), parallax=0.22, base_offset=27,
+                  highlight=(100, 220, 214)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 248, 210)], lambda w: 1, (56, 56), (78, 78), 0.05),
+        FloatyLayer(shapes.draw_sun, [(255, 232, 130)], lambda w: 1, (56, 56), (34, 34), 0.05),
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 300, (25, 100), (20, 32), 0.2),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_palm_tree, [(70, 158, 92), (84, 172, 100)], (50, 74), (100, 170), 35),
+        GroundProp(shapes.draw_tiki_totem, [(150, 100, 60), (140, 92, 54)], (60, 84), (340, 480), 45),
+        GroundProp(shapes.draw_hibiscus, [(240, 90, 100), (250, 150, 96)], (16, 22), (90, 150), 22),
+        GroundProp(shapes.draw_starfish, [(244, 158, 124), (236, 182, 100)], (12, 17), (150, 240), 25),
+        GroundProp(shapes.draw_grass_tuft, [(160, 190, 120)], (10, 14), (46, 80), 15),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_parrot, [(60, 190, 90), (220, 100, 60), (80, 140, 220)], lambda w: 4, (60, 170),
+                       (13, 18), (20, 40), 0.32, bob_amplitude=8, bob_period=1.6),
+        FlyingCreature(shapes.draw_bird, [(250, 250, 250)], lambda w: 4, (40, 130), (10, 14), (30, 55), 0.3),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_crab, [(226, 104, 78), (208, 88, 64)], lambda w: 3, (14, 20), (14, 24), (50, 95)),
+    ],
+)
+
+FAIRY_TALE = Theme(
+    id="fairy_tale",
+    name="Enchanted Kingdom",
+    sky_top=(148, 118, 196),
+    sky_bottom=(252, 210, 232),
+    ground_color=(150, 118, 90),
+    platform_color=(150, 118, 90),
+    cap_color=(140, 200, 120),
+    shade_color=(108, 84, 62),
+    bump_layers=[
+        BumpLayer((190, 160, 210), spacing=(210, 290), radius=(90, 140), parallax=0.09, base_offset=60,
+                  highlight=(212, 186, 226)),
+        BumpLayer((160, 190, 150), spacing=(165, 235), radius=(58, 90), parallax=0.22, base_offset=30,
+                  highlight=(182, 210, 168)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 236, 250)], lambda w: 1, (60, 60), (74, 74), 0.04),
+        FloatyLayer(shapes.draw_star, [(255, 255, 255)], lambda w: w // 130, (20, 150), (2, 4), 0.18),
+        FloatyLayer(shapes.draw_petal, [(255, 210, 236), (240, 220, 255)], lambda w: w // 100, (60, 300), (3, 5), 0.5),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_castle, [(220, 200, 228), (208, 220, 236)], (150, 200), (900, 1300), 90),
+        GroundProp(shapes.draw_giant_mushroom, [(226, 100, 120), (110, 150, 220)], (36, 54), (160, 260), 35),
+        GroundProp(shapes.draw_wishing_well, [(150, 130, 110)], (44, 58), (280, 400), 45),
+        GroundProp(shapes.draw_flower, [(255, 255, 255), (255, 214, 90), (255, 150, 220)], (11, 13), (44, 84), 15),
+        GroundProp(shapes.draw_bush, [(120, 180, 110)], (8, 10), (60, 100), 20),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_fairy, [(255, 220, 130), (200, 230, 255), (255, 180, 220)], lambda w: 5, (60, 220),
+                       (9, 13), (14, 26), 0.45, bob_amplitude=12, bob_period=1.8),
+        FlyingCreature(shapes.draw_butterfly, [(240, 190, 230), (255, 224, 150)], lambda w: 4, (140, 250), (7, 10),
+                       (16, 30), 0.5, bob_amplitude=10, bob_period=1.4),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_fox, [(230, 160, 90), (222, 150, 78)], lambda w: 2, (16, 22), (12, 20), (70, 130)),
+    ],
+)
+
+LONDON = Theme(
+    id="london",
+    name="Foggy London",
+    sky_top=(120, 130, 140),
+    sky_bottom=(206, 212, 214),
+    ground_color=(96, 96, 100),
+    platform_color=(96, 96, 100),
+    cap_color=(130, 130, 134),
+    shade_color=(66, 66, 70),
+    bump_layers=[
+        BumpLayer((150, 154, 158), spacing=(220, 300), radius=(80, 130), parallax=0.08, base_offset=58,
+                  highlight=(172, 176, 178)),
+        BumpLayer((168, 172, 176), spacing=(170, 240), radius=(52, 82), parallax=0.2, base_offset=28,
+                  highlight=(190, 192, 194)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_cloud, [(220, 222, 224)], lambda w: w // 200, (20, 120), (30, 50), 0.22),
+        FloatyLayer(shapes.draw_cloud, [(236, 238, 238)], lambda w: w // 280, (10, 60), (18, 28), 0.14),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_big_ben, [(180, 156, 96)], (140, 190), (1100, 1500), 80),
+        GroundProp(shapes.draw_phone_booth, [(196, 40, 40)], (46, 62), (200, 300), 35),
+        GroundProp(shapes.draw_double_decker_bus, [(196, 40, 40)], (60, 76), (360, 500), 55),
+        GroundProp(shapes.draw_machiya, [(150, 140, 130)], (36, 48), (260, 380), 45),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_bird, [(70, 68, 66), (90, 86, 82)], lambda w: 5, (40, 130), (10, 14), (28, 48), 0.3),
+    ],
+)
+
+NEW_YORK = Theme(
+    id="new_york",
+    name="Empire City",
+    sky_top=(70, 90, 150),
+    sky_bottom=(240, 190, 150),
+    ground_color=(80, 80, 86),
+    platform_color=(80, 80, 86),
+    cap_color=(112, 112, 118),
+    shade_color=(54, 54, 60),
+    bump_layers=[
+        BumpLayer((50, 56, 90), spacing=(220, 300), radius=(80, 130), parallax=0.08, base_offset=60,
+                  highlight=(62, 68, 104)),
+        BumpLayer((64, 68, 100), spacing=(170, 240), radius=(50, 80), parallax=0.18, base_offset=30,
+                  highlight=(78, 82, 116)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 220, 180)], lambda w: 1, (60, 60), (70, 70), 0.05),
+        FloatyLayer(shapes.draw_sun, [(255, 200, 140)], lambda w: 1, (60, 60), (30, 30), 0.05),
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 320, (24, 90), (18, 28), 0.18),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_skyscraper, [(56, 60, 92), (68, 70, 100), (48, 52, 84)], (120, 210), (60, 120), 40),
+        GroundProp(shapes.draw_statue_of_liberty, [(110, 170, 150)], (130, 170), (1500, 2100), 90),
+        GroundProp(shapes.draw_yellow_cab, [(240, 200, 40)], (44, 56), (220, 320), 40),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_plane, [(226, 230, 240)], lambda w: 2, (30, 80), (7, 10), (55, 85), 0.15,
+                       bob_amplitude=2, bob_period=5.0),
+        FlyingCreature(shapes.draw_bird, [(60, 58, 56)], lambda w: 5, (50, 140), (9, 13), (32, 55), 0.32),
+    ],
+)
+
+KOREA = Theme(
+    id="korea",
+    name="Seoul Palace",
+    sky_top=(132, 178, 224),
+    sky_bottom=(252, 224, 232),
+    ground_color=(150, 118, 90),
+    platform_color=(150, 118, 90),
+    cap_color=(140, 190, 110),
+    shade_color=(108, 84, 62),
+    bump_layers=[
+        BumpLayer((172, 176, 192), spacing=(215, 295), radius=(90, 140), parallax=0.09, base_offset=60,
+                  highlight=(196, 200, 212)),
+        BumpLayer((150, 190, 150), spacing=(168, 238), radius=(56, 88), parallax=0.22, base_offset=30,
+                  highlight=(174, 210, 172)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 240, 220)], lambda w: 1, (62, 62), (70, 70), 0.04),
+        FloatyLayer(shapes.draw_sun, [(255, 228, 160)], lambda w: 1, (62, 62), (28, 28), 0.04),
+        FloatyLayer(shapes.draw_petal, [(255, 214, 226), (255, 236, 240)], lambda w: w // 90, (50, 300), (3, 5), 0.5),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_palace_gate, [(200, 60, 50)], (90, 120), (700, 1000), 80),
+        GroundProp(shapes.draw_hanok, [(230, 220, 200), (222, 210, 192)], (54, 74), (260, 380), 45),
+        GroundProp(shapes.draw_paper_lantern, [(230, 90, 70), (220, 150, 60)], (34, 46), (150, 230), 25),
+        GroundProp(shapes.draw_sakura_tree, [(250, 200, 216), (255, 224, 234)], (46, 64), (220, 320), 40),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_crane, [(250, 250, 250)], lambda w: 3, (50, 150), (14, 20), (28, 46), 0.26,
+                       bob_amplitude=5, bob_period=3.0),
+        FlyingCreature(shapes.draw_bird, [(84, 76, 68)], lambda w: 4, (40, 120), (10, 14), (30, 52), 0.32),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_fox, [(210, 150, 92)], lambda w: 2, (16, 22), (12, 20), (70, 130)),
+    ],
+)
+
 THEMES = {
     theme.id: theme
     for theme in (
         FOREST, DESERT, ARABIAN_NIGHT, UNDERWATER, SKY,
         TOKYO, NAGANO, OKINAWA, HOKKAIDO, KYOTO,
+        ISLAND, FAIRY_TALE, LONDON, NEW_YORK, KOREA,
     )
 }
 
 
 def get_theme(theme_id):
     return THEMES[theme_id]
+
+
+# --- Enemy skins --------------------------------------------------------
+# (body_color, foot_color) per world, keeping every enemy's silhouette
+# but recoloring it to fit the setting -- a goblin-green forest imp reads
+# very differently from a coconut-crab-orange island hazard even though
+# both are the same Enemy class. Themes without an entry fall back to
+# Enemy's own default red-brown palette.
+
+ENEMY_PALETTES = {
+    "forest": ((92, 130, 60), (58, 88, 38)),
+    "desert": ((196, 150, 90), (140, 100, 58)),
+    "arabian_night": ((90, 60, 110), (56, 36, 74)),
+    "underwater": ((60, 140, 150), (34, 96, 104)),
+    "sky": ((210, 210, 220), (160, 160, 176)),
+    "tokyo": ((200, 70, 150), (140, 40, 108)),
+    "nagano": ((200, 210, 224), (150, 162, 182)),
+    "okinawa": ((214, 96, 70), (160, 66, 48)),
+    "hokkaido": ((150, 108, 76), (104, 72, 48)),
+    "kyoto": ((160, 96, 60), (112, 64, 38)),
+    "island": ((230, 120, 60), (176, 84, 40)),
+    "fairy_tale": ((150, 90, 190), (100, 56, 136)),
+    "london": ((110, 110, 118), (74, 74, 82)),
+    "new_york": ((120, 108, 100), (80, 70, 64)),
+    "korea": ((200, 66, 60), (150, 42, 40)),
+}
+
+# (body_color, wing_color) for FlyingEnemy, per world -- same idea, kept
+# separate from ENEMY_PALETTES since flying and ground hazards use
+# different color roles.
+FLYING_ENEMY_PALETTES = {
+    "forest": ((60, 46, 74), (86, 68, 104)),
+    "arabian_night": ((40, 35, 50), (55, 48, 65)),
+    "underwater": ((70, 60, 130), (100, 90, 170)),
+    "sky": ((150, 150, 170), (190, 190, 210)),
+    "tokyo": ((60, 50, 90), (110, 70, 150)),
+    "nagano": ((80, 90, 120), (130, 140, 170)),
+    "fairy_tale": ((160, 70, 140), (210, 130, 190)),
+    "london": ((60, 60, 66), (90, 90, 98)),
+    "new_york": ((50, 50, 58), (80, 80, 90)),
+    "korea": ((90, 50, 60), (140, 80, 90)),
+}
