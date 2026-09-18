@@ -1,10 +1,11 @@
+import asyncio
 import re
 
 import pygame
 
 from kobito import furigana
 from kobito import input as game_input
-from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS, IS_WEB, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 from kobito.companion_art import draw_companion
 from kobito.hint_service import HintService
@@ -131,7 +132,14 @@ class QuizScreen:
         self.show_details = False
         self.panel_x = SCREEN_WIDTH
 
-    def run(self):
+        # Screen-space rect for each choice line, refreshed every _draw
+        # call -- lets a tap/click (web build only) select an answer by
+        # hitting the line itself, since the box's position moves around
+        # the anchor block and there's nowhere fixed to put buttons.
+        self._choice_rects = []
+        self._rpg_box_rect = None
+
+    async def run(self):
         phase = PHASE_ANSWERING
         selected = None
         reveal_timer = 0.0
@@ -172,6 +180,16 @@ class QuizScreen:
                     elif phase == PHASE_HINT and event.button in game_input.FACE_BUTTONS:
                         return False
 
+                tap_pos = game_input.touch_tap_pos(event)
+                if tap_pos is not None:
+                    if phase == PHASE_ANSWERING:
+                        tapped_choice = self._choice_at(tap_pos)
+                        if tapped_choice is not None:
+                            selected = tapped_choice
+                            phase = PHASE_REVEAL
+                    elif phase == PHASE_HINT and self._rpg_box_rect and self._rpg_box_rect.collidepoint(tap_pos):
+                        return False
+
             if phase == PHASE_REVEAL:
                 reveal_timer += dt
                 correct = selected == self.question["answer"]
@@ -193,6 +211,7 @@ class QuizScreen:
 
             self._update_detail_panel(dt)
             self._draw(selected, phase, hint_text=hint_text)
+            await asyncio.sleep(0)  # yields to the browser event loop; a no-op on desktop
 
     def _update_detail_panel(self, dt):
         target = SCREEN_WIDTH - DETAIL_PANEL_WIDTH if self.show_details else SCREEN_WIDTH
@@ -258,6 +277,7 @@ class QuizScreen:
             self.screen.blit(surface, (x, y))
             y += surface.get_height() + LINE_GAP
 
+        self._choice_rects = []
         for index, choice_text in enumerate(self.question["choices"]):
             color = TEXT_COLOR
             if selected is not None:
@@ -265,8 +285,12 @@ class QuizScreen:
                     color = CORRECT_COLOR
                 elif index == selected:
                     color = WRONG_COLOR
-            line_height = self._draw_annotated_line(f"{index + 1}. {choice_text}", self.font_choice, x, y, color)
-            y += max(line_height, CHOICE_HEIGHT) + LINE_GAP
+            line_height = max(
+                self._draw_annotated_line(f"{index + 1}. {choice_text}", self.font_choice, x, y, color),
+                CHOICE_HEIGHT,
+            )
+            self._choice_rects.append(pygame.Rect(box.x, y, box.width, line_height))
+            y += line_height + LINE_GAP
 
         for line in footer_lines:
             surface = self.font_hint.render(line, True, HINT_COLOR)
@@ -445,9 +469,15 @@ class QuizScreen:
             parts.append(f"{self.points} XP")
         return "  ·  ".join(parts)
 
+    def _choice_at(self, pos):
+        for index, rect in enumerate(self._choice_rects):
+            if rect.collidepoint(pos):
+                return index
+        return None
+
     def _footer_text(self, phase, selected):
         if phase == PHASE_ANSWERING:
-            return "Press 1-4 to answer"
+            return "Tap a choice to answer" if IS_WEB else "Press 1-4 to answer"
         return None  # once answered, the companion's dialogue box carries the message instead
 
     def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False):
@@ -462,6 +492,7 @@ class QuizScreen:
             SCREEN_WIDTH - 2 * RPG_BOX_MARGIN,
             RPG_BOX_HEIGHT,
         )
+        self._rpg_box_rect = box
         # Plain translucent black, no border -- matches a classic JRPG
         # textbox rather than a bordered UI panel.
         box_surface = pygame.Surface(box.size, pygame.SRCALPHA)
@@ -489,7 +520,8 @@ class QuizScreen:
             line_y += surface.get_height() + LINE_GAP
 
         if show_continue and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
-            marker = self.font_hint.render("Enter ▼", True, RPG_TEXT_COLOR)
+            marker_text = "Tap ▼" if IS_WEB else "Enter ▼"
+            marker = self.font_hint.render(marker_text, True, RPG_TEXT_COLOR)
             self.screen.blit(marker, marker.get_rect(bottomright=(box.right - 12, box.bottom - 8)))
 
     def _position_box(self, width, height, bottom_reserve=0):

@@ -1,3 +1,5 @@
+import asyncio
+
 import pygame
 
 from kobito import input as game_input
@@ -88,6 +90,10 @@ class Game:
         self.jlpt_level = jlpt_level
         self.level_number = level_number
         game_input.get_joysticks()
+        # None on desktop (see kobito.input.IS_WEB) -- a phone has no
+        # keyboard/joystick, so this on-screen d-pad + jump button is
+        # its only way to play.
+        self.touch_controls = game_input.get_gameplay_touch_controls(self.screen)
 
         level = build_level1(theme_id, level_number=level_number)
         self.platforms = level.platforms
@@ -127,15 +133,19 @@ class Game:
         self.game_over_font = get_font(36)
         self.level_complete_font = get_font(32)
 
-    def run(self):
+    async def run(self):
         while self.running:
             # dt = seconds since last frame. Using it to scale movement
             # (instead of moving a fixed number of pixels/frame) keeps
             # speeds consistent even if the frame rate dips.
             dt = self.clock.tick(FPS) / 1000.0
             self._handle_events()
-            self._update(dt)
+            await self._update(dt)
             self._draw()
+            # Yields to the browser's event loop every frame -- required
+            # by Pygbag's Emscripten build (a plain blocking loop would
+            # freeze the tab); a harmless no-op in the desktop build.
+            await asyncio.sleep(0)
 
         # Only tear down pygame when the player is truly done (quit or
         # ran out of lives) -- advancing to the next level reuses the
@@ -165,7 +175,13 @@ class Game:
                 elif event.button in game_input.CANCEL_BUTTONS:
                     self.running = False
 
-    def _update(self, dt):
+            if self.touch_controls:
+                jump_tapped = self.touch_controls.handle_event(event)
+                if jump_tapped and self.level_complete:
+                    self.outcome = OUTCOME_ADVANCE
+                    self.running = False
+
+    async def _update(self, dt):
         if self.game_over or self.level_complete:
             return
 
@@ -178,7 +194,7 @@ class Game:
         target_camera_x = self.player.rect.centerx - SCREEN_WIDTH / 2
         self.camera_x = max(0.0, target_camera_x)
 
-        self._check_question_blocks()
+        await self._check_question_blocks()
         self._check_collectibles()
         self._check_goal()
 
@@ -225,16 +241,16 @@ class Game:
             self.gauge -= GAUGE_MAX
             self.lives += 1
 
-    def _check_question_blocks(self):
+    async def _check_question_blocks(self):
         # player.touched is whatever solids collision resolution found
         # this frame (see Player.update) -- filter down to the one kind
         # we care about here, and only the ones not already answered.
         for solid in self.player.touched:
             if isinstance(solid, QuestionBlock) and not solid.used:
-                self._trigger_question(solid)
+                await self._trigger_question(solid)
                 break  # handle at most one block per frame
 
-    def _trigger_question(self, block):
+    async def _trigger_question(self, block):
         block.mark_used()
         question = self.question_bank.random_question(jlpt=self.jlpt_level)
         companion = self.hint_service.companion
@@ -255,7 +271,7 @@ class Game:
         background = self.screen.copy()
         anchor_rect = block.rect.move(-self.camera_x, 0)
 
-        correct = QuizScreen(
+        correct = await QuizScreen(
             self.screen,
             question,
             background=background,
@@ -332,6 +348,9 @@ class Game:
             self._draw_game_over()
         elif self.level_complete:
             self._draw_level_complete()
+
+        if self.touch_controls:
+            self.touch_controls.draw(self.screen)
 
         pygame.display.flip()
 

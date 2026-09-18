@@ -37,6 +37,62 @@ during play, it's picked up automatically (hot-plug supported):
 
 Button numbers follow the common Xbox-style layout most gamepads report.
 
+On the web build (see below), on-screen touch buttons appear automatically
+instead — a left/right/jump trio during gameplay, and prev/next/OK
+arrows on every menu and quiz screen — since a phone has neither a
+keyboard nor a gamepad. They're built entirely from the same input
+handling as keyboard/joystick (see `kobito/input.py`); nothing about the
+desktop build changes.
+
+## Playing on the web or a phone
+
+The exact same codebase also builds into a static, no-install web
+version via [Pygbag](https://github.com/pygame-web/pygbag) (Pygame
+compiled to WASM), playable in a desktop or mobile browser with the
+on-screen touch controls above. Build it with:
+
+```
+pip install pygbag
+python packaging/build_web.sh
+```
+
+That leaves a static site in `build/web/` — open `build/web/index.html`
+locally to try it, or deploy the folder as-is to any static host. For
+Vercel specifically:
+
+```
+npx vercel deploy build/web --prod
+```
+
+(A `vercel.json` at the repo root also lets Vercel build it directly
+from a git-connected project, running that same `pygbag --build` step.)
+
+Two things behave differently in the web build:
+- **AI hints** (`ANTHROPIC_API_KEY`) don't work in-browser — WASM can't
+  make the same kind of network call the desktop build does, so it
+  always uses Kobito's local fallback hints there. Gameplay is otherwise
+  identical.
+- The first load is slower than a native launch (the browser is
+  downloading a WASM Python runtime), but it's cached after that.
+
+## Standalone desktop builds
+
+For a single executable that runs without installing Python or any
+dependency (share it, or just avoid re-running `pip install` yourself):
+
+```
+pip install pyinstaller
+python packaging/build_desktop.py
+```
+
+This produces `dist/Kobito` (`dist/Kobito.exe` on Windows). PyInstaller
+bundles for whatever OS it runs *on* — it doesn't cross-compile — so
+build a Windows .exe on Windows, a macOS .app on a Mac, and a Linux
+binary on Linux; there's no way to produce all three from one machine.
+See `packaging/build_desktop.py` for why `anthropic` is excluded from
+the bundle (same local-hint fallback as the web build, for a different
+reason — a PyInstaller/`cryptography` build issue on some platforms).
+
 ## Question blocks
 
 Yellow "?" blocks (drawn slightly larger than a tile, Mario-block style)

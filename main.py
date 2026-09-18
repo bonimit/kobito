@@ -1,14 +1,17 @@
+import asyncio
+
 from kobito.companion_select_screen import CompanionSelectScreen
 from kobito.difficulty_select_screen import DifficultySelectScreen
 from kobito.game import Game, OUTCOME_ADVANCE
 from kobito.select_screen import SelectScreen
 from kobito.world_select_screen import WorldSelectScreen
 
-if __name__ == "__main__":
-    character_id = SelectScreen().run()
-    companion_id = CompanionSelectScreen().run()
-    theme_id = WorldSelectScreen().run()
-    jlpt_level = DifficultySelectScreen(companion_id).run()
+
+async def main():
+    character_id = await SelectScreen().run()
+    companion_id = await CompanionSelectScreen().run()
+    theme_id = await WorldSelectScreen().run()
+    jlpt_level = await DifficultySelectScreen(companion_id).run()
 
     # Each Game instance is one level. Reaching the goal castle ends it
     # with OUTCOME_ADVANCE plus a JLPT level for the next one, picked
@@ -17,7 +20,7 @@ if __name__ == "__main__":
     score = 0
     level_number = 1
     while True:
-        outcome, score, jlpt_level = Game(
+        outcome, score, jlpt_level = await Game(
             character_id,
             theme_id,
             companion_id=companion_id,
@@ -28,3 +31,11 @@ if __name__ == "__main__":
         if outcome != OUTCOME_ADVANCE:
             break
         level_number += 1
+
+
+if __name__ == "__main__":
+    # asyncio.run (rather than a plain call) is what lets every screen's
+    # loop yield with `await asyncio.sleep(0)` each frame -- required for
+    # the Pygbag/Emscripten web build, and a harmless indirection here on
+    # desktop, where the two builds otherwise share this exact code path.
+    asyncio.run(main())

@@ -1,7 +1,14 @@
+import sys
+
 # Window / rendering
 SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 540
 FPS = 60
+
+# True only in the Pygbag/Emscripten (browser) build -- used to gate the
+# on-screen touch controls (kobito/input.py) so the desktop build never
+# shows them, since a mouse/keyboard/joystick player has no use for them.
+IS_WEB = sys.platform == "emscripten"
 
 # Tile size in pixels. Everything in the level (platforms, player size)
 # is a multiple of this so levels can be laid out on a grid.

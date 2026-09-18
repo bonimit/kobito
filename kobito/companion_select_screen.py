@@ -1,3 +1,5 @@
+import asyncio
+
 import pygame
 
 from kobito import input as game_input
@@ -61,13 +63,14 @@ class CompanionSelectScreen:
         self.font_hint = get_font(20)
         game_input.get_joysticks()
         self.joy_nav = game_input.MenuNav()
+        self.menu_touch = game_input.get_menu_touch_controls(self.screen)
 
         # A soft blink into "happy" every couple seconds on the
         # selected portrait -- enough to make the gallery feel alive
         # without a full idle animation loop like the mascots have.
         self._blink_timer = 0.0
 
-    def run(self):
+    async def run(self):
         """Blocks until the player confirms a companion, then returns its id."""
         while True:
             dt = self.clock.tick(FPS) / 1000.0
@@ -77,6 +80,7 @@ class CompanionSelectScreen:
 
             self._blink_timer = (self._blink_timer + dt) % IDLE_BLINK_PERIOD
             self._draw()
+            await asyncio.sleep(0)  # yields to the browser event loop; a no-op on desktop
 
     def _handle_events(self):
         for event in pygame.event.get():
@@ -106,6 +110,15 @@ class CompanionSelectScreen:
             elif action == "cancel":
                 pygame.quit()
                 raise SystemExit
+
+            if self.menu_touch:
+                touch_action = self.menu_touch.handle_event(event)
+                if touch_action == "left":
+                    self.index = (self.index - 1) % len(COMPANIONS)
+                elif touch_action == "right":
+                    self.index = (self.index + 1) % len(COMPANIONS)
+                elif touch_action == "confirm":
+                    return COMPANIONS[self.index]["id"]
         return None
 
     def _draw(self):
@@ -123,6 +136,9 @@ class CompanionSelectScreen:
 
         hint = self.font_hint.render("<- / -> to compare    Enter to confirm    Esc to quit", True, HINT_COLOR)
         self.screen.blit(hint, hint.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 32))
+
+        if self.menu_touch:
+            self.menu_touch.draw(self.screen)
 
         pygame.display.flip()
 

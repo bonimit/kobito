@@ -4,3 +4,11 @@ __pycache__/
 venv/
 .DS_Store
 *.egg-info/
+
+# PyInstaller desktop build output (packaging/build_desktop.py)
+/build/
+/dist/
+*.spec
+
+# Pygbag web build output (packaging/build_web.sh)
+/web-build/

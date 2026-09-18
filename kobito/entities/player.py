@@ -61,7 +61,18 @@ class Player(pygame.sprite.Sprite):
         elif joy_axis > 0:
             self.velocity_x = RUN_SPEED
 
-        jump_pressed = keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP] or game_input.jump_held()
+        # On-screen touch buttons (web build only -- see kobito.input.IS_WEB)
+        # layered in the same way: whichever input the player has just works.
+        touch_axis = game_input.touch_move_axis()
+        if touch_axis < 0:
+            self.velocity_x = -RUN_SPEED
+        elif touch_axis > 0:
+            self.velocity_x = RUN_SPEED
+
+        jump_pressed = (
+            keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]
+            or game_input.jump_held() or game_input.touch_jump_held()
+        )
         if jump_pressed and self.on_ground:
             self.velocity_y = -JUMP_SPEED
             self.on_ground = False

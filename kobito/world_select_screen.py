@@ -1,3 +1,5 @@
+import asyncio
+
 import pygame
 
 from kobito import input as game_input
@@ -35,6 +37,7 @@ class WorldSelectScreen:
         self.font_hint = get_font(22)
         game_input.get_joysticks()
         self.joy_nav = game_input.MenuNav()
+        self.menu_touch = game_input.get_menu_touch_controls(self.screen)
 
         # One preview Background per world, built once up front (same
         # reasoning as SelectScreen preloading animations: switching
@@ -45,7 +48,7 @@ class WorldSelectScreen:
             for world_id in WORLD_ORDER
         }
 
-    def run(self):
+    async def run(self):
         """Blocks until the player confirms a world, then returns its id."""
         while True:
             dt = self.clock.tick(FPS) / 1000.0
@@ -55,6 +58,7 @@ class WorldSelectScreen:
 
             self.previews[WORLD_ORDER[self.index]].update(dt)
             self._draw()
+            await asyncio.sleep(0)  # yields to the browser event loop; a no-op on desktop
 
     def _handle_events(self):
         for event in pygame.event.get():
@@ -84,6 +88,15 @@ class WorldSelectScreen:
             elif action == "cancel":
                 pygame.quit()
                 raise SystemExit
+
+            if self.menu_touch:
+                touch_action = self.menu_touch.handle_event(event)
+                if touch_action == "left":
+                    self.index = (self.index - 1) % len(WORLD_ORDER)
+                elif touch_action == "right":
+                    self.index = (self.index + 1) % len(WORLD_ORDER)
+                elif touch_action == "confirm":
+                    return WORLD_ORDER[self.index]
         return None
 
     def _draw(self):
@@ -98,6 +111,9 @@ class WorldSelectScreen:
 
         hint = "<- / -> to choose    Enter to confirm    Esc to quit"
         self._draw_shadowed_text(hint, self.font_hint, centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 55)
+
+        if self.menu_touch:
+            self.menu_touch.draw(self.screen)
 
         pygame.display.flip()
 
