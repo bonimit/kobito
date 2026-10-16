@@ -86,7 +86,16 @@ class Speech:
     lines: list
     expression: str = "happy"
     seconds_left: float = 4.5
+    total: float = 4.5
     token: int = 0
+
+    @property
+    def page(self):
+        """The bubble is small, so a reaction with a vocabulary lesson
+        shows as two pages: the companion's line first, then the lesson."""
+        if len(self.lines) < 2:
+            return 0
+        return 0 if (self.total - self.seconds_left) < 0.42 * self.total else 1
 
 
 class ItemCoach:
@@ -111,7 +120,8 @@ class ItemCoach:
         lines = [text]
         if lesson and item is not None:
             lines.append(self.lesson_line(item))
-        self._say(lines, "happy" if situation != "asleep" else "sympathetic")
+        self._say(lines, "happy" if situation != "asleep" else "sympathetic",
+                  seconds=6.5 if len(lines) > 1 else 4.5)
         if item is not None:
             self._ask_claude(situation, item, power)
 
@@ -148,7 +158,8 @@ class ItemCoach:
 
     def _say(self, lines, expression, seconds=4.5):
         self._token += 1
-        self.speech = Speech(lines=list(lines), expression=expression, seconds_left=seconds, token=self._token)
+        self.speech = Speech(lines=list(lines), expression=expression, seconds_left=seconds, total=seconds,
+                             token=self._token)
 
     # -- Optional Claude layer -------------------------------------------
 

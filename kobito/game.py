@@ -69,7 +69,10 @@ POWER_OK = (96, 214, 120)
 POWER_LOW = (240, 86, 86)
 POWER_EMPTY = (60, 60, 70)
 BOOST_SPEED_SCALE = 1.25
-SPEECH_BOX = pygame.Rect(318, 8, SCREEN_WIDTH - 318 - 14, 0)
+# Docked at the bottom, in the strip below the ground line: nothing is
+# played down there, so the box never covers the player. Its sides stop
+# short of the on-screen touch buttons in the web build.
+SPEECH_BOX = pygame.Rect(196, SCREEN_HEIGHT - 58, SCREEN_WIDTH - 196 - 104, 54)
 
 # Outcomes Game.run() can return, telling main.py what to do next.
 OUTCOME_QUIT = "quit"
@@ -715,36 +718,48 @@ class Game:
 
     def _draw_speech(self):
         """The companion's reaction to what just happened -- a small box
-        at the top, never blocking play, that fades out by itself."""
+        docked at the bottom that never blocks play and fades out by
+        itself. A reaction with a vocabulary lesson shows as two pages."""
         speech = self.coach.speech
         if speech is None:
             return
-        text_x = SPEECH_BOX.x + 64
-        width = SPEECH_BOX.width - 64 - 12
-        rows = []
-        for index, line in enumerate(speech.lines):
-            color = (255, 244, 214) if index == 0 else (180, 215, 255)
-            for wrapped in self._wrap(line, self.speech_font, width):
-                rows.append((wrapped, color))
-        rows = rows[:5]
-        height = max(60, 38 + len(rows) * (self.speech_font.get_height() + 3))
-        box = pygame.Rect(SPEECH_BOX.x, SPEECH_BOX.y, SPEECH_BOX.width, height)
+        box = SPEECH_BOX
+        name = self.speech_font.render(self.coach.companion["name"], True, (255, 210, 110))
+        text_x = box.x + 58
+        right = box.right - 12
 
         fade = min(1.0, speech.seconds_left / 0.6)
         panel = pygame.Surface(box.size, pygame.SRCALPHA)
-        pygame.draw.rect(panel, (15, 12, 24, round(190 * fade)), panel.get_rect(), border_radius=10)
+        pygame.draw.rect(panel, (15, 12, 24, round(205 * fade)), panel.get_rect(), border_radius=10)
         pygame.draw.rect(panel, (255, 214, 150, round(220 * fade)), panel.get_rect(), width=2, border_radius=10)
         self.screen.blit(panel, box.topleft)
-
-        draw_companion(self.screen, self.coach.companion["id"], box.x + 32, box.centery, 44,
+        draw_companion(self.screen, self.coach.companion["id"], box.x + 30, box.centery, 42,
                        expression=speech.expression)
-        name = self.speech_font.render(self.coach.companion["name"], True, (255, 210, 110))
-        self.screen.blit(name, (text_x, box.y + 6))
-        y = box.y + 8 + name.get_height()
-        for text, color in rows:
-            surface = self.speech_font.render(text, True, color)
-            self.screen.blit(surface, (text_x, y))
-            y += surface.get_height() + 3
+
+        page = speech.page
+        color = (255, 244, 214) if page == 0 else (180, 215, 255)
+        # The name sits inline at the start of the first line; the text
+        # wraps around it, to at most two lines.
+        first_width = right - text_x - name.get_width() - 8
+        words, lines, current, width = speech.lines[page].replace("  ", " ").split(" "), [], "", first_width
+        for word in words:
+            trial = f"{current} {word}".strip()
+            if current and self.speech_font.size(trial)[0] > width:
+                lines.append(current)
+                current, width = word, right - text_x
+            else:
+                current = trial
+        lines.append(current)
+
+        y = box.y + 8
+        self.screen.blit(name, (text_x, y))
+        self.screen.blit(self.speech_font.render(lines[0], True, color), (text_x + name.get_width() + 8, y))
+        for extra in lines[1:2]:
+            self.screen.blit(self.speech_font.render(extra, True, color), (text_x, y + 19))
+        if len(speech.lines) > 1:  # page dots
+            for i in range(2):
+                pygame.draw.circle(self.screen, (255, 214, 150) if i == page else (110, 100, 120),
+                                   (box.right - 18 + i * 8 - 4, box.bottom - 9), 2)
 
     def _draw_game_over(self):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)

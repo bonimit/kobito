@@ -286,7 +286,7 @@ Yellow "?" blocks are still the quiz questions.
 
 The companion you chose comments on what you collect — in its own voice
 (Kobito gentle, Ushi motherly, Hana bubbly, Ume-shu elegant, Kinoko
-punny) — in a small box at the top of the screen that never blocks play.
+punny) — in a small box docked at the bottom of the screen (in the strip below the ground, so it never covers the player or blocks play). A reaction with a vocabulary lesson shows as two pages: the companion's line, then the word.
 It warns you when you get sleepy, cheers when you find a favorite, and
 celebrates rare finds. Each pickup also shows the **Japanese word for the
 item with its reading and an example sentence**, e.g.
