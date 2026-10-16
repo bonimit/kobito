@@ -2,14 +2,15 @@
 Start button, or a tap on the HUD's gear or item-box icon.
 
 Two pages:
-  * MENU  -- Resume, Item Box, Furigana ON/OFF, Translation ON/OFF, Quit.
+  * MENU  -- Resume, Save game, Item Box, Furigana ON/OFF, Translation
+             ON/OFF, Save & quit.
   * ITEMS -- the item box: every item picked up this run, with its
              Japanese word, reading and how many were found.
 
 The HUD only shows a small crate icon with a count; this is where the
 player comes to actually look inside it. Furigana / translation live here
 too (instead of a tab on the quiz screen) so all player options are in one
-place.
+place. The two toggles are remembered between sessions (kobito/save_game.py).
 
 Works with keyboard, mouse, touch and gamepad. run() returns "resume" or
 "quit".
@@ -19,7 +20,7 @@ import asyncio
 
 import pygame
 
-from kobito import furigana
+from kobito import furigana, save_game
 from kobito import input as game_input
 from kobito import ui
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
@@ -41,9 +42,10 @@ RIGHT_KEYS = (pygame.K_RIGHT, pygame.K_d)
 START_BUTTONS = (6, 7)   # Back / Start
 STICK_Y_AXIS = 1
 
-MENU_PANEL = pygame.Rect(0, 0, 460, 404)
+MENU_PANEL = pygame.Rect(0, 0, 460, 444)
 MENU_PANEL.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-ROW_HEIGHT = 54
+ROW_HEIGHT = 50
+TOAST_SECONDS = 2.2
 ITEMS_PANEL = pygame.Rect(0, 0, 860, 470)
 ITEMS_PANEL.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 GRID_COLS = 3
@@ -55,7 +57,7 @@ ITEM_GROUP_COLORS = {"konbini": ui.SKY, "favorite": (255, 170, 210), "rare": ui.
 
 
 class SettingsScreen:
-    def __init__(self, screen, background, item_box, start_page=PAGE_MENU):
+    def __init__(self, screen, background, item_box, start_page=PAGE_MENU, on_save=None):
         self.screen = screen
         self.background = background.copy()
         self.dim = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -67,6 +69,10 @@ class SettingsScreen:
         self.selected = 0
         self.scroll = 0         # first visible row on the items page
         self.result = None
+        # on_save() writes the game and returns True on success; without it
+        # (e.g. nothing to save yet) the save rows simply aren't offered.
+        self.on_save = on_save
+        self.toast = None       # (message, color, seconds left)
         self._stick_y = 0       # last stick direction, so a held stick moves once
         self._row_rects = []
         self._back_rect = None
@@ -74,24 +80,36 @@ class SettingsScreen:
     # -- Menu model -----------------------------------------------------------
 
     def _rows(self):
-        return [
-            ("resume", "Resume", None),
+        rows = [("resume", "Resume", None)]
+        if self.on_save:
+            rows.append(("save", "Save game", None))
+        rows += [
             ("items", "Item Box", f"{sum(self.item_box.values())}"),
             ("furigana", "Furigana", furigana.is_enabled()),
             ("translation", "Translation", furigana.is_translation_visible()),
-            ("quit", "Quit game", None),
+            ("quit", "Save & quit" if self.on_save else "Quit game", None),
         ]
+        return rows
 
     def _activate(self, key):
         if key == "resume":
             self.result = RESULT_RESUME
         elif key == "items":
             self.page, self.scroll = PAGE_ITEMS, 0
+        elif key == "save":
+            if self.on_save():
+                self.toast = ("Game saved!", ui.GREEN, TOAST_SECONDS)
+            else:
+                self.toast = ("Couldn't save the game", ui.RED, TOAST_SECONDS)
         elif key == "furigana":
             furigana.toggle()
+            save_game.save_settings()
         elif key == "translation":
             furigana.toggle_translation()
+            save_game.save_settings()
         elif key == "quit":
+            if self.on_save:
+                self.on_save()
             self.result = RESULT_QUIT
 
     def _back(self):
@@ -115,7 +133,10 @@ class SettingsScreen:
     async def run(self):
         game_input.get_joysticks()
         while self.result is None:
-            self.clock.tick(FPS)
+            dt = self.clock.tick(FPS) / 1000.0
+            if self.toast:
+                message, color, left = self.toast
+                self.toast = (message, color, left - dt) if left > dt else None
             for event in pygame.event.get():
                 self._handle(event)
             self._draw()
@@ -229,18 +250,27 @@ class SettingsScreen:
             color = ui.RED if key == "quit" else (ui.CREAM if active else ui.MUTED)
             ui.text(self.screen, label, body, (row.x + 36, row.centery), color=color, anchor="midleft")
 
-            if key == "items":
+            if key == "save":
+                ui.text(self.screen, "keeps your exact spot", ui.label_font(16), (row.right - 14, row.centery),
+                        color=ui.MUTED, anchor="midright", thickness=1)
+            elif key == "items":
                 ui.item_box_icon(self.screen, (row.right - 58, row.centery + 1), 26)
-                ui.count_badge(self.screen, (row.right - 40, row.centery - 10), value)
+                if value != "0":
+                    ui.count_badge(self.screen, (row.right - 40, row.centery - 10), value)
                 ui.text(self.screen, "›", body, (row.right - 14, row.centery), color=ui.MUTED,
                         anchor="midright", thickness=1)
             elif isinstance(value, bool):
                 self._switch(pygame.Rect(row.right - 84, row.centery - 13, 70, 26), value)
             y += ROW_HEIGHT
 
-        hint = "↑↓ choose    Enter select    Esc resume"
-        ui.text(self.screen, hint, ui.label_font(16), (rect.centerx, rect.bottom - 22), color=ui.MUTED,
-                anchor="center", thickness=1)
+        if self.toast:
+            message, color, _ = self.toast
+            ui.text(self.screen, message, ui.label_font(16), (rect.centerx, rect.bottom - 22), color=color,
+                    anchor="center")
+        else:
+            hint = "↑↓ choose    Enter select    Esc resume"
+            ui.text(self.screen, hint, ui.label_font(16), (rect.centerx, rect.bottom - 22), color=ui.MUTED,
+                    anchor="center", thickness=1)
 
     def _switch(self, rect, on):
         """An ON/OFF pill, like a phone settings toggle."""

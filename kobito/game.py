@@ -42,7 +42,7 @@ from kobito.entities.enemy import FlyingEnemy
 from kobito.entities.gift_box import GiftBox
 from kobito.entities.player import Player
 from kobito.entities.question_block import QuestionBlock
-from kobito import ui
+from kobito import save_game, ui
 from kobito.hint_service import HintService
 from kobito.item_art import get_icon
 from kobito.item_coach import ItemCoach
@@ -108,6 +108,8 @@ class Game:
         starting_score=0,
         starting_xp=0,
         item_box=None,
+        badges=None,
+        resume_state=None,
     ):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -132,6 +134,8 @@ class Game:
 
         character = get_character(character_id)
         self.character = character
+        self.theme_id = theme_id
+        self.companion_id = companion_id
         level = build_level1(theme_id, level_number=level_number, favorites=character["favorites"])
         self.platforms = level.platforms
         self.question_blocks = level.question_blocks
@@ -139,6 +143,12 @@ class Game:
         self.enemies = level.enemies
         self.collectibles = level.collectibles
         self.goal = level.goal
+        # The level is built the same way every time (seeded), so a save
+        # can name "the 4th coin" or "the 2nd enemy" by its spawn index.
+        self._spawned = {
+            "blocks": list(self.question_blocks), "gifts": list(self.gift_boxes),
+            "collectibles": list(self.collectibles), "enemies": list(self.enemies),
+        }
         self.background = Background(level.width_px, level.ground_y, level.ground_segments_px, level.theme)
 
         self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
@@ -190,9 +200,12 @@ class Game:
         # dict to each level so the box carries over; it's opened from the
         # settings screen (the HUD just shows a crate icon and a count).
         self.item_box = item_box if item_box is not None else {}
+        self.badges = badges if badges is not None else []   # badge ids earned this run
         self.pending_settings = None   # page to open at the end of this frame
         self._box_rect = None          # HUD icons, clickable / tappable
         self._gear_rect = None
+        if resume_state:
+            self._restore(resume_state)
 
     async def run(self):
         while self.running:
@@ -222,6 +235,8 @@ class Game:
     def _handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                if not (self.game_over or self.level_complete):
+                    self.save_progress()
                 self.running = False
             elif event.type == pygame.KEYDOWN:
                 if self.game_over and event.key in CONTINUE_KEYS + SETTINGS_KEYS:
@@ -263,12 +278,80 @@ class Game:
         run; otherwise play picks up exactly where it stopped."""
         self.pending_settings = None
         self._draw()
-        result = await SettingsScreen(self.screen, self.screen.copy(), self.item_box, start_page=page).run()
+        result = await SettingsScreen(self.screen, self.screen.copy(), self.item_box, start_page=page,
+                                      on_save=self.save_progress).run()
         if result == RESULT_QUIT:
             self.running = False
         # Same reason as after a quiz: the menu's time shouldn't arrive as
         # one huge dt on the next frame.
         self.clock.tick(FPS)
+
+    # -- Saving ----------------------------------------------------------------
+
+    def _run_record(self, level_number=None, jlpt_level=None):
+        return {
+            "character_id": self.character["id"], "companion_id": self.companion_id, "theme_id": self.theme_id,
+            "jlpt_level": jlpt_level or self.jlpt_level, "level_number": level_number or self.level_number,
+            "score": self.score, "xp": self.xp,
+            "item_box": dict(self.item_box), "badges": list(self.badges),
+        }
+
+    def snapshot(self):
+        """Everything needed to drop the player back exactly here: where they
+        stand, their power/lives/quiz counters, and which blocks, boxes,
+        coins and enemies are already gone. (Enemies that are still around
+        restart from their spawn spot.)"""
+        alive = {
+            "collectibles": set(self.collectibles), "enemies": set(self.enemies),
+        }
+        return {
+            "player": [self.player.rect.x, self.player.rect.y],
+            "power": self.power, "lives": self.lives, "next_life_xp": self.next_life_xp,
+            "correct": self.correct_count, "wrong": self.wrong_count, "skipped": self.skipped_count,
+            "stomps": self.stomps, "snacks": self.snacks_eaten, "favorites": self.favorites_found,
+            "gifts": self.gifts_opened, "asked_ids": sorted(self.asked_ids, key=str),
+            "used_blocks": [i for i, b in enumerate(self._spawned["blocks"]) if b.used],
+            "used_gifts": [i for i, b in enumerate(self._spawned["gifts"]) if b.used],
+            "taken": [i for i, c in enumerate(self._spawned["collectibles"]) if c not in alive["collectibles"]],
+            "defeated": [i for i, e in enumerate(self._spawned["enemies"]) if e not in alive["enemies"]],
+        }
+
+    def _restore(self, state):
+        def indices(key, pool):
+            return [pool[i] for i in state.get(key, []) if isinstance(i, int) and 0 <= i < len(pool)]
+
+        try:
+            for block in indices("used_blocks", self._spawned["blocks"]):
+                block.mark_used()
+            for box in indices("used_gifts", self._spawned["gifts"]):
+                box.mark_used()
+            for sprite in indices("taken", self._spawned["collectibles"]) + indices("defeated", self._spawned["enemies"]):
+                sprite.kill()
+            self.player.rect.topleft = tuple(int(v) for v in state["player"])
+            self.power = max(1, min(POWER_MAX, int(state.get("power", POWER_MAX))))
+            self.lives = max(1, min(MAX_LIVES, int(state.get("lives", STARTING_LIVES))))
+            self.next_life_xp = max(self.next_life_xp, int(state.get("next_life_xp", 0)))
+            self.correct_count = int(state.get("correct", 0))
+            self.wrong_count = int(state.get("wrong", 0))
+            self.skipped_count = int(state.get("skipped", 0))
+            self.stomps = int(state.get("stomps", 0))
+            self.snacks_eaten = int(state.get("snacks", 0))
+            self.favorites_found = int(state.get("favorites", 0))
+            self.gifts_opened = int(state.get("gifts", 0))
+            self.asked_ids = set(state.get("asked_ids", []))
+        except (KeyError, TypeError, ValueError):
+            return  # a damaged spot just means starting the level fresh
+        self.drowsy_warned = self.drowsy
+        self.camera_x = max(0.0, self.player.rect.centerx - SCREEN_WIDTH / 2)
+        # A moment of safety, in case an enemy is standing on the spot.
+        self.invulnerable_timer = WAKE_INVULNERABILITY_SECONDS
+
+    def save_progress(self):
+        """Saves the run with the player's exact spot in this level. Returns
+        True if it was written."""
+        if self.game_over or self.level_complete:
+            return False
+        return save_game.save_run(self._run_record(), level=self.snapshot())
 
     async def _update(self, dt):
         if self.game_over or self.level_complete:
@@ -330,6 +413,11 @@ class Game:
             self.jlpt_level, self.correct_count, self.wrong_count
         )
         self.badge_earned = self._badge_earned()
+        if self.badge_earned and self.badge.id not in self.badges:
+            self.badges.append(self.badge.id)
+        # Autosave: a checkpoint at the start of the next level, so closing
+        # the game on the "stage clear" card loses nothing.
+        save_game.save_run(self._run_record(level_number=self.level_number + 1, jlpt_level=self.next_jlpt_level))
 
     def _badge_earned(self):
         """The level's badge needs a decent sample answered *and* most of

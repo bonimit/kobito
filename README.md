@@ -26,7 +26,7 @@ category-based canned hint instead of an AI-generated one.
 - **1-4** — answer a question block's quiz
 - **S** — skip (pass on) the question instead of answering it
 - **Enter/Space** — dismiss Kobito's hint after a wrong answer, or continue after completing a level
-- **Esc / P** — pause and open **Settings** (item box, furigana, translation, quit)
+- **Esc / P** — pause and open **Settings** (save, item box, furigana, translation, save & quit)
 
 A gamepad works everywhere alongside the keyboard — plug one in before or
 during play, it's picked up automatically (hot-plug supported):
@@ -137,6 +137,29 @@ fires once. Add more questions by appending objects to that JSON file — each n
 radical, a particle's role, a stem change) without giving the answer
 away. Both feed Kobito's hint below.
 
+### Saving
+
+Your run is saved automatically, and you can save any time yourself:
+
+- **Stage clear** — autosaves a checkpoint at the start of the next level.
+- **Settings → Save game** — saves your *exact spot*: where you're standing,
+  power, lives, quiz progress, and which question boxes, gift boxes, coins
+  and enemies are already gone.
+- **Settings → Save & quit**, or just closing the window mid-level — the same.
+- Your **item box**, **badges**, score and XP are part of the save, and the
+  furigana / translation toggles are remembered between sessions.
+
+When a save exists the game opens on a title screen showing it (mascot,
+companion, level, world, score, badges, items) with **Continue** or **New
+Game** — New Game asks once more before replacing the save. Running out of
+lives leaves the save as it was, so Continue picks up from your last save.
+
+Where it's stored (`kobito/save_game.py`): `%APPDATA%\Kobito\save.json` on
+Windows, `~/Library/Application Support/Kobito/save.json` on macOS,
+`~/.local/share/kobito/save.json` on Linux (override with `KOBITO_SAVE_PATH`),
+and the browser's localStorage in the web build. Delete the file to start
+completely fresh; a damaged or outdated save is simply ignored.
+
 ### HUD, settings and the item box
 
 The HUD is two cards in the top corners, each read top-down as label →
@@ -151,8 +174,8 @@ The item box keeps every item you've picked up this run, across levels.
 The HUD only shows the crate; click/tap it (or open Settings → Item Box) to
 see each item with its Japanese word, reading and how many you've found.
 
-Settings (`kobito/settings_screen.py`) pauses the level: Resume, Item Box,
-Furigana ON/OFF, Translation ON/OFF, Quit game. It works with arrow keys +
+Settings (`kobito/settings_screen.py`) pauses the level: Resume, Save game,
+Item Box, Furigana ON/OFF, Translation ON/OFF, Save & quit. It works with arrow keys +
 Enter, the mouse, touch and a gamepad (d-pad, A, B).
 
 The companion's box stays docked along the bottom, in larger rounded type
