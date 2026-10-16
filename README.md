@@ -53,7 +53,7 @@ on-screen touch controls above. Build it with:
 
 ```
 pip install pygbag
-python packaging/build_web.sh
+./packaging/build_web.sh   # (on Windows: python -m pygbag --build .)
 ```
 
 That leaves a static site in `build/web/` — open `build/web/index.html`
@@ -102,9 +102,15 @@ still visible, with a tooltip-style tail that touches the block itself
 (no floating gap) so the box clearly reads as popping up *from* it —
 with a multiple-choice Japanese question (vocabulary,
 kanji, grammar, or verb conjugation) drawn from
-`assets/data/questions.json` (**150 questions** — 30 per JLPT level,
+`assets/data/questions.json` (**190 questions** — 38 per JLPT level,
 spread evenly across the four categories), filtered to the level's
 current JLPT level (see Difficulty below).
+
+Question blocks are kept well apart — **at least 8 tiles between any two**
+(`MIN_QUESTION_SPACING_TILES` in `kobito/levels/level1.py`) — and levels
+are long (about 220 tiles), so there are real stretches of running,
+jumping, stomping and snack-hunting between quizzes, not a quiz every few
+steps.
 
 A question's worth scales with its level, shown up front in the quiz box
 as e.g. `N3 · GRAMMAR · 20 XP`:
@@ -216,23 +222,76 @@ name, tagline, personality, placeholder color, and an ability —
 `always_show_explanation`) and dropping its five expression frames into
 `assets/sprites/<id>/` — nothing else changes.
 
-## Enemies, collectibles, and scenery
+## Power, enemies and stomping
 
-Simple patrol enemies (Goomba-style: walk back and forth, fall under
-gravity, turn at their patrol bounds) roam the level; touching one costs
-a life, with a brief blinking invulnerability window and knockback
-afterward.
+Every mascot has a **power gauge, 10 pips** (shown under the score). Each
+enemy hit costs **1 power**, so ten hits drain a full gauge — hits no
+longer cost a life directly.
 
-Collectibles — coins, shiitake mushrooms, and onigiri — are picked up on
-touch (`kobito/entities/collectible.py`). Coins and onigiri add to your
-score *and* fill an XP gauge (0-100, shown under the score); a shiitake
-instead grants an extra life outright. Correct quiz answers fill it too.
-Reaching/exceeding a full gauge grants a bonus life (classic "100 coins
-= 1UP", just gauge-shaped), carrying over any remainder. An enemy hit
-costs a life and knocks the gauge back by 5; a wrong quiz answer costs
-XP only (scaled by JLPT level — see the table above). Add more collectibles
-by calling `add_collectible(col, row, kind=...)` in
-`kobito/levels/level1.py`.
+- **3/10 or less: drowsy.** The pips flash red, the screen darkens at the
+  edges, Z's float over the mascot, and it runs and jumps slower. The AI
+  companion warns you once. Find something to perk you up!
+- **0/10: you fall asleep.** That costs a **life** and you wake up with
+  5/10 power and a couple of seconds of invulnerability. Out of lives is
+  game over ("You fell asleep...").
+
+**Jump on an enemy's head to defeat it** — you bounce up, score +10, and
+ground enemies sometimes drop a snack. You must be falling onto it;
+walking or jumping up into one still hurts (and a hit is followed by a
+short blink of invulnerability, during which you can still stomp back).
+Constants live in `kobito/constants.py` (`POWER_*`, `STOMP_*`).
+
+Simple patrol enemies (walk back and forth, turn at their patrol bounds)
+roam the ground and stepping stones; bats patrol up and down over the
+gaps.
+
+## Items: konbini snacks, favorites and rare finds
+
+All items are data in `kobito/items.py` (icons are drawn in code in
+`kobito/item_art.py`). They're picked up on touch, add to your score and
+XP gauge, and show up in three families:
+
+- **Konbini snacks — refill power.** Things you'd grab at a Japanese
+  convenience store: Genki Can (energy drink, +4), Mega Can (+5), Kan
+  Coffee (+3), Ume Soda (+3, a nod to the Ume-shu companion), Onigiri (+2),
+  Melon Pan (+2), Ocha (+2), Candy (+1). The energy drinks are generic,
+  not real brands.
+- **Favorites — each mascot's own favourite things**, two per character
+  (Capybara: yuzu, watermelon · Sloth: leaf, hibiscus · Kitsune: inari
+  sushi, aburaage · Wombat: sweet potato, grass · Otter: clam, fish ·
+  Scottish Fold: tuna, milk · Frenchie: bone, sausage). Scattered through
+  every level (the HUD shows yours); each is worth +25 and +1 power.
+- **Rare finds — mostly from gift boxes.** Golden Can (full power plus an
+  8-second speed boost) and Lucky Bag / fukubukuro (full power and an extra
+  life).
+
+Plus coins and shiitake (an extra life), as before. Every item also has its
+Japanese word, reading, meaning and an example sentence — the companion
+teaches it when you collect it.
+
+## Gift boxes
+
+Not every box is a question. **Red boxes with a gold ribbon** are gifts:
+bump one and it pops open with a random prize — coins, a snack, a big
+drink, one of your favorites, an extra life, or (about 1 in 12) a rare
+item. They never pause the game. When you're drowsy the odds improve
+(more drinks and snacks, fewer coins), so a gift box can be a lifeline.
+Yellow "?" blocks are still the quiz questions.
+
+## AI companion reactions
+
+The companion you chose comments on what you collect — in its own voice
+(Kobito gentle, Ushi motherly, Hana bubbly, Ume-shu elegant, Kinoko
+punny) — in a small box at the top of the screen that never blocks play.
+It warns you when you get sleepy, cheers when you find a favorite, and
+celebrates rare finds. Each pickup also shows the **Japanese word for the
+item with its reading and an example sentence**, e.g.
+`おにぎり (onigiri) = rice ball. おにぎりを食べます。(I eat an onigiri.)`
+
+The line you see first is instant and works offline
+(`kobito/item_coach.py`). If an Anthropic key is set, a Claude-written
+reaction is requested on a background thread and replaces it if it arrives
+while the box is still showing — gameplay never waits on the network.
 
 ## Worlds
 

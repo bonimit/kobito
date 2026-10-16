@@ -36,6 +36,11 @@ class Player(pygame.sprite.Sprite):
         self.velocity_y = 0.0
         self.on_ground = False
 
+        # Game sets these every frame: below 1.0 when the player is
+        # drowsy (low power), above 1.0 during a golden-can speed boost.
+        self.run_scale = 1.0
+        self.jump_scale = 1.0
+
         # Every solid the player overlapped *during* collision
         # resolution this frame (before rects get snapped apart so they
         # no longer overlap). Game reads this after update() to detect
@@ -49,32 +54,32 @@ class Player(pygame.sprite.Sprite):
 
         self.velocity_x = 0.0
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.velocity_x = -RUN_SPEED
+            self.velocity_x = -RUN_SPEED * self.run_scale
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.velocity_x = RUN_SPEED
+            self.velocity_x = RUN_SPEED * self.run_scale
 
         # Gamepad d-pad/left stick, on top of (not instead of) keyboard --
         # whichever the player is actually using just works.
         joy_axis = game_input.move_axis()
         if joy_axis < 0:
-            self.velocity_x = -RUN_SPEED
+            self.velocity_x = -RUN_SPEED * self.run_scale
         elif joy_axis > 0:
-            self.velocity_x = RUN_SPEED
+            self.velocity_x = RUN_SPEED * self.run_scale
 
         # On-screen touch buttons (web build only -- see kobito.input.IS_WEB)
         # layered in the same way: whichever input the player has just works.
         touch_axis = game_input.touch_move_axis()
         if touch_axis < 0:
-            self.velocity_x = -RUN_SPEED
+            self.velocity_x = -RUN_SPEED * self.run_scale
         elif touch_axis > 0:
-            self.velocity_x = RUN_SPEED
+            self.velocity_x = RUN_SPEED * self.run_scale
 
         jump_pressed = (
             keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]
             or game_input.jump_held() or game_input.touch_jump_held()
         )
         if jump_pressed and self.on_ground:
-            self.velocity_y = -JUMP_SPEED
+            self.velocity_y = -JUMP_SPEED * self.jump_scale
             self.on_ground = False
 
     def apply_gravity(self, dt):

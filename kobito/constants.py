@@ -82,3 +82,27 @@ GAUGE_DAMAGE = 5
 INVULNERABILITY_SECONDS = 1.2
 KNOCKBACK_SPEED_X = 220.0
 KNOCKBACK_SPEED_Y = -300.0
+
+# Power gauge: the player's stamina, separate from lives. Each enemy hit
+# costs 1 power (so ten hits drain a full gauge). At POWER_DROWSY or below
+# the player is about to doze off -- slower and sluggish -- until they
+# find something from the konbini to perk them up. Hitting 0 means
+# falling asleep: that costs a life, and they wake with POWER_WAKE.
+POWER_MAX = 10
+POWER_DROWSY = 3
+POWER_WAKE = 5
+DROWSY_RUN_SCALE = 0.72
+DROWSY_JUMP_SCALE = 0.9
+WAKE_INVULNERABILITY_SECONDS = 2.0
+MAX_LIVES = 9
+
+# Jumping on an enemy's head defeats it and bounces the player up.
+STOMP_BOUNCE_SPEED = 470.0
+STOMP_SCORE = 10
+STOMP_GAUGE = 5
+STOMP_DROP_CHANCE = 0.22  # a defeated ground enemy sometimes drops a snack
+
+# Favourite items (see characters.py): a character's own favourite food
+# or toy is worth more than a plain snack.
+FAVORITE_SCORE = 25
+FAVORITE_POWER = 1
