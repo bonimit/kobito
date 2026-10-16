@@ -22,6 +22,7 @@ FACE_BUTTONS = (0, 1, 2, 3)
 CONFIRM_BUTTONS = (0,)  # A
 CANCEL_BUTTONS = (1,)  # B
 JUMP_BUTTONS = (0,)  # A
+SKIP_BUTTONS = (4, 5, 7)  # shoulder buttons / Start: skip a quiz question (face buttons are the answers)
 
 _joysticks = None
 

@@ -53,6 +53,8 @@ RESULT_DISPLAY_SECONDS = 1.0
 REVEAL_BEFORE_HINT_SECONDS = 0.8  # let the wrong-answer highlight register before the companion shows up
 ANSWER_KEYS = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3}
 CONTINUE_KEYS = (pygame.K_RETURN, pygame.K_SPACE)
+SKIP_KEYS = (pygame.K_s,)
+SKIP_BUTTON_SIZE = (92, 22)
 
 PHASE_ANSWERING = "answering"
 PHASE_REVEAL = "reveal"
@@ -87,6 +89,10 @@ class QuizScreen:
     out -- for whenever the question itself or the companion's hint
     wasn't enough on its own. It never appears before an answer is
     picked, so it can't spoil the question.
+
+    While answering, the player can also pass: S, a gamepad shoulder button
+    or Start, or the on-screen Skip button ends the quiz with no answer --
+    run() then returns None (True/False are right/wrong).
 
     Self-contained loop, same shape as SelectScreen and Game. The rest
     of the level stays fully visible behind the (translucent) box, and
@@ -138,6 +144,7 @@ class QuizScreen:
         # the anchor block and there's nowhere fixed to put buttons.
         self._choice_rects = []
         self._rpg_box_rect = None
+        self._skip_rect = None  # the on-screen Skip button, set each _draw while answering
 
     async def run(self):
         phase = PHASE_ANSWERING
@@ -158,6 +165,8 @@ class QuizScreen:
                     if phase == PHASE_ANSWERING and event.key in ANSWER_KEYS:
                         selected = ANSWER_KEYS[event.key]
                         phase = PHASE_REVEAL
+                    elif phase == PHASE_ANSWERING and event.key in SKIP_KEYS:
+                        return None  # passed: the question goes unanswered
                     elif phase == PHASE_HINT and event.key in CONTINUE_KEYS:
                         return False
                     elif event.key == DETAIL_KEY and selected is not None:
@@ -174,6 +183,8 @@ class QuizScreen:
                     # Face buttons (A/B/X/Y) double as answer choices
                     # 1-4 while answering, and as "continue" (any of
                     # them) once the companion's hint is showing.
+                    if phase == PHASE_ANSWERING and event.button in game_input.SKIP_BUTTONS:
+                        return None
                     if phase == PHASE_ANSWERING and event.button in game_input.FACE_BUTTONS:
                         selected = game_input.FACE_BUTTONS.index(event.button)
                         phase = PHASE_REVEAL
@@ -182,6 +193,8 @@ class QuizScreen:
 
                 tap_pos = game_input.touch_tap_pos(event)
                 if tap_pos is not None:
+                    if phase == PHASE_ANSWERING and self._skip_rect and self._skip_rect.collidepoint(tap_pos):
+                        return None
                     if phase == PHASE_ANSWERING:
                         tapped_choice = self._choice_at(tap_pos)
                         if tapped_choice is not None:
@@ -310,6 +323,10 @@ class QuizScreen:
                 self._draw_rpg_dialogue(
                     f"Not quite... let me think.{loss}", expression="sympathetic", show_continue=False
                 )
+
+        self._skip_rect = None
+        if phase == PHASE_ANSWERING:
+            self._draw_skip_button(box)
 
         self._draw_toggle_tab()
         if selected is not None:
@@ -474,6 +491,18 @@ class QuizScreen:
             if rect.collidepoint(pos):
                 return index
         return None
+
+    def _draw_skip_button(self, box):
+        """A small "Skip" button in the box's bottom-right corner. Passing
+        leaves the question unanswered (no XP lost, no hint) -- a level
+        holds 30 quiz boxes but the badge only needs 20 answered."""
+        rect = pygame.Rect((0, 0), SKIP_BUTTON_SIZE)
+        rect.bottomright = (box.right - BOX_PADDING, box.bottom - BOX_PADDING + 2)
+        self._skip_rect = rect
+        pygame.draw.rect(self.screen, (60, 60, 82), rect, border_radius=6)
+        pygame.draw.rect(self.screen, (170, 170, 190), rect, width=1, border_radius=6)
+        label = self.font_hint.render("Skip" if IS_WEB else "Skip (S)", True, (225, 225, 235))
+        self.screen.blit(label, label.get_rect(center=rect.center))
 
     def _footer_text(self, phase, selected):
         if phase == PHASE_ANSWERING:

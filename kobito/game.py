@@ -158,6 +158,7 @@ class Game:
         self.score = starting_score
         self.correct_count = 0
         self.wrong_count = 0
+        self.skipped_count = 0
         self.lives = STARTING_LIVES
         # XP is a running total that carries from level to level; each time
         # it passes another multiple of XP_PER_LIFE the player earns a life.
@@ -436,7 +437,12 @@ class Game:
             penalty=penalty,
         ).run()
 
-        if correct:
+        if correct is None:
+            # Passed: nothing answered, nothing lost -- the badge only needs
+            # 20 of the level's 30 questions answered.
+            self.skipped_count += 1
+            self._add_effect_text("Skipped", (block.rect.centerx, block.rect.top), (210, 210, 225))
+        elif correct:
             # Quiz blocks are the main XP source: a right answer both
             # scores and adds XP, so studying -- not just coin
             # collecting -- is what earns bonus lives.
@@ -675,6 +681,8 @@ class Game:
         min_questions = required_question_count(self.level_number)
         needed_right = round(min_questions * BADGE_PASS_ACCURACY)
         text = f"Quiz {self.correct_count}/{answered}"
+        if self.skipped_count:
+            text += f" (skipped {self.skipped_count})"
         if self._badge_earned():
             text += "    badge ready!"
         elif answered < min_questions:
@@ -806,7 +814,7 @@ class Game:
                             f"    Accuracy: {round(self.level_accuracy * 100)}%", (255, 255, 255)),
             (self.hud_font, f"Next up: {self.next_jlpt_level} - {JLPT_DESCRIPTIONS[self.next_jlpt_level]}",
              (255, 255, 255)),
-            (self.hud_font_small, f"Stomped {self.stomps}   Snacks {self.snacks_eaten}   "
+            (self.hud_font_small, f"Skipped {self.skipped_count}   Stomped {self.stomps}   Snacks {self.snacks_eaten}   "
                                   f"Favorites {self.favorites_found}   Gifts {self.gifts_opened}", (200, 225, 255)),
             (self.hud_font_small, "Press Enter to continue", (215, 215, 220)),
         ]

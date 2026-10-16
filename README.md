@@ -24,6 +24,7 @@ category-based canned hint instead of an AI-generated one.
 - **Left/Right arrows or A/D** — choose mascot/companion/world/difficulty (select screens) / run (in-level)
 - **Space / W / Up** — jump; **Enter/Space** — confirm a selection
 - **1-4** — answer a question block's quiz
+- **S** — skip (pass on) the question instead of answering it
 - **Enter/Space** — dismiss Kobito's hint after a wrong answer, or continue after completing a level
 - **Esc** — quit
 
@@ -34,6 +35,7 @@ during play, it's picked up automatically (hot-plug supported):
 - **A** (button 0) — jump; confirm a selection; continue after Kobito's hint or a level
 - **B** (button 1) — cancel / quit
 - **A/B/X/Y** (buttons 0-3) — answer a question block's quiz (choices 1-4)
+- **LB / RB / Start** — skip the question
 
 Button numbers follow the common Xbox-style layout most gamepads report.
 
@@ -356,7 +358,7 @@ it.
 Every level contains **30 yellow "?" quiz boxes** (`QUESTION_BLOCKS_PER_LEVEL`
 in `kobito/constants.py`) — and never repeats a question within a level,
 since each JLPT level's pool holds more than 30 (`assets/data/questions.json`).
-You don't have to answer them all: the badge needs **at least 20 answered**
+You don't have to answer them all. Every quiz box has a **Skip** button (or press **S**, a gamepad shoulder button/Start, or tap it): the box is used up, but nothing is lost — no XP, no hint, and it doesn't count as answered or wrong. The badge needs **at least 20 answered**
 (`MIN_QUESTIONS_ANSWERED`), so you can skip up to 10 boxes — a tricky one,
 or one in a risky spot. Later levels get harder through faster enemies and
 tougher JLPT questions, not longer levels. Levels run about 400 tiles, with
