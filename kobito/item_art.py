@@ -243,10 +243,49 @@ def _nuts(s):
         pygame.draw.circle(s, (190, 146, 90), (18 + (cy % 3), cy), 1)
 
 
+def _ekiben(s):
+    # a bento box seen from above, its lid slid half off
+    _rr(s, (180, 60, 50), (2, 7, 22, 16), 3)
+    pygame.draw.rect(s, WHITE, (4, 9, 9, 12))
+    for x, y in ((6, 12), (9, 15), (6, 18)):
+        pygame.draw.circle(s, (30, 30, 30), (x, y), 1)        # sesame
+    pygame.draw.circle(s, (220, 50, 70), (9, 11), 2)          # umeboshi
+    pygame.draw.rect(s, (250, 200, 80), (14, 9, 8, 5))         # tamagoyaki
+    pygame.draw.rect(s, (110, 180, 80), (14, 15, 8, 6))        # greens
+    pygame.draw.line(s, INK, (13, 9), (13, 21), 1)
+    _rr(s, (220, 170, 90), (4, 2, 20, 6), 2)                   # lid
+    pygame.draw.line(s, (200, 40, 50), (14, 2), (14, 8), 2)    # string
+
+
+def _pizza_bun(s):
+    pygame.draw.ellipse(s, INK, (2, 6, 22, 18))
+    pygame.draw.ellipse(s, (250, 236, 214), (3, 7, 20, 16))
+    pygame.draw.ellipse(s, (232, 110, 50), (6, 7, 14, 9))      # orange pizza top
+    for x, y in ((9, 10), (15, 9), (13, 13)):
+        pygame.draw.circle(s, (200, 40, 40), (x, y), 2)         # pepperoni
+    pygame.draw.circle(s, (120, 180, 90), (11, 13), 1)
+    for x in (8, 13, 18):                                       # steam
+        pygame.draw.arc(s, (200, 210, 230), (x - 2, 0, 4, 6), 1.6, 4.7, 1)
+
+
+def _gem(s):
+    top, mid, bottom = 5, 11, 23
+    outline = [(7, top), (19, top), (24, mid), (13, bottom), (2, mid)]
+    pygame.draw.polygon(s, (80, 200, 230), outline)
+    pygame.draw.polygon(s, (150, 235, 250), [(7, top), (13, top), (10, mid), (2, mid)])
+    pygame.draw.polygon(s, (40, 150, 200), [(13, bottom), (16, mid), (24, mid)])
+    pygame.draw.line(s, (40, 150, 200), (2, mid), (24, mid), 1)
+    pygame.draw.line(s, (40, 150, 200), (10, mid), (13, bottom), 1)
+    pygame.draw.line(s, (40, 150, 200), (16, mid), (13, top), 1)
+    pygame.draw.polygon(s, INK, outline, width=2)
+    pygame.draw.polygon(s, WHITE, [(22, 1), (23, 3), (25, 4), (23, 5), (22, 7), (21, 5), (19, 4), (21, 3)])
+
+
 DRAWERS = {
     "energy_drink": _energy_drink, "mega_can": _mega_can, "ume_soda": _ume_soda, "candy": _candy,
     "onigiri": _onigiri, "gummy": _gummy, "dried_ume": _dried_ume, "nuts": _nuts, "canned_coffee": _canned_coffee, "melon_pan": _melon_pan, "green_tea": _green_tea,
     "lucky_bag": _lucky_bag, "golden_can": _golden_can,
+    "ekiben": _ekiben, "pizza_bun": _pizza_bun, "gem": _gem,
     "yuzu": _yuzu, "watermelon": _watermelon, "leaf": _leaf, "hibiscus": _hibiscus, "inari": _inari,
     "aburaage": _aburaage, "sweet_potato": _sweet_potato, "grass": _grass, "clam": _clam, "fish": _fish,
     "tuna": _tuna, "milk": _milk, "bone": _bone, "sausage": _sausage,

@@ -34,6 +34,12 @@ GROUND_ROW = 15
 # game, so they can sit nearer.)
 MIN_QUESTION_SPACING_TILES = 8
 
+# Three of the gaps hide a secret: drop into one and you land in a hidden
+# underground stage (kobito/levels/underground.py) instead of losing a life.
+# Which stage is behind which gap rotates from level to level.
+SECRET_GAP_SEGMENTS = (2, 7, 12)
+UNDERGROUND_STYLES = ("subway", "sewer", "mine")
+
 
 @dataclass
 class Level:
@@ -48,6 +54,9 @@ class Level:
     ground_y: int
     theme: object
     ground_segments_px: list = field(default_factory=list)
+    # [{"index", "style", "x0", "x1", "return_x"}] -- gaps (x0..x1, pixels)
+    # that lead underground; return_x is where the player comes back up.
+    secret_pits: list = field(default_factory=list)
 
 
 def build_level1(theme_id="forest", level_number=1, favorites=()):
@@ -86,6 +95,8 @@ def build_level1(theme_id="forest", level_number=1, favorites=()):
 class _LevelBuilder:
     def __init__(self, theme, level_number=1, favorites=()):
         self.theme = theme
+        self.level_number = level_number
+        self.secret_pits = []
         self.favorites = list(favorites)
         # Seeded per level so a level's layout is the same every time it's
         # built (and testable), but differs from level to level.
@@ -219,6 +230,16 @@ class _LevelBuilder:
             for i, dy in enumerate((0, 1, 2)):
                 self._add_collectible(high_col + i - 1, 8 - 3 - dy, kind="coin")
 
+        if segment_index in SECRET_GAP_SEGMENTS:
+            index = len(self.secret_pits)
+            self.secret_pits.append({
+                "index": index,
+                "style": UNDERGROUND_STYLES[(self.level_number - 1 + index) % len(UNDERGROUND_STYLES)],
+                "x0": (s + W) * TILE_SIZE,
+                "x1": (s + W + GAP_WIDTH_TILES) * TILE_SIZE,
+                "return_x": (s + W + GAP_WIDTH_TILES + 2) * TILE_SIZE,
+            })
+
         self.col = s + W + GAP_WIDTH_TILES
 
     def build_final_segment(self):
@@ -254,4 +275,5 @@ class _LevelBuilder:
             ground_y=GROUND_ROW * TILE_SIZE,
             theme=self.theme,
             ground_segments_px=self.ground_segments_px,
+            secret_pits=self.secret_pits,
         )

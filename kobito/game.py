@@ -48,9 +48,12 @@ from kobito.item_art import get_icon
 from kobito.item_coach import ItemCoach
 from kobito.items import BIG_DRINKS, SMALL_SNACKS, get_item, roll_gift
 from kobito.levels.level1 import build_level1
+from kobito.levels.underground import STYLES as UNDERGROUND_STYLES, build_underground, place_lesson
 from kobito.questions import QuestionBank
 from kobito.quiz_screen import QuizScreen
 from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
+from kobito.underground_background import UndergroundBackground
+from kobito.world import World
 
 OVERLAY = (8, 6, 16, 175)
 BLINK_INTERVAL_SECONDS = 0.1
@@ -76,6 +79,10 @@ BOOST_SPEED_SCALE = 1.25
 # short of the on-screen touch buttons in the web build.
 SPEECH_BOX = pygame.Rect(196, SCREEN_HEIGHT - 66, SCREEN_WIDTH - 196 - 104, 62)
 SPEECH_FONT_SIZES = (19, 17, 15)   # largest that fits in two lines wins
+
+FADE_SECONDS = 0.35        # each half of a room change / respawn fade
+BANNER_SECONDS = 3.0       # "SECRET AREA!" title when entering one
+FALL_LIMIT_Y = SCREEN_HEIGHT + 24   # below this, the player has fallen out of the world
 
 # Outcomes Game.run() can return, telling main.py what to do next.
 OUTCOME_QUIT = "quit"
@@ -137,31 +144,22 @@ class Game:
         self.theme_id = theme_id
         self.companion_id = companion_id
         level = build_level1(theme_id, level_number=level_number, favorites=character["favorites"])
-        self.platforms = level.platforms
-        self.question_blocks = level.question_blocks
-        self.gift_boxes = level.gift_boxes
-        self.enemies = level.enemies
-        self.collectibles = level.collectibles
-        self.goal = level.goal
-        # The level is built the same way every time (seeded), so a save
-        # can name "the 4th coin" or "the 2nd enemy" by its spawn index.
-        self._spawned = {
-            "blocks": list(self.question_blocks), "gifts": list(self.gift_boxes),
-            "collectibles": list(self.collectibles), "enemies": list(self.enemies),
-        }
-        self.background = Background(level.width_px, level.ground_y, level.ground_segments_px, level.theme)
+        # The level's surface, plus any hidden underground rooms the player
+        # has dropped into (built on first visit, keyed by pit index). Game's
+        # platforms / enemies / collectibles / ... always mean the room the
+        # player is in right now -- see the properties below.
+        self.surface = World(level, Background(level.width_px, level.ground_y, level.ground_segments_px, level.theme))
+        self.world = self.surface
+        self.underground_worlds = {}
+        self._underground_states = {}   # saved coins/enemies for rooms not yet rebuilt
+        self.secrets_found = set()      # pit indices visited this level
 
         self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
-
-        # A "sprite group" is pygame's container for a batch of sprites.
-        # It gives us group.draw(screen) and group.update(...) instead of
-        # hand-rolled loops, and spritecollide() below checks one sprite
-        # against every sprite in a group in one call. The goal is drawn
-        # like everything else here but deliberately isn't in
-        # `platforms`, so it's visible without being solid.
-        self.all_sprites = pygame.sprite.Group(
-            self.player, *self.platforms, *self.enemies, *self.collectibles, self.goal
-        )
+        # A "sprite group" is pygame's container for a batch of sprites; the
+        # world's group holds everything drawn in that room (the goal is in
+        # it but deliberately not in `platforms`, so it's visible without
+        # being solid). The player joins whichever room it's in.
+        self.all_sprites.add(self.player)
 
         # How far the world has scrolled left, in pixels, so the camera
         # can follow the player through a level wider than the screen.
@@ -187,6 +185,10 @@ class Game:
         self.boost_timer = 0.0
         self.drowsy_warned = False
         self.fell_asleep_flag = False
+        self.fell_in_pit_flag = False
+        self.pits_fallen = 0
+        self.transition = None   # an in-progress fade, see _start_transition
+        self.banner = None       # (title, subtitle, seconds left)
         self.rng = random.Random()
         self.coach = ItemCoach(self.hint_service, character["name"])
         self.effects = []          # floating text / icons / puffs, see _add_effect
@@ -206,6 +208,17 @@ class Game:
         self._gear_rect = None
         if resume_state:
             self._restore(resume_state)
+
+    # The room the player is in right now. Everything that handles
+    # collisions, pickups and drawing goes through these.
+    platforms = property(lambda self: self.world.platforms)
+    question_blocks = property(lambda self: self.world.question_blocks)
+    gift_boxes = property(lambda self: self.world.gift_boxes)
+    enemies = property(lambda self: self.world.enemies)
+    collectibles = property(lambda self: self.world.collectibles)
+    goal = property(lambda self: self.world.goal)
+    background = property(lambda self: self.world.background)
+    all_sprites = property(lambda self: self.world.all_sprites)
 
     async def run(self):
         while self.running:
@@ -299,34 +312,30 @@ class Game:
     def snapshot(self):
         """Everything needed to drop the player back exactly here: where they
         stand, their power/lives/quiz counters, and which blocks, boxes,
-        coins and enemies are already gone. (Enemies that are still around
-        restart from their spawn spot.)"""
-        alive = {
-            "collectibles": set(self.collectibles), "enemies": set(self.enemies),
-        }
-        return {
-            "player": [self.player.rect.x, self.player.rect.y],
+        coins and enemies are already gone -- on the surface and in every
+        hidden room visited. (Enemies still around restart from their spawn
+        spot.) Saved while underground, the spot is just past the pit they
+        dropped into: they continue on the surface and can drop in again."""
+        if self.world.underground:
+            pit = self.world.pit
+            spot = [pit["return_x"] - self.player.rect.width // 2, self.surface.ground_y - self.player.rect.height]
+        else:
+            spot = [self.player.rect.x, self.player.rect.y]
+        state = {
+            "player": spot,
             "power": self.power, "lives": self.lives, "next_life_xp": self.next_life_xp,
             "correct": self.correct_count, "wrong": self.wrong_count, "skipped": self.skipped_count,
             "stomps": self.stomps, "snacks": self.snacks_eaten, "favorites": self.favorites_found,
             "gifts": self.gifts_opened, "asked_ids": sorted(self.asked_ids, key=str),
-            "used_blocks": [i for i, b in enumerate(self._spawned["blocks"]) if b.used],
-            "used_gifts": [i for i, b in enumerate(self._spawned["gifts"]) if b.used],
-            "taken": [i for i, c in enumerate(self._spawned["collectibles"]) if c not in alive["collectibles"]],
-            "defeated": [i for i, e in enumerate(self._spawned["enemies"]) if e not in alive["enemies"]],
+            "pits_fallen": self.pits_fallen, "secrets_found": sorted(self.secrets_found),
+            "underground": {str(i): w.objects_state() for i, w in self.underground_worlds.items()},
         }
+        state.update(self.surface.objects_state())
+        return state
 
     def _restore(self, state):
-        def indices(key, pool):
-            return [pool[i] for i in state.get(key, []) if isinstance(i, int) and 0 <= i < len(pool)]
-
         try:
-            for block in indices("used_blocks", self._spawned["blocks"]):
-                block.mark_used()
-            for box in indices("used_gifts", self._spawned["gifts"]):
-                box.mark_used()
-            for sprite in indices("taken", self._spawned["collectibles"]) + indices("defeated", self._spawned["enemies"]):
-                sprite.kill()
+            self.surface.restore_objects(state)
             self.player.rect.topleft = tuple(int(v) for v in state["player"])
             self.power = max(1, min(POWER_MAX, int(state.get("power", POWER_MAX))))
             self.lives = max(1, min(MAX_LIVES, int(state.get("lives", STARTING_LIVES))))
@@ -339,6 +348,10 @@ class Game:
             self.favorites_found = int(state.get("favorites", 0))
             self.gifts_opened = int(state.get("gifts", 0))
             self.asked_ids = set(state.get("asked_ids", []))
+            self.pits_fallen = int(state.get("pits_fallen", 0))
+            self.secrets_found = {int(i) for i in state.get("secrets_found", [])}
+            rooms = state.get("underground", {})
+            self._underground_states = {int(k): v for k, v in rooms.items() if isinstance(v, dict)}
         except (KeyError, TypeError, ValueError):
             return  # a damaged spot just means starting the level fresh
         self.drowsy_warned = self.drowsy
@@ -356,8 +369,14 @@ class Game:
     async def _update(self, dt):
         if self.game_over or self.level_complete:
             return
+        if self.transition:
+            self._update_transition(dt)
+            return
 
         self.clock_time += dt
+        if self.banner:
+            title, sub, left = self.banner
+            self.banner = (title, sub, left - dt) if left > dt else None
         self._apply_power_effects(dt)
         self.player.update(dt, self.platforms)
         self.enemies.update(dt, self.platforms)
@@ -365,19 +384,118 @@ class Game:
         self.coach.update(dt)
         self._update_effects(dt)
 
-        # Keep the player roughly centered horizontally by shifting the
-        # camera, but never scroll past the left edge of the level.
-        target_camera_x = self.player.rect.centerx - SCREEN_WIDTH / 2
-        self.camera_x = max(0.0, target_camera_x)
+        self._follow_camera()
 
         await self._check_question_blocks()
         self._check_gift_boxes()
         self._check_collectibles()
-        self._check_goal()
+        if self.world.underground:
+            self._check_exit()
+        else:
+            self._check_goal()
+        if self.player.rect.top > FALL_LIMIT_Y:
+            self._fell_out()
+            return
 
         if self.invulnerable_timer > 0:
             self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
         self._check_enemy_contact(dt)
+
+    def _follow_camera(self):
+        # Keep the player roughly centered horizontally by shifting the
+        # camera, but never scroll past either end of the room.
+        target = self.player.rect.centerx - SCREEN_WIDTH / 2
+        self.camera_x = max(0.0, min(target, self.world.width_px - SCREEN_WIDTH))
+
+    # -- Pits, secret rooms and the way back up ---------------------------------
+
+    def _fell_out(self):
+        """The player dropped below the screen. Over a secret pit that's the
+        way into a hidden room; anywhere else it's a fall -- one life."""
+        pit = None if self.world.underground else self.world.secret_pit_at(self.player.rect.centerx)
+        if pit is not None:
+            self._start_transition(lambda: self._enter_underground(pit))
+            return
+        if self.world.underground:      # no holes down there, but never get stuck
+            self._start_transition(lambda: self._place_player(self.world.entry_x, -self.player.rect.height))
+            return
+
+        self.pits_fallen += 1
+        self.lives -= 1
+        if self.lives <= 0:
+            self.fell_in_pit_flag = True
+            self.game_over = True
+            return
+        self._start_transition(self._respawn_after_fall)
+
+    def _respawn_after_fall(self):
+        x = self.world.ledge_before(self.player.rect.centerx)
+        self._place_player(x, self.world.ground_y)
+        self.invulnerable_timer = WAKE_INVULNERABILITY_SECONDS
+        self._add_effect_text("-1 Life", (x, self.world.ground_y - 60), (255, 150, 150))
+        self.coach.fell(self.power)
+
+    def _place_player(self, x, bottom):
+        self.player.rect.midbottom = (round(x), round(bottom))
+        self.player.velocity_x = self.player.velocity_y = 0.0
+        self._follow_camera()
+
+    def _switch_world(self, world):
+        self.all_sprites.remove(self.player)
+        self.world = world
+        self.all_sprites.add(self.player)
+        self.effects = []
+
+    def _underground_world(self, pit):
+        index = pit["index"]
+        if index not in self.underground_worlds:
+            level, entry_x = build_underground(pit["style"], self.level_number, index, self.character["favorites"])
+            background = UndergroundBackground(level.width_px, level.ground_y, pit["style"], entry_x, seed=index)
+            world = World(level, background, kind="underground", style=pit["style"], entry_x=entry_x, pit=pit)
+            if index in self._underground_states:
+                world.restore_objects(self._underground_states.pop(index))
+            self.underground_worlds[index] = world
+        return self.underground_worlds[index]
+
+    def _enter_underground(self, pit):
+        world = self._underground_world(pit)
+        self._switch_world(world)
+        # Drop in through the hole in the ceiling.
+        self._place_player(world.entry_x, 0)
+        spec = UNDERGROUND_STYLES[pit["style"]]
+        self.banner = ("SECRET AREA!", f"{spec['jp']}  ·  {spec['name'].upper()}", BANNER_SECONDS)
+        first_visit = pit["index"] not in self.secrets_found
+        self.secrets_found.add(pit["index"])
+        if first_visit:
+            self.coach.secret(spec["name"], place_lesson(pit["style"]))
+
+    def _check_exit(self):
+        if self.player.rect.colliderect(self.goal.rect.inflate(-60, 0)):
+            self._start_transition(self._leave_underground)
+
+    def _leave_underground(self):
+        pit = self.world.pit
+        self._switch_world(self.surface)
+        self._place_player(pit["return_x"], self.surface.ground_y)
+        self.invulnerable_timer = 1.0
+        self.coach.surface()
+
+    def _start_transition(self, action):
+        """Fades to black, runs `action` (move rooms / respawn) while the
+        screen is dark, then fades back in. Play is paused meanwhile."""
+        if self.transition is None:
+            self.transition = {"t": 0.0, "phase": "out", "action": action}
+
+    def _update_transition(self, dt):
+        tr = self.transition
+        tr["t"] += dt
+        if tr["t"] < FADE_SECONDS:
+            return
+        if tr["phase"] == "out":
+            tr["action"]()
+            tr.update(phase="in", t=0.0)
+        else:
+            self.transition = None
 
     @property
     def drowsy(self):
@@ -464,7 +582,7 @@ class Game:
         if item.group == "favorite":
             situation, color = "favorite", (255, 170, 210)
             self.favorites_found += 1
-        elif item.group == "rare":
+        elif item.group in ("rare", "treasure"):
             situation, color = "rare", (255, 226, 120)
         elif was_sleepy and not self.drowsy:
             situation, color = "rescue", (150, 255, 170)
@@ -690,6 +808,18 @@ class Game:
 
     def _draw(self):
         self.background.draw(self.screen, self.camera_x)
+        if not self.world.underground:
+            self._draw_pit_hints()
+
+        # Treasures pulse with a soft halo, so they stand out from the scenery.
+        for pickup in self.collectibles:
+            if pickup.item is not None and pickup.item.group == "treasure":
+                pulse = 0.6 + 0.4 * math.sin(self.clock_time * 4)
+                center = (pickup.rect.centerx - self.camera_x, pickup.rect.centery)
+                halo = pygame.Surface((64, 64), pygame.SRCALPHA)
+                for r in range(30, 6, -4):
+                    pygame.draw.circle(halo, (255, 236, 150, round(70 * pulse * (1 - r / 32))), (32, 32), r)
+                self.screen.blit(halo, (center[0] - 32, center[1] - 32))
 
         for sprite in self.all_sprites:
             if sprite is self.player and self._player_should_blink_off():
@@ -707,8 +837,16 @@ class Game:
         if self.drowsy and not self.game_over:
             self._draw_drowsy()
         if not (self.game_over or self.level_complete):
+            self._draw_banner()
             self._draw_hud()
             self._draw_speech()
+        if self.transition:
+            tr = self.transition
+            amount = tr["t"] / FADE_SECONDS if tr["phase"] == "out" else 1 - tr["t"] / FADE_SECONDS
+            fade = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            fade.fill((6, 4, 10))
+            fade.set_alpha(round(255 * max(0.0, min(1.0, amount))))
+            self.screen.blit(fade, (0, 0))
         if self.game_over:
             self._draw_game_over()
         elif self.level_complete:
@@ -718,6 +856,54 @@ class Game:
             self.touch_controls.draw(self.screen)
 
         pygame.display.flip()
+
+    def _draw_pit_hints(self):
+        """A secret pit gives itself away, if you look: NYC-manhole steam,
+        a green sewer glow, or gold sparkles from the mine rise out of it."""
+        for pit in self.surface.secret_pits:
+            x0, x1 = pit["x0"] - self.camera_x, pit["x1"] - self.camera_x
+            if x1 < -40 or x0 > SCREEN_WIDTH + 40:
+                continue
+            hint = UNDERGROUND_STYLES[pit["style"]]["hint"]
+            width = x1 - x0
+            # The pit looks deeper than an ordinary one: a dark, tinted shaft
+            # fading in towards the bottom of the screen.
+            ground = self.surface.ground_y
+            depth = SCREEN_HEIGHT - ground
+            shade = {"steam": (40, 40, 50), "glow": (20, 60, 36), "sparkle": (60, 40, 24)}[hint]
+            hole = pygame.Surface((width, depth), pygame.SRCALPHA)
+            for y in range(depth):
+                pygame.draw.line(hole, (*shade, round(230 * (y / depth) ** 0.7)), (0, y), (width, y))
+            self.screen.blit(hole, (x0, ground))
+            layer = pygame.Surface((width + 80, 240), pygame.SRCALPHA)
+            base = layer.get_height()
+            for i in range(7):
+                phase = (self.clock_time * 0.32 + i / 7) % 1.0
+                px = 40 + 12 + (i * 37) % max(1, width - 24) + math.sin(phase * 6 + i) * 7
+                py = base - phase * 190
+                if hint == "steam":
+                    r = round(8 + phase * 18)
+                    pygame.draw.circle(layer, (226, 228, 236, round(190 * (1 - phase))), (px, py), r)
+                elif hint == "glow":
+                    pygame.draw.circle(layer, (90, 230, 120, round(220 * (1 - phase))), (px, py), 5)
+                    pygame.draw.circle(layer, (220, 255, 220, round(200 * (1 - phase))), (px - 1, py - 1), 1)
+                else:
+                    a = round(255 * (1 - phase) * (0.6 + 0.4 * math.sin(self.clock_time * 9 + i)))
+                    for dx, dy in ((6, 0), (0, 6)):
+                        pygame.draw.line(layer, (240, 180, 40, a), (px - dx, py - dy), (px + dx, py + dy), 3)
+            if hint == "glow":
+                pygame.draw.ellipse(layer, (120, 255, 150, 50), (30, base - 40, width + 20, 60))
+            self.screen.blit(layer, (x0 - 40, self.surface.ground_y + 70 - base))
+
+    def _draw_banner(self):
+        if not self.banner:
+            return
+        title, sub, left = self.banner
+        card = pygame.Surface((620, 110), pygame.SRCALPHA)
+        ui.text(card, title, ui.title_font(48), (310, 36), color=ui.GOLD, anchor="center", thickness=3)
+        ui.text(card, sub, ui.label_font(16), (310, 84), anchor="center")
+        card.set_alpha(round(255 * min(1.0, left / 0.6)))
+        self.screen.blit(card, card.get_rect(center=(SCREEN_WIDTH // 2, 200)))
 
     def _player_should_blink_off(self):
         # While invulnerable, skip drawing the player on alternating
@@ -793,6 +979,8 @@ class Game:
     def _draw_level_pill(self):
         label = ui.label_font(16)
         words = f"LEVEL {self.level_number}  ·  {self.jlpt_level}"
+        if self.world.underground:
+            words = f"SECRET  ·  {UNDERGROUND_STYLES[self.world.style]['name'].upper()}"
         pill = pygame.Rect(0, 0, label.size(words)[0] + 32, 28)
         pill.midtop = (SCREEN_WIDTH // 2, 12)
         ui.panel(self.screen, pill, radius=14)
@@ -979,8 +1167,12 @@ class Game:
                 thickness=3)
         ui.text(self.screen, "FINAL SCORE", ui.label_font(16), (cx, card.y + 100), color=ui.GOLD, anchor="center")
         ui.text(self.screen, str(self.score), ui.title_font(32), (cx, card.y + 128), anchor="center")
-        note = ("You fell asleep... grab a konbini snack next time!" if self.fell_asleep_flag
-                else "Good try! Every question makes you stronger.")
+        if self.fell_asleep_flag:
+            note = "You fell asleep... grab a konbini snack next time!"
+        elif self.fell_in_pit_flag:
+            note = "You fell into a pit... some pits hide a secret, though!"
+        else:
+            note = "Good try! Every question makes you stronger."
         ui.text(self.screen, note, ui.body_font(18), (cx, card.y + 172), color=(190, 200, 255), anchor="center",
                 thickness=1)
         self._prompt("PRESS ENTER", card.bottom - 26)
@@ -1023,6 +1215,6 @@ class Game:
         ui.text(self.screen, f"Next up: {JLPT_DESCRIPTIONS[self.next_jlpt_level]}", ui.body_font(16),
                 (cx, 394), color=ui.CREAM, anchor="center", thickness=1)
         extras = (f"STOMPED {self.stomps}     SNACKS {self.snacks_eaten}     FAVORITES {self.favorites_found}"
-                  f"     GIFTS {self.gifts_opened}     SKIPPED {self.skipped_count}")
+                  f"     GIFTS {self.gifts_opened}     SECRETS {len(self.secrets_found)}/{len(self.surface.secret_pits)}")
         ui.text(self.screen, extras, ui.label_font(16), (cx, 422), color=ui.SKY, anchor="center", thickness=1)
         self._prompt("PRESS ENTER TO CONTINUE", 456)

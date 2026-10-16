@@ -29,7 +29,7 @@ class Item:
     meaning: str
     example: str
     example_en: str
-    group: str            # "konbini" | "rare" | "favorite"
+    group: str            # "konbini" | "rare" | "favorite" | "treasure"
     power: int = 0
     score: int = 10
     life: int = 0
@@ -77,6 +77,18 @@ ITEMS = {item.id: item for item in [
          "金の缶を見つけました。", "I found the golden can.", "rare",
          power=10, score=40, full_power=True, boost_seconds=8.0),
 
+    # Treasures: one waits in each hidden underground stage (see
+    # kobito/levels/underground.py) and nowhere else.
+    Item("ekiben", "Ekiben", "駅弁", "ekiben", "station bento (a boxed lunch sold at train stations)",
+         "駅弁を電車で食べます。", "I eat a station bento on the train.", "treasure",
+         power=10, score=80, full_power=True),
+    Item("pizza_bun", "Pizza Bun", "ピザまん", "pizaman", "pizza bun (a steamed bun with pizza filling)",
+         "ピザまんは熱いです。", "The pizza bun is hot.", "treasure",
+         power=6, score=70, boost_seconds=6.0),
+    Item("gem", "Gem", "宝石", "houseki", "gem, jewel",
+         "宝石を見つけました。", "I found a gem.", "treasure",
+         power=2, score=150, life=1),
+
     _favorite("yuzu", "Yuzu", "ゆず", "yuzu", "yuzu citrus",
               "ゆずの匂いが好きです。", "I like the smell of yuzu."),
     _favorite("watermelon", "Watermelon", "すいか", "suika", "watermelon",
@@ -109,6 +121,7 @@ ITEMS = {item.id: item for item in [
 
 KONBINI_IDS = [i.id for i in ITEMS.values() if i.group == "konbini"]
 RARE_IDS = [i.id for i in ITEMS.values() if i.group == "rare"]
+TREASURE_IDS = [i.id for i in ITEMS.values() if i.group == "treasure"]
 BIG_DRINKS = ["energy_drink", "mega_can", "canned_coffee"]
 SMALL_SNACKS = ["candy", "onigiri", "melon_pan", "green_tea", "ume_soda", "gummy", "dried_ume", "nuts"]
 

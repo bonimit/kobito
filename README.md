@@ -322,10 +322,48 @@ XP, and show up in three families:
 - **Rare finds — mostly from gift boxes.** Golden Can (full power plus an
   8-second speed boost) and Lucky Bag / fukubukuro (full power and an extra
   life).
+- **Treasures — only in the hidden underground stages** (see below), one
+  per stage: 駅弁 ekiben in the subway (full power), ピザまん pizza bun in the
+  sewer (power and a speed boost), 宝石 gem in the mine (big score and an
+  extra life). They glow so you can't miss them.
 
 Plus coins and shiitake (an extra life), as before. Every item also has its
 Japanese word, reading, meaning and an example sentence — the companion
 teaches it when you collect it.
+
+## Pits and hidden underground stages
+
+Falling into a gap is no longer endless:
+
+- **An ordinary pit costs a life.** The screen fades and you're back on the
+  ledge just before the gap, with a moment of safety (and a word from your
+  companion). On your last life it's game over.
+- **Three gaps per level are secret.** Look closely: a secret pit is darker
+  than the others, with a clue rising out of it — subway steam, a green
+  sewer glow, or gold sparkles from a mine. Drop in on purpose and you land
+  in a **hidden underground stage** instead of losing a life:
+  - **NYC Subway** (地下鉄 chikatetsu) — white tile walls, a TIMES SQ – 42 ST
+    mosaic band, steel columns, coloured line signs, and a train rattling past.
+    Rats patrol the platform. Treasure: 駅弁 ekiben.
+  - **Sewer Pipes** (下水道 gesuidou) — turtle-hideout style tunnels: wet
+    green brick, arched waterways, big pipes with red valve wheels, light
+    through street grates, dripping water. Little gators. Treasure: ピザまん.
+  - **Old Mine** (鉱山 kouzan) — rough rock with glittering crystals and gold
+    veins, timber frames, flickering lanterns, mine carts. Moles and bats.
+    Treasure: 宝石 gem.
+
+  Each is a bonus room: no quiz boxes, lots of coins, two gift boxes, a
+  snack, a favourite and the treasure. Your companion teaches the place's
+  Japanese word when you arrive. Walk to the **出口 (EXIT)** at the far end —
+  stairs, a manhole ladder or a mine lift — and you come back up just past
+  the gap. Which room is behind which gap changes from level to level, and
+  the stage-clear card shows how many secrets you found (e.g. SECRETS 2/3).
+
+Saving underground keeps everything you picked up down there; you continue
+on the surface just past that pit and can drop back in for the rest.
+Code: `kobito/levels/underground.py` (layout + styles),
+`kobito/underground_background.py` (backdrops), `kobito/entities/exit.py`,
+`kobito/world.py` (switching between the surface and a room).
 
 ## Gift boxes
 

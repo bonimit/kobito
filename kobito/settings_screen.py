@@ -53,7 +53,8 @@ CARD_SIZE = (264, 78)
 CARD_GAP = 10
 GRID_ROWS_VISIBLE = 4
 
-ITEM_GROUP_COLORS = {"konbini": ui.SKY, "favorite": (255, 170, 210), "rare": ui.GOLD}
+ITEM_GROUP_COLORS = {"konbini": ui.SKY, "favorite": (255, 170, 210), "rare": ui.GOLD,
+                     "treasure": (150, 235, 250)}
 
 
 class SettingsScreen:

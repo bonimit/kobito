@@ -21,10 +21,11 @@ import random
 import threading
 from dataclasses import dataclass
 
-SITUATIONS = ("snack", "rescue", "favorite", "rare", "life", "coins", "drowsy", "asleep")
+SITUATIONS = ("snack", "rescue", "favorite", "rare", "life", "coins", "drowsy", "asleep",
+              "fell", "secret", "surface")
 
 # {item} English name, {jp} Japanese word, {pet} the player's mascot,
-# {power} current power out of 10. Short: they sit in a small bubble.
+# {power} current power out of 10, {place} a hidden stage's name. Short: they sit in a small bubble.
 VOICES = {
     "kobito": {
         "snack": ["Nice find, {pet}! {item} keeps you going.", "A little {item} -- gentle on the legs, kind to the heart."],
@@ -35,6 +36,9 @@ VOICES = {
         "coins": ["A little shower of coins -- how cheerful.", "Gifts everywhere today."],
         "drowsy": ["Your eyes are drooping, {pet}... find something with a kick.", "Careful -- only {power} power left. Something from the konbini would help."],
         "asleep": ["Zzz... oh dear. Rest a moment, then try again.", "You dozed off, {pet}. A life lost, but you're up again."],
+        "fell": ["Oh! Mind the gap, {pet}. Let's try that jump again.", "A tumble... a life lost, but you're safe now."],
+        "secret": ["A secret place, {pet}! The {place}... how mysterious.", "Shh -- we've found the hidden {place}."],
+        "surface": ["Fresh air again. What a little adventure!", "Back in the light, {pet}. Well explored."],
     },
     "ushi": {
         "snack": ["There, there -- {item}. Eat up, dear.", "Mmm, {item}. Good for the road, {pet}."],
@@ -45,6 +49,9 @@ VOICES = {
         "coins": ["Coins! Put them away safely, dear.", "A little treat from the box."],
         "drowsy": ["You're so sleepy, dear. Find a snack before you nod off.", "Only {power} power left. Shall we find something warm?"],
         "asleep": ["Oh, you fell asleep. Rest a moment, dear -- here we go again.", "A little nap, and a life gone. Up you get."],
+        "fell": ["Oh dear, careful! Mama's got you -- up you get.", "Watch your step, sweetheart. One life gone."],
+        "secret": ["Goodness, the {place}! Stay close to me, dear.", "A hidden {place}... let's be careful, dear."],
+        "surface": ["There, back upstairs. Good child.", "Out we come. Let's dust you off, dear."],
     },
     "hana": {
         "snack": ["Ooh, {item}! Sparkle-time, {pet}!", "Yay, {item}! Energy bloom!"],
@@ -55,6 +62,9 @@ VOICES = {
         "coins": ["Coins, coins, coins! Shiny!", "Confetti coins!"],
         "drowsy": ["Don't wilt on me, {pet}! Find a drink, quick!", "Only {power} power -- you're droopy! Konbini time!"],
         "asleep": ["Noooo, you wilted! Up, up, up!", "Zzz... shake it off, {pet}, you've got this!"],
+        "fell": ["Eek! Down the hole! Shake it off, {pet}!", "Oopsie-daisy! Petals up -- try again!"],
+        "secret": ["WHOA, a secret {place}! Sparkle hunt time!", "Hidden {place}!! I'm blooming with excitement!"],
+        "surface": ["Sunshine! We're back, {pet}!", "Up and out -- bloom, bloom!"],
     },
     "umeshu": {
         "snack": ["A modest {item}. Quietly satisfying.", "Mm. {item}. A civilised pause, {pet}."],
@@ -65,6 +75,9 @@ VOICES = {
         "coins": ["Pocket change, but pleasant.", "A small, polite shower of coins."],
         "drowsy": ["Your pace slackens, {pet}. Perhaps a refreshment?", "{power} power remains. I would find something stimulating."],
         "asleep": ["Sleep overtook you. It happens to the best of us.", "A life spent on a nap. Gather yourself."],
+        "fell": ["A misstep. The ground was, regrettably, absent.", "Gravity wins this round. Gather yourself, {pet}."],
+        "secret": ["How delightful -- a concealed {place}.", "The {place}. Few ever find it."],
+        "surface": ["Daylight. A most refreshing return.", "Back above ground, with pockets fuller."],
     },
     "kinoko": {
         "snack": ["{item}? That's snack-tastic, {pet}!", "Gobble gobble -- {item}! Fun-gi to eat!"],
@@ -75,6 +88,9 @@ VOICES = {
         "coins": ["Cha-ching, coins! Spore of the moment!", "Coin shower -- what a fun-gi!"],
         "drowsy": ["Don't nod off, {pet}! Need a pick-me-up -- only {power} power!", "You're getting sleepy... find a drink before you hit the hay-stack!"],
         "asleep": ["You fell asleep! Wake up, sleepy-head -- you lost a life!", "Zzz-mushroom! Time to wake up, {pet}!"],
+        "fell": ["Whoops, you fell in the hole-y moley! One life down!", "Pit-iful jump, {pet}! Try again!"],
+        "secret": ["A secret {place}! I'm totally under-ground-ed by this!", "Hidden {place} -- what a fun-gi find!"],
+        "surface": ["Back up top! That was a ground-breaking trip!", "Surface again -- spore-tacular!"],
     },
 }
 
@@ -131,6 +147,17 @@ class ItemCoach:
     def fell_asleep(self, power):
         self._say([self._local_line("asleep", None, power)], "sympathetic", seconds=5.0)
 
+    def fell(self, power):
+        self._say([self._local_line("fell", None, power)], "sympathetic", seconds=4.0)
+
+    def secret(self, place, lesson):
+        """Found a hidden stage: a line in character, then the place's
+        Japanese word as a mini lesson."""
+        self._say([self._local_line("secret", None, 10, place=place), lesson], "happy", seconds=7.0)
+
+    def surface(self):
+        self._say([self._local_line("surface", None, 10)], "happy", seconds=3.5)
+
     def update(self, dt):
         if self.speech is None:
             return
@@ -148,12 +175,12 @@ class ItemCoach:
     def lesson_line(item):
         return f"{item.jp} ({item.reading}) = {item.meaning}.  {item.example}  ({item.example_en})"
 
-    def _local_line(self, situation, item, power):
+    def _local_line(self, situation, item, power, place=""):
         voice = VOICES.get(self.companion["id"], VOICES["kobito"])
         template = self.rng.choice(voice[situation])
         return template.format(
             item=item.name if item else "", jp=item.jp if item else "",
-            pet=self.character_name, power=power,
+            pet=self.character_name, power=power, place=place,
         )
 
     def _say(self, lines, expression, seconds=4.5):
