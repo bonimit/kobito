@@ -26,14 +26,15 @@ category-based canned hint instead of an AI-generated one.
 - **1-4** — answer a question block's quiz
 - **S** — skip (pass on) the question instead of answering it
 - **Enter/Space** — dismiss Kobito's hint after a wrong answer, or continue after completing a level
-- **Esc** — quit
+- **Esc / P** — pause and open **Settings** (item box, furigana, translation, quit)
 
 A gamepad works everywhere alongside the keyboard — plug one in before or
 during play, it's picked up automatically (hot-plug supported):
 
 - **D-pad / left stick** — move / navigate menus
 - **A** (button 0) — jump; confirm a selection; continue after Kobito's hint or a level
-- **B** (button 1) — cancel / quit
+- **B** (button 1) — back (in Settings)
+- **Start / Back** — open Settings
 - **A/B/X/Y** (buttons 0-3) — answer a question block's quiz (choices 1-4)
 - **LB / RB / Start** — skip the question
 
@@ -136,13 +137,41 @@ fires once. Add more questions by appending objects to that JSON file — each n
 radical, a particle's role, a stem change) without giving the answer
 away. Both feed Kobito's hint below.
 
+### HUD, settings and the item box
+
+The HUD is two cards in the top corners, each read top-down as label →
+big number → detail: the left one is you (score, lives, the 10-pip power
+gauge, XP toward the next 1UP), the right one is the lesson (questions
+answered toward the badge, how many right, your accuracy). Temporary states
+(sleepy, boost) pop up as a tag under the left card. Under the quiz card is
+a small tray: your mascot's favourite foods, the **item box** (a crate with
+a count) and a **gear**.
+
+The item box keeps every item you've picked up this run, across levels.
+The HUD only shows the crate; click/tap it (or open Settings → Item Box) to
+see each item with its Japanese word, reading and how many you've found.
+
+Settings (`kobito/settings_screen.py`) pauses the level: Resume, Item Box,
+Furigana ON/OFF, Translation ON/OFF, Quit game. It works with arrow keys +
+Enter, the mouse, touch and a gamepad (d-pad, A, B).
+
+The companion's box stays docked along the bottom, in larger rounded type
+with a name plate; a pickup's vocabulary lesson is its second page.
+
+Fonts (all bundled under `assets/fonts/`, see the licence files there):
+**DotGothic16** for the pixel HUD labels, numbers and titles, **M PLUS
+Rounded 1c** for sentences (the companion, menus), and **IPA Gothic** for
+quiz text, which needs full kanji coverage. The shared panel/text/icon
+helpers live in `kobito/ui.py`.
+
 Japanese text renders with a bundled font (`assets/fonts/ipag.ttf`,
 IPA Font License v1.0) since pygame's default font has no CJK glyphs.
 
 ### Furigana and translation
 
-Two independent toggles, always shown in a small tab at the top-left of
-the quiz screen:
+Two independent toggles, both in **Settings** (Esc / P / Start, or the
+gear icon in the HUD). While a question is open, **F** and **T** still work
+as shortcuts:
 
 - **F** — furigana: small kana readings above kanji (`kobito/furigana.py`),
   on by default. Toggling it off drops back to plain kanji.

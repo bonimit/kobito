@@ -20,6 +20,7 @@ async def main():
     score = 0
     xp = 0
     level_number = 1
+    item_box = {}  # everything picked up this run, shared across levels
     while True:
         outcome, score, jlpt_level, xp = await Game(
             character_id,
@@ -29,6 +30,7 @@ async def main():
             level_number=level_number,
             starting_score=score,
             starting_xp=xp,
+            item_box=item_box,
         ).run()
         if outcome != OUTCOME_ADVANCE:
             break

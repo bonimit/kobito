@@ -17,10 +17,10 @@ from kobito.hint_service import HintService
 TRAILING_TRANSLATION = re.compile(r"^(.*\S)\s*\(([^()]+)\)\s*$")
 DETAIL_TRANSLATION_COLOR = (175, 185, 200)
 
+# Furigana / translation are set in the settings screen (Esc); F and T stay
+# as quick shortcuts while a question is open.
 FURIGANA_KEY = pygame.K_f
 TRANSLATION_KEY = pygame.K_t
-TOGGLE_TAB_COLOR = (215, 225, 240)
-TOGGLE_TAB_BG = (30, 30, 44, 190)
 
 BOX_COLOR = (18, 18, 30, 175)  # translucent, not flat opaque -- lets the scene show through
 BOX_BORDER = (230, 230, 230)
@@ -124,7 +124,6 @@ class QuizScreen:
         self.font_detail_label = get_font(14)
         self.font_detail_body = get_font(15)
         self.font_ruby = get_font(10)
-        self.font_toggle_tab = get_font(13)
 
         # Furigana asks whether the current question's kanji is fair
         # game to annotate at all -- a "kanji" category question is
@@ -328,32 +327,12 @@ class QuizScreen:
         if phase == PHASE_ANSWERING:
             self._draw_skip_button(box)
 
-        self._draw_toggle_tab()
         if selected is not None:
             self._draw_detail_tab()
         if self.panel_x < SCREEN_WIDTH:
             self._draw_detail_panel()
 
         pygame.display.flip()
-
-    def _draw_toggle_tab(self):
-        """Furigana and translation are both off by default and toggled
-        with F/T -- shown here at all times (not just once answered)
-        so the settings are discoverable before the player needs them,
-        not just after.
-        """
-        parts = []
-        if not self.suppress_furigana:
-            parts.append(f"F Furigana {'ON' if furigana.is_enabled() else 'OFF'}")
-        parts.append(f"T Translation {'ON' if furigana.is_translation_visible() else 'OFF'}")
-        text = self.font_toggle_tab.render("   ".join(parts), True, TOGGLE_TAB_COLOR)
-        tab = pygame.Rect(0, 0, text.get_width() + 20, text.get_height() + 10)
-        tab.topleft = (10, 10)
-
-        tab_surface = pygame.Surface(tab.size, pygame.SRCALPHA)
-        tab_surface.fill(TOGGLE_TAB_BG)
-        self.screen.blit(tab_surface, tab.topleft)
-        self.screen.blit(text, text.get_rect(center=tab.center))
 
     def _line_needs_ruby(self, text):
         if self.suppress_furigana or not furigana.is_enabled():

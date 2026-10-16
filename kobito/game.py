@@ -42,7 +42,7 @@ from kobito.entities.enemy import FlyingEnemy
 from kobito.entities.gift_box import GiftBox
 from kobito.entities.player import Player
 from kobito.entities.question_block import QuestionBlock
-from kobito.fonts import get_font
+from kobito import ui
 from kobito.hint_service import HintService
 from kobito.item_art import get_icon
 from kobito.item_coach import ItemCoach
@@ -50,29 +50,32 @@ from kobito.items import BIG_DRINKS, SMALL_SNACKS, get_item, roll_gift
 from kobito.levels.level1 import build_level1
 from kobito.questions import QuestionBank
 from kobito.quiz_screen import QuizScreen
+from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
 
-HUD_TEXT_COLOR = (255, 255, 255)
-HUD_TEXT_OUTLINE = (20, 20, 20)
-GAME_OVER_OVERLAY = (0, 0, 0, 160)
-LEVEL_COMPLETE_OVERLAY = (0, 0, 0, 170)
+OVERLAY = (8, 6, 16, 175)
 BLINK_INTERVAL_SECONDS = 0.1
 CONTINUE_KEYS = (pygame.K_RETURN, pygame.K_SPACE)
+SETTINGS_KEYS = (pygame.K_ESCAPE, pygame.K_p)
+SETTINGS_BUTTONS = (6, 7)  # gamepad Back / Start
 
-GAUGE_BAR_SIZE = (140, 14)
-GAUGE_BAR_POS = (12, 90)
-GAUGE_BAR_BG = (210, 205, 195)
-GAUGE_BAR_FILL = (90, 190, 110)
-GAUGE_BAR_BORDER = (60, 50, 40)
+# HUD layout (see _draw_hud). Two cards in the top corners -- the left one
+# is "you" (score, lives, power, XP), the right one is "the lesson" (quiz
+# progress toward the badge) -- with a small tray of icons under it.
+HUD_LEFT_CARD = pygame.Rect(10, 10, 286, 118)
+HUD_RIGHT_CARD = pygame.Rect(SCREEN_WIDTH - 10 - 262, 10, 262, 104)
+HUD_TRAY_HEIGHT = 40
 
-POWER_PIP = (15, 14)   # width, height of one power pip
+POWER_PIP = (13, 14)   # width, height of one power pip
 POWER_OK = (96, 214, 120)
 POWER_LOW = (240, 86, 86)
-POWER_EMPTY = (60, 60, 70)
+POWER_EMPTY = (60, 56, 76)
+XP_FILL = (150, 205, 255)
 BOOST_SPEED_SCALE = 1.25
-# Docked at the bottom, in the strip below the ground line: nothing is
-# played down there, so the box never covers the player. Its sides stop
+# Docked at the bottom, in the strip below the ground line (y=480): nothing
+# is played down there, so the box never covers the player. Its sides stop
 # short of the on-screen touch buttons in the web build.
-SPEECH_BOX = pygame.Rect(196, SCREEN_HEIGHT - 58, SCREEN_WIDTH - 196 - 104, 54)
+SPEECH_BOX = pygame.Rect(196, SCREEN_HEIGHT - 66, SCREEN_WIDTH - 196 - 104, 62)
+SPEECH_FONT_SIZES = (19, 17, 15)   # largest that fits in two lines wins
 
 # Outcomes Game.run() can return, telling main.py what to do next.
 OUTCOME_QUIT = "quit"
@@ -104,6 +107,7 @@ class Game:
         level_number=1,
         starting_score=0,
         starting_xp=0,
+        item_box=None,
     ):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -182,11 +186,13 @@ class Game:
         self.gifts_opened = 0
         self.clock_time = 0.0
         self._vignette = self._build_vignette()
-        self.hud_font = get_font(22)
-        self.speech_font = get_font(15)
-        self.hud_font_small = get_font(16)
-        self.game_over_font = get_font(36)
-        self.level_complete_font = get_font(32)
+        # Every item picked up this run, id -> count. main.py passes the same
+        # dict to each level so the box carries over; it's opened from the
+        # settings screen (the HUD just shows a crate icon and a count).
+        self.item_box = item_box if item_box is not None else {}
+        self.pending_settings = None   # page to open at the end of this frame
+        self._box_rect = None          # HUD icons, clickable / tappable
+        self._gear_rect = None
 
     async def run(self):
         while self.running:
@@ -195,6 +201,9 @@ class Game:
             # speeds consistent even if the frame rate dips.
             dt = self.clock.tick(FPS) / 1000.0
             self._handle_events()
+            if self.pending_settings:
+                await self._open_settings(self.pending_settings)
+                continue
             await self._update(dt)
             self._draw()
             # Yields to the browser's event loop every frame -- required
@@ -215,8 +224,10 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if self.game_over and event.key in CONTINUE_KEYS + SETTINGS_KEYS:
                     self.running = False
+                elif event.key in SETTINGS_KEYS:
+                    self.pending_settings = PAGE_MENU
                 elif self.level_complete and event.key in CONTINUE_KEYS:
                     self.outcome = OUTCOME_ADVANCE
                     self.running = False
@@ -224,17 +235,40 @@ class Game:
             game_input.handle_hotplug(event)
 
             if event.type == pygame.JOYBUTTONDOWN:
-                if self.level_complete and event.button in game_input.CONFIRM_BUTTONS:
+                if self.game_over and event.button in game_input.CONFIRM_BUTTONS + SETTINGS_BUTTONS:
+                    self.running = False
+                elif self.level_complete and event.button in game_input.CONFIRM_BUTTONS:
                     self.outcome = OUTCOME_ADVANCE
                     self.running = False
-                elif event.button in game_input.CANCEL_BUTTONS:
-                    self.running = False
+                elif event.button in SETTINGS_BUTTONS:
+                    self.pending_settings = PAGE_MENU
+
+            tap = game_input.touch_tap_pos(event)
+            if tap is not None and not self.game_over:
+                if self._gear_rect and self._gear_rect.collidepoint(tap):
+                    self.pending_settings = PAGE_MENU
+                    continue
+                if self._box_rect and self._box_rect.collidepoint(tap):
+                    self.pending_settings = PAGE_ITEMS
+                    continue
 
             if self.touch_controls:
                 jump_tapped = self.touch_controls.handle_event(event)
                 if jump_tapped and self.level_complete:
                     self.outcome = OUTCOME_ADVANCE
                     self.running = False
+
+    async def _open_settings(self, page):
+        """Pauses the level under the settings menu. Quit there ends the
+        run; otherwise play picks up exactly where it stopped."""
+        self.pending_settings = None
+        self._draw()
+        result = await SettingsScreen(self.screen, self.screen.copy(), self.item_box, start_page=page).run()
+        if result == RESULT_QUIT:
+            self.running = False
+        # Same reason as after a quiz: the menu's time shouldn't arrive as
+        # one huge dt on the next frame.
+        self.clock.tick(FPS)
 
     async def _update(self, dt):
         if self.game_over or self.level_complete:
@@ -327,6 +361,7 @@ class Game:
         """Applies one item: score, power, life, speed boost -- then has the
         companion react and teach the word."""
         was_sleepy = self.drowsy
+        self.item_box[item.id] = self.item_box.get(item.id, 0) + 1
         self.score += item.score
         self._add_xp(item.score)
 
@@ -552,9 +587,8 @@ class Game:
             progress = e["t"] / e["life"]
             x = e["x"] - self.camera_x
             if e["kind"] == "text":
-                self._draw_outlined_text(e["text"], self.hud_font_small,
-                                         (x - self.hud_font_small.size(e["text"])[0] // 2, e["y"] - 46 * progress),
-                                         color=e["color"])
+                ui.text(self.screen, e["text"], ui.label_font(16), (x, e["y"] - 46 * progress),
+                        color=e["color"], anchor="midbottom")
             elif e["kind"] == "icon":
                 icon = get_icon(e["item"], 40)
                 self.screen.blit(icon, icon.get_rect(center=(x, e["y"] - 70 * progress)))
@@ -584,8 +618,9 @@ class Game:
         self._draw_effects()
         if self.drowsy and not self.game_over:
             self._draw_drowsy()
-        self._draw_hud()
-        self._draw_speech()
+        if not (self.game_over or self.level_complete):
+            self._draw_hud()
+            self._draw_speech()
         if self.game_over:
             self._draw_game_over()
         elif self.level_complete:
@@ -604,47 +639,139 @@ class Game:
             return False
         return int(self.invulnerable_timer / BLINK_INTERVAL_SECONDS) % 2 == 0
 
+    # -- HUD -------------------------------------------------------------------
+    #
+    # One type scale everywhere (kobito/ui.py): gold pixel LABELS name a
+    # thing, big pixel NUMBERS are the thing, rounded BODY text is for
+    # sentences. Each card reads top-down as label -> number -> detail.
+
     def _draw_hud(self):
-        # No background panel -- an outline around each glyph (instead
-        # of a solid color) is what keeps the HUD readable against any
-        # world's sky, bright or dark, without covering the scene.
-        self._draw_outlined_text(f"Level {self.level_number} - {self.jlpt_level}", self.hud_font, (12, 8))
-        self._draw_outlined_text(f"Score: {self.score}", self.hud_font, (12, 32))
-        self._draw_outlined_text(f"Lives: {self.lives}", self.hud_font, (12, 56))
-        self._draw_favorites()
-        self._draw_power()
-        self._draw_gauge_bar()
-        self._draw_quiz_progress()
+        self._draw_player_card()
+        self._draw_level_pill()
+        self._draw_quiz_card()
+        self._draw_tray()
 
-    def _draw_favorites(self):
-        """The mascot's two favourite items, with how many have been found
-        this level -- a small reminder of what to hunt for."""
-        x = 112
-        for item_id in self.character["favorites"]:
-            self.screen.blit(get_icon(item_id, 22), (x, 58))
-            x += 26
-        self._draw_outlined_text(f"x{self.favorites_found}", self.hud_font_small, (x + 2, 62))
+    def _draw_player_card(self):
+        card = ui.panel(self.screen, HUD_LEFT_CARD)
+        x, right = card.x + 14, card.right - 14
+        label, big = ui.label_font(16), ui.title_font(32)
 
-    def _draw_power(self):
-        """Ten pips: green when healthy, flashing red when drowsy."""
-        x0, y0 = 12, 84 - 0
+        ui.text(self.screen, "SCORE", label, (x, card.y + 8), color=ui.GOLD)
+        ui.text(self.screen, str(self.score), big, (x, card.y + 24))
+        ui.text(self.screen, "LIVES", label, (right, card.y + 8), color=ui.GOLD, anchor="topright")
+        lives = ui.text(self.screen, f"×{self.lives}", big, (right, card.y + 24), anchor="topright")
+        ui.heart(self.screen, (lives.x - 16, lives.centery + 1), 22)
+
+        # Power: ten pips -- green when fine, flashing red when sleepy.
+        row = card.y + 70
+        ui.text(self.screen, "POWER", label, (x, row), color=ui.GOLD)
         pip_w, pip_h = POWER_PIP
+        px = x + 66
         flash = self.drowsy and int(self.clock_time * 4) % 2 == 0
         for i in range(POWER_MAX):
-            rect = pygame.Rect(x0 + i * (pip_w + 3), y0, pip_w, pip_h)
+            rect = pygame.Rect(px + i * (pip_w + 3), row + 1, pip_w, pip_h)
             filled = i < self.power
             color = POWER_EMPTY if not filled else (POWER_LOW if self.drowsy else POWER_OK)
             if filled and flash:
                 color = (255, 170, 170)
+            pygame.draw.rect(self.screen, ui.OUTLINE, rect.inflate(4, 4), border_radius=4)
             pygame.draw.rect(self.screen, color, rect, border_radius=3)
-            pygame.draw.rect(self.screen, GAUGE_BAR_BORDER, rect, width=2, border_radius=3)
-        label = f"POWER {self.power}/{POWER_MAX}"
+        ui.text(self.screen, str(self.power), label, (right, row), anchor="topright",
+                color=ui.RED if self.drowsy else ui.CREAM)
+
+        # XP: a running total, and a slim bar toward the next bonus life.
+        row = card.y + 94
+        ui.text(self.screen, "XP", label, (x, row), color=ui.GOLD)
+        value = ui.text(self.screen, str(self.xp), label, (x + 66, row))
+        next_up = ui.text(self.screen, f"1UP {self.next_life_xp}", label, (right, row), color=ui.MUTED,
+                          anchor="topright", thickness=1)
+        bar_x = max(value.right + 10, x + 120)
+        into_life = self.xp - (self.next_life_xp - XP_PER_LIFE)
+        ui.bar(self.screen, (bar_x, row + 5, next_up.x - 10 - bar_x, 7), into_life / XP_PER_LIFE, XP_FILL, radius=3)
+
+        # Temporary states get their own tag under the card, so they're
+        # noticed without crowding the numbers above.
+        tag = None
         if self.drowsy:
-            label += "  sleepy..."
+            tag = ("SLEEPY... FIND A SNACK!", (120, 30, 44, 220), (255, 190, 190))
         elif self.boost_timer > 0:
-            label += f"  BOOST {math.ceil(self.boost_timer)}s"
-        self._draw_outlined_text(label, self.hud_font_small, (x0 + POWER_MAX * (pip_w + 3) + 6, y0 - 1),
-                                 color=(255, 190, 190) if self.drowsy else HUD_TEXT_COLOR)
+            tag = (f"BOOST  {math.ceil(self.boost_timer)}s", (24, 70, 44, 220), (170, 255, 190))
+        if tag:
+            words, bg, color = tag
+            width = label.size(words)[0] + 24
+            pill = ui.panel(self.screen, (card.x, card.bottom + 6, width, 26), bg=bg, edge=(*color, 160), radius=13)
+            ui.text(self.screen, words, label, pill.center, color=color, anchor="center", thickness=1)
+
+    def _draw_level_pill(self):
+        label = ui.label_font(16)
+        words = f"LEVEL {self.level_number}  ·  {self.jlpt_level}"
+        pill = pygame.Rect(0, 0, label.size(words)[0] + 32, 28)
+        pill.midtop = (SCREEN_WIDTH // 2, 12)
+        ui.panel(self.screen, pill, radius=14)
+        ui.text(self.screen, words, label, pill.center, color=ui.GOLD, anchor="center")
+
+    def _draw_quiz_card(self):
+        """Progress toward the badge -- at least N questions answered, 70%
+        of them right -- so it's something to aim at mid-level rather than
+        a surprise at the castle."""
+        card = ui.panel(self.screen, HUD_RIGHT_CARD)
+        x, right = card.x + 14, card.right - 14
+        label, big = ui.label_font(16), ui.title_font(32)
+        answered = self.correct_count + self.wrong_count
+        min_questions = required_question_count(self.level_number)
+        ready = self._badge_earned()
+
+        ui.text(self.screen, "QUIZ", label, (x, card.y + 8), color=ui.GOLD)
+        goal = "BADGE READY!" if ready else f"BADGE: {round(BADGE_PASS_ACCURACY * 100)}% RIGHT"
+        ui.text(self.screen, goal, label, (right, card.y + 8), color=ui.GREEN if ready else ui.MUTED,
+                anchor="topright", thickness=1)
+        count = ui.text(self.screen, str(answered), big, (x, card.y + 24))
+        ui.text(self.screen, f"/{min_questions} answered", label, (count.right + 4, count.bottom - 6),
+                color=ui.CREAM, anchor="bottomleft")
+
+        ui.bar(self.screen, (x, card.y + 66, card.width - 28, 7), answered / min_questions,
+               ui.GREEN if ready else ui.GOLD, radius=3)
+
+        row = card.y + 80
+        accuracy = round(100 * self.correct_count / answered) if answered else None
+        right_text = ui.text(self.screen, f"{self.correct_count} right", label, (x, row))
+        if accuracy is not None:
+            ok = accuracy >= BADGE_PASS_ACCURACY * 100
+            ui.text(self.screen, f"{accuracy}%", label, (right_text.right + 10, row),
+                    color=ui.GREEN if ok else (255, 150, 150))
+        if self.skipped_count:
+            ui.text(self.screen, f"{self.skipped_count} skipped", label, (right, row), color=ui.MUTED,
+                    anchor="topright", thickness=1)
+
+    def _draw_tray(self):
+        """Icons under the quiz card: the mascot's favourite foods (with how
+        many were found), the item box, and the settings gear. The box and
+        the gear are buttons -- click or tap to open the settings screen."""
+        label = ui.label_font(16)
+        favorites = self.character["favorites"]
+        fav_w = 26 * len(favorites) + label.size(f"×{self.favorites_found}")[0] + 8
+        width = 12 + fav_w + 16 + 40 + 8 + 36 + 8
+        tray = pygame.Rect(HUD_RIGHT_CARD.right - width, HUD_RIGHT_CARD.bottom + 6, width, HUD_TRAY_HEIGHT)
+        ui.panel(self.screen, tray, radius=12)
+
+        x = tray.x + 12
+        for item_id in favorites:
+            icon = get_icon(item_id, 24)
+            self.screen.blit(icon, icon.get_rect(midleft=(x, tray.centery)))
+            x += 26
+        ui.text(self.screen, f"×{self.favorites_found}", label, (x + 2, tray.centery), anchor="midleft",
+                color=(255, 170, 210))
+        x += fav_w - 26 * len(favorites) + 6
+        pygame.draw.line(self.screen, (*ui.PANEL_EDGE[:3],), (x, tray.y + 9), (x, tray.bottom - 9), 1)
+
+        self._box_rect = pygame.Rect(x + 8, tray.y + 2, 40, tray.height - 4)
+        ui.item_box_icon(self.screen, (self._box_rect.centerx - 2, self._box_rect.centery + 2), 24)
+        held = sum(self.item_box.values())
+        if held:
+            ui.count_badge(self.screen, (self._box_rect.right - 6, self._box_rect.y + 7), held)
+
+        self._gear_rect = pygame.Rect(self._box_rect.right + 6, tray.y + 2, 36, tray.height - 4)
+        ui.gear(self.screen, self._gear_rect.center, 22)
 
     # -- Drowsiness -----------------------------------------------------------
 
@@ -669,49 +796,14 @@ class Game:
         head = self.player.rect.midtop
         for i in range(3):
             t = (self.clock_time * 0.7 + i / 3) % 1.0
-            letter = self.hud_font.render("Z", True, (200, 210, 255))
+            letter = ui.title_font(32).render("z", True, (200, 210, 255))
             letter.set_alpha(round(255 * (1 - t)))
             self.screen.blit(letter, (head[0] - self.camera_x + 8 + i * 6 + t * 14, head[1] - 10 - t * 46))
 
-    def _draw_quiz_progress(self):
-        """Progress toward the badge (e.g. "Quiz 12/15  -  answer 5 more"),
-        so the bar -- at least 20 answered, 70% of them right -- is something
-        the player can aim at mid-level rather than a surprise at the castle."""
-        answered = self.correct_count + self.wrong_count
-        min_questions = required_question_count(self.level_number)
-        needed_right = round(min_questions * BADGE_PASS_ACCURACY)
-        text = f"Quiz {self.correct_count}/{answered}"
-        if self.skipped_count:
-            text += f" (skipped {self.skipped_count})"
-        if self._badge_earned():
-            text += "    badge ready!"
-        elif answered < min_questions:
-            text += f"    answer {min_questions - answered} more for the badge"
-        else:
-            text += f"    need {needed_right} right ({needed_right - self.correct_count} more)"
-        self._draw_outlined_text(text, self.hud_font_small, (12, 134))
+    # -- Companion box -----------------------------------------------------------
 
-    def _draw_outlined_text(self, text, font, pos, color=HUD_TEXT_COLOR, outline_color=HUD_TEXT_OUTLINE):
-        outline = font.render(text, True, outline_color)
-        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)):
-            self.screen.blit(outline, (pos[0] + dx, pos[1] + dy))
-        self.screen.blit(font.render(text, True, color), pos)
-
-    def _draw_gauge_bar(self):
-        """XP as a plain running total ("XP 245"), with a slim bar showing
-        progress to the next bonus life -- no fixed 0-100 scale."""
-        x, y = GAUGE_BAR_POS[0], GAUGE_BAR_POS[1] + 22
-        self._draw_outlined_text(f"XP {self.xp}", self.hud_font_small, (x, y - 2))
-
-        width, height = 96, 8
-        bar = pygame.Rect(x + 78, y + 2, width, height)
-        into_life = self.xp - (self.next_life_xp - XP_PER_LIFE)
-        pygame.draw.rect(self.screen, GAUGE_BAR_BG, bar)
-        pygame.draw.rect(self.screen, GAUGE_BAR_FILL, (*bar.topleft, round(width * max(0, into_life) / XP_PER_LIFE), height))
-        pygame.draw.rect(self.screen, GAUGE_BAR_BORDER, bar, width=2)
-        self._draw_outlined_text(f"1UP at {self.next_life_xp}", self.hud_font_small, (bar.right + 8, y - 2))
-
-    def _wrap(self, text, font, width):
+    @staticmethod
+    def _wrap(text, font, width):
         lines, current = [], ""
         for word in text.replace("  ", " ").split(" "):
             trial = f"{current} {word}".strip()
@@ -724,102 +816,125 @@ class Game:
             lines.append(current)
         return lines
 
+    def _fit_speech(self, text, width):
+        """Wraps `text` at the largest companion font size that fits in two
+        lines; anything still too long is trimmed with an ellipsis."""
+        for size in SPEECH_FONT_SIZES:
+            font = ui.body_font(size)
+            lines = self._wrap(text, font, width)
+            if len(lines) <= 2:
+                return font, lines
+        lines = lines[:2]
+        while font.size(lines[1] + "…")[0] > width and len(lines[1]) > 1:
+            lines[1] = lines[1][:-1]
+        lines[1] = lines[1].rstrip() + "…"
+        return font, lines
+
     def _draw_speech(self):
-        """The companion's reaction to what just happened -- a small box
-        docked at the bottom that never blocks play and fades out by
-        itself. A reaction with a vocabulary lesson shows as two pages."""
+        """The companion's reaction to what just happened -- a box docked at
+        the bottom that never blocks play and fades out by itself. A reaction
+        with a vocabulary lesson shows as two pages."""
         speech = self.coach.speech
         if speech is None:
             return
         box = SPEECH_BOX
-        name = self.speech_font.render(self.coach.companion["name"], True, (255, 210, 110))
-        text_x = box.x + 58
-        right = box.right - 12
-
         fade = min(1.0, speech.seconds_left / 0.6)
-        panel = pygame.Surface(box.size, pygame.SRCALPHA)
-        pygame.draw.rect(panel, (15, 12, 24, round(205 * fade)), panel.get_rect(), border_radius=10)
-        pygame.draw.rect(panel, (255, 214, 150, round(220 * fade)), panel.get_rect(), width=2, border_radius=10)
-        self.screen.blit(panel, box.topleft)
-        draw_companion(self.screen, self.coach.companion["id"], box.x + 30, box.centery, 42,
+        ui.panel(self.screen, box, bg=(16, 12, 28, 242), edge=(255, 214, 150, 220), radius=12, alpha=fade)
+
+        # Portrait in its own little frame on the left.
+        frame = pygame.Rect(box.x + 7, box.y + 7, box.height - 14, box.height - 14)
+        pygame.draw.rect(self.screen, (44, 36, 66), frame, border_radius=9)
+        draw_companion(self.screen, self.coach.companion["id"], frame.centerx, frame.centery, 46,
                        expression=speech.expression)
 
-        page = speech.page
-        color = (255, 244, 214) if page == 0 else (180, 215, 255)
-        # The name sits inline at the start of the first line; the text
-        # wraps around it, to at most two lines.
-        first_width = right - text_x - name.get_width() - 8
-        words, lines, current, width = speech.lines[page].replace("  ", " ").split(" "), [], "", first_width
-        for word in words:
-            trial = f"{current} {word}".strip()
-            if current and self.speech_font.size(trial)[0] > width:
-                lines.append(current)
-                current, width = word, right - text_x
-            else:
-                current = trial
-        lines.append(current)
+        # Name plate sitting on the box's top edge, RPG style.
+        name = self.coach.companion["name"].upper()
+        label = ui.label_font(16)
+        plate = pygame.Rect(frame.right + 12, box.y - 11, label.size(name)[0] + 20, 20)
+        ui.panel(self.screen, plate, bg=(255, 210, 110, 255), edge=(20, 14, 26, 255), radius=6)
+        ui.text(self.screen, name, label, plate.center, color=ui.OUTLINE, outline=None, anchor="center")
 
-        y = box.y + 8
-        self.screen.blit(name, (text_x, y))
-        self.screen.blit(self.speech_font.render(lines[0], True, color), (text_x + name.get_width() + 8, y))
-        for extra in lines[1:2]:
-            self.screen.blit(self.speech_font.render(extra, True, color), (text_x, y + 19))
+        page = speech.page
+        lesson = page == 1
+        text_x, right = frame.right + 14, box.right - 22
+        font, lines = self._fit_speech(speech.lines[page], right - text_x)
+        color = ui.SKY if lesson else ui.CREAM
+        line_h = font.get_height() - 2
+        top = box.y + 12 + (box.height - 18 - line_h * len(lines)) // 2
+        for i, line in enumerate(lines):
+            ui.text(self.screen, line, font, (text_x, top + i * line_h), color=color, thickness=1)
+
         if len(speech.lines) > 1:  # page dots
             for i in range(2):
-                pygame.draw.circle(self.screen, (255, 214, 150) if i == page else (110, 100, 120),
-                                   (box.right - 18 + i * 8 - 4, box.bottom - 9), 2)
+                pygame.draw.circle(self.screen, ui.GOLD if i == page else (110, 100, 120),
+                                   (box.right - 12, box.y + 22 + i * 12), 3)
+
+    # -- End-of-level screens ----------------------------------------------------
+
+    def _dim(self):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill(OVERLAY)
+        self.screen.blit(overlay, (0, 0))
+
+    def _prompt(self, words, y):
+        """A blinking "press a button" line at the bottom of a card."""
+        if int(pygame.time.get_ticks() / 500) % 2 == 0:
+            ui.text(self.screen, words, ui.label_font(16), (SCREEN_WIDTH // 2, y), color=ui.CREAM, anchor="center")
 
     def _draw_game_over(self):
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        overlay.fill(GAME_OVER_OVERLAY)
-        self.screen.blit(overlay, (0, 0))
-
-        text = self.game_over_font.render(f"Game Over - Score: {self.score}", True, (255, 255, 255))
-        self.screen.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
-        if self.fell_asleep_flag:
-            note = self.hud_font.render("You fell asleep... grab a snack next time!", True, (190, 200, 255))
-            self.screen.blit(note, note.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 44)))
+        self._dim()
+        card = pygame.Rect(0, 0, 520, 250)
+        card.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        ui.panel(self.screen, card, bg=(18, 14, 32, 235), radius=16)
+        cx = card.centerx
+        ui.text(self.screen, "GAME OVER", ui.title_font(48), (cx, card.y + 54), color=ui.RED, anchor="center",
+                thickness=3)
+        ui.text(self.screen, "FINAL SCORE", ui.label_font(16), (cx, card.y + 100), color=ui.GOLD, anchor="center")
+        ui.text(self.screen, str(self.score), ui.title_font(32), (cx, card.y + 128), anchor="center")
+        note = ("You fell asleep... grab a konbini snack next time!" if self.fell_asleep_flag
+                else "Good try! Every question makes you stronger.")
+        ui.text(self.screen, note, ui.body_font(18), (cx, card.y + 172), color=(190, 200, 255), anchor="center",
+                thickness=1)
+        self._prompt("PRESS ENTER", card.bottom - 26)
 
     def _draw_level_complete(self):
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        overlay.fill(LEVEL_COMPLETE_OVERLAY)
-        self.screen.blit(overlay, (0, 0))
-
-        center_x = SCREEN_WIDTH // 2
+        self._dim()
+        cx = SCREEN_WIDTH // 2
         answered = self.correct_count + self.wrong_count
         min_questions = required_question_count(self.level_number)
         needed = round(min_questions * BADGE_PASS_ACCURACY)
 
-        title = self.level_complete_font.render(f"Level {self.level_number} Complete!", True, (255, 255, 255))
-        self.screen.blit(title, title.get_rect(centerx=center_x, y=42))
+        ui.text(self.screen, f"LEVEL {self.level_number}", ui.label_font(16), (cx, 30), color=ui.GOLD,
+                anchor="center")
+        ui.text(self.screen, "STAGE CLEAR!", ui.title_font(48), (cx, 64), anchor="center", thickness=3)
 
-        # The badge is the prize, so it gets the visual center of the
-        # screen -- shown greyed out when it wasn't earned, so the player
-        # can see exactly what they just missed.
-        draw_badge(self.screen, center_x, 190, 128, self.badge, earned=self.badge_earned)
+        # The badge is the prize, so it gets the visual center -- greyed out
+        # when it wasn't earned, so the player sees what they just missed.
+        draw_badge(self.screen, cx, 172, 112, self.badge, earned=self.badge_earned)
 
         if self.badge_earned:
-            headline = f"Badge earned:  {self.badge.name}"
-            sub = self.badge.caption
-            headline_color = (255, 226, 140)
+            headline, sub, color = f"Badge earned: {self.badge.name}", self.badge.caption, ui.GOLD
         else:
-            headline = f"Badge locked:  {self.badge.name}"
-            sub = f"Answer at least {min_questions} questions with {needed} right to claim it -- so close!"
-            headline_color = (215, 215, 220)
+            headline = f"Badge locked: {self.badge.name}"
+            sub = f"Answer at least {min_questions} with {needed} right to claim it -- so close!"
+            color = ui.MUTED
+        ui.text(self.screen, headline, ui.body_font(22), (cx, 252), color=color, anchor="center")
+        ui.text(self.screen, sub, ui.body_font(16), (cx, 280), color=ui.CREAM, anchor="center", thickness=1)
 
-        lines = [
-            (self.hud_font, headline, headline_color),
-            (self.hud_font_small, sub, (225, 225, 230)),
-            (self.hud_font, f"Score: {self.score}    Quiz: {self.correct_count}/{answered}"
-                            f"    Accuracy: {round(self.level_accuracy * 100)}%", (255, 255, 255)),
-            (self.hud_font, f"Next up: {self.next_jlpt_level} - {JLPT_DESCRIPTIONS[self.next_jlpt_level]}",
-             (255, 255, 255)),
-            (self.hud_font_small, f"Skipped {self.skipped_count}   Stomped {self.stomps}   Snacks {self.snacks_eaten}   "
-                                  f"Favorites {self.favorites_found}   Gifts {self.gifts_opened}", (200, 225, 255)),
-            (self.hud_font_small, "Press Enter to continue", (215, 215, 220)),
-        ]
-        y = 288
-        for font, text, color in lines:
-            surface = font.render(text, True, color)
-            self.screen.blit(surface, surface.get_rect(centerx=center_x, y=y))
-            y += surface.get_height() + 10
+        # Four stat tiles: label on top, number below.
+        accuracy = f"{round(self.level_accuracy * 100)}%" if self.level_accuracy is not None else "-"
+        tiles = [("SCORE", str(self.score)), ("QUIZ", f"{self.correct_count}/{answered}"),
+                 ("ACCURACY", accuracy), ("NEXT", self.next_jlpt_level)]
+        tile_w, gap = 168, 12
+        x0 = cx - (len(tiles) * tile_w + (len(tiles) - 1) * gap) // 2
+        for i, (name, value) in enumerate(tiles):
+            tile = ui.panel(self.screen, (x0 + i * (tile_w + gap), 306, tile_w, 70), radius=10)
+            ui.text(self.screen, name, ui.label_font(16), (tile.centerx, tile.y + 18), color=ui.GOLD, anchor="center")
+            ui.text(self.screen, value, ui.title_font(32), (tile.centerx, tile.y + 46), anchor="center")
+
+        ui.text(self.screen, f"Next up: {JLPT_DESCRIPTIONS[self.next_jlpt_level]}", ui.body_font(16),
+                (cx, 394), color=ui.CREAM, anchor="center", thickness=1)
+        extras = (f"STOMPED {self.stomps}     SNACKS {self.snacks_eaten}     FAVORITES {self.favorites_found}"
+                  f"     GIFTS {self.gifts_opened}     SKIPPED {self.skipped_count}")
+        ui.text(self.screen, extras, ui.label_font(16), (cx, 422), color=ui.SKY, anchor="center", thickness=1)
+        self._prompt("PRESS ENTER TO CONTINUE", 456)
