@@ -63,6 +63,12 @@ ITEMS = {item.id: item for item in [
              "メロンパンはおいしいです。", "Melon bread is delicious.", 2),
     _konbini("green_tea", "Ocha", "お茶", "ocha", "green tea",
              "お茶をください。", "Green tea, please.", 2),
+    _konbini("gummy", "Gummy", "グミ", "gumi", "gummy candy",
+             "グミが好きです。", "I like gummy candy.", 2),
+    _konbini("dried_ume", "Dried Ume", "干し梅", "hoshi ume", "dried plum",
+             "干し梅は酸っぱいです。", "Dried plums are sour.", 2),
+    _konbini("nuts", "Nuts", "ナッツ", "nattsu", "nuts",
+             "ナッツを食べます。", "I eat nuts.", 3),
 
     Item("lucky_bag", "Lucky Bag", "福袋", "fukubukuro", "lucky bag (a New Year mystery bag)",
          "福袋を買いました。", "I bought a lucky bag.", "rare",
@@ -104,7 +110,7 @@ ITEMS = {item.id: item for item in [
 KONBINI_IDS = [i.id for i in ITEMS.values() if i.group == "konbini"]
 RARE_IDS = [i.id for i in ITEMS.values() if i.group == "rare"]
 BIG_DRINKS = ["energy_drink", "mega_can", "canned_coffee"]
-SMALL_SNACKS = ["candy", "onigiri", "melon_pan", "green_tea", "ume_soda"]
+SMALL_SNACKS = ["candy", "onigiri", "melon_pan", "green_tea", "ume_soda", "gummy", "dried_ume", "nuts"]
 
 
 def get_item(item_id):

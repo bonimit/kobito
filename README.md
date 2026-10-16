@@ -254,7 +254,8 @@ XP gauge, and show up in three families:
 - **Konbini snacks — refill power.** Things you'd grab at a Japanese
   convenience store: Genki Can (energy drink, +4), Mega Can (+5), Kan
   Coffee (+3), Ume Soda (+3, a nod to the Ume-shu companion), Onigiri (+2),
-  Melon Pan (+2), Ocha (+2), Candy (+1). The energy drinks are generic,
+  Melon Pan (+2), Ocha (+2), Gummy (+2), Dried Ume (+2, the sour dried-plum
+  snack), Nuts (+3), Candy (+1). The energy drinks are generic,
   not real brands.
 - **Favorites — each mascot's own favourite things**, two per character
   (Capybara: yuzu, watermelon · Sloth: leaf, hibiscus · Kitsune: inari

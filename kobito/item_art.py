@@ -206,9 +206,46 @@ def _sausage(s):
     pygame.draw.line(s, (240, 140, 110), (8, 14), (15, 10), 2)
 
 
+def _gummy(s):
+    body, shine = (236, 70, 90), (255, 170, 180)
+    for cx, cy, r in ((8, 6, 4), (18, 6, 4)):                  # ears
+        pygame.draw.circle(s, INK, (cx, cy), r + 1)
+        pygame.draw.circle(s, body, (cx, cy), r)
+    pygame.draw.ellipse(s, INK, (4, 15, 18, 10))                  # belly
+    pygame.draw.ellipse(s, body, (5, 16, 16, 8))
+    pygame.draw.circle(s, INK, (13, 11), 8)                       # head
+    pygame.draw.circle(s, body, (13, 11), 7)
+    pygame.draw.circle(s, INK, (11, 10), 1)
+    pygame.draw.circle(s, INK, (15, 10), 1)
+    pygame.draw.circle(s, shine, (10, 8), 2)
+
+
+def _dried_ume(s):
+    pygame.draw.circle(s, INK, (13, 14), 10)
+    pygame.draw.circle(s, (150, 52, 70), (13, 14), 9)
+    for pts in (((7, 12), (11, 14), (9, 18)), ((15, 8), (17, 13), (14, 17)), ((10, 20), (15, 21), (19, 18))):
+        pygame.draw.lines(s, (96, 28, 46), False, pts, 1)
+    pygame.draw.circle(s, (205, 110, 120), (9, 10), 2)
+    pygame.draw.line(s, INK, (13, 5), (15, 2), 2)
+    pygame.draw.ellipse(s, (90, 170, 90), (14, 1, 8, 4))
+
+
+def _nuts(s):
+    # an almond and a peanut, side by side
+    pygame.draw.ellipse(s, INK, (2, 9, 12, 16))
+    pygame.draw.ellipse(s, (190, 130, 70), (3, 10, 10, 14))
+    pygame.draw.line(s, (150, 96, 50), (8, 12), (8, 22), 1)
+    for cy in (9, 16):                                            # peanut: two joined lobes
+        pygame.draw.circle(s, INK, (19, cy), 6)
+    for cy in (9, 16):
+        pygame.draw.circle(s, (226, 184, 120), (19, cy), 5)
+    for cy in (7, 11, 14, 18):
+        pygame.draw.circle(s, (190, 146, 90), (18 + (cy % 3), cy), 1)
+
+
 DRAWERS = {
     "energy_drink": _energy_drink, "mega_can": _mega_can, "ume_soda": _ume_soda, "candy": _candy,
-    "onigiri": _onigiri, "canned_coffee": _canned_coffee, "melon_pan": _melon_pan, "green_tea": _green_tea,
+    "onigiri": _onigiri, "gummy": _gummy, "dried_ume": _dried_ume, "nuts": _nuts, "canned_coffee": _canned_coffee, "melon_pan": _melon_pan, "green_tea": _green_tea,
     "lucky_bag": _lucky_bag, "golden_can": _golden_can,
     "yuzu": _yuzu, "watermelon": _watermelon, "leaf": _leaf, "hibiscus": _hibiscus, "inari": _inari,
     "aburaage": _aburaage, "sweet_potato": _sweet_potato, "grass": _grass, "clam": _clam, "fish": _fish,
