@@ -18,15 +18,17 @@ async def main():
     # adaptively from how this level's questions went -- loop here to
     # keep playing levels until the player quits or runs out of lives.
     score = 0
+    xp = 0
     level_number = 1
     while True:
-        outcome, score, jlpt_level = await Game(
+        outcome, score, jlpt_level, xp = await Game(
             character_id,
             theme_id,
             companion_id=companion_id,
             jlpt_level=jlpt_level,
             level_number=level_number,
             starting_score=score,
+            starting_xp=xp,
         ).run()
         if outcome != OUTCOME_ADVANCE:
             break

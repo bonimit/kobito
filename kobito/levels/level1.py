@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 import pygame
 
-from kobito.constants import LEVEL_BLOCK_BUFFER, TILE_SIZE, required_question_count
+from kobito.constants import QUESTION_BLOCKS_PER_LEVEL, TILE_SIZE
 from kobito.entities.collectible import Collectible
 from kobito.entities.enemy import Enemy, FlyingEnemy
 from kobito.entities.gift_box import GiftBox
@@ -55,10 +55,11 @@ def build_level1(theme_id="forest", level_number=1, favorites=()):
     theme (see kobito/themes.py) and sized to the given level_number.
 
     The level is a chain of identical-shaped "segments" (see
-    build_segment) so it can grow with level_number: required_question_
-    count() climbs as level_number climbs, and this function keeps adding
-    segments until there are enough question blocks to comfortably clear
-    that requirement (plus a small buffer so a player can skip a couple).
+    build_segment); this function keeps adding them until the level holds
+    QUESTION_BLOCKS_PER_LEVEL (30) quiz blocks, of which the player needs
+    to answer MIN_QUESTIONS_ANSWERED (20) to earn the badge -- so there's
+    slack to skip a few. Later levels get tougher through faster enemies,
+    not longer levels.
 
     `favorites` are the chosen mascot's two favourite item ids (see
     kobito/characters.py); they're scattered through the level as
@@ -72,9 +73,8 @@ def build_level1(theme_id="forest", level_number=1, favorites=()):
     theme = get_theme(theme_id)
     builder = _LevelBuilder(theme, level_number, favorites)
 
-    target_blocks = min(32, required_question_count(level_number) + LEVEL_BLOCK_BUFFER)
     segment_index = 0
-    while builder.blocks_placed < target_blocks:
+    while builder.blocks_placed < QUESTION_BLOCKS_PER_LEVEL:
         builder.build_segment(segment_index)
         segment_index += 1
 
@@ -166,7 +166,7 @@ class _LevelBuilder:
                       above it (col 11, row 8) -- the platform is what
                       makes the high block reachable
             col 16   a second gift box (even segments)
-            col 19   a second QUESTION block (odd segments)
+            col 19   a second QUESTION block
 
         so consecutive question blocks are always at least
         MIN_QUESTION_SPACING_TILES apart -- the player gets real
@@ -185,9 +185,8 @@ class _LevelBuilder:
         self._add_question_block(high_col, 8)
 
         if segment_index % 2 == 0:
-            self._add_gift_box(s + 16, 12)
-        else:
-            self._add_question_block(s + 19, 12)
+            self._add_gift_box(s + 15, 12)
+        self._add_question_block(s + 19, 12)
 
         # --- Enemies: two ground patrols, one on the stepping stone ---
         self._add_enemy(spawn_col=s + 1, row=GROUND_ROW - 1, patrol_start_col=s, patrol_end_col=s + 9)

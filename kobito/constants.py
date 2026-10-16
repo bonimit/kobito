@@ -36,48 +36,35 @@ CORRECT_ANSWER_SCORE = 10
 JLPT_QUESTION_POINTS = {"N5": 10, "N4": 15, "N3": 20, "N2": 30, "N1": 40}
 JLPT_GAUGE_PENALTY = {"N5": 4, "N4": 6, "N3": 8, "N2": 11, "N1": 15}
 
-# Earning a level's badge means answering most questions right, not all
-# of them: at least the level's required question count (see
-# required_question_count() below), with BADGE_PASS_ACCURACY of those
-# correct -- i.e. 7 out of 10 at level 1. A wrong answer therefore costs
-# XP but deliberately NOT a life, otherwise a few mistakes would end the
-# run before the player could ever reach a 70% bar.
+# Every level holds QUESTION_BLOCKS_PER_LEVEL yellow "?" quiz blocks, but
+# the player doesn't have to hit them all: earning the level's badge needs
+# at least MIN_QUESTIONS_ANSWERED questions answered, with
+# BADGE_PASS_ACCURACY of the answered ones correct (14 of 20 at 70%). A
+# wrong answer costs XP but deliberately NOT a life, otherwise a few
+# mistakes would end the run before a player could reach that bar.
+QUESTION_BLOCKS_PER_LEVEL = 30
+MIN_QUESTIONS_ANSWERED = 20
 BADGE_PASS_ACCURACY = 0.7
 
-# How many questions a level requires climbs as level_number climbs, so
-# later levels demand more practice, not just harder JLPT content.
-# Starts at 10 (level 1) and climbs by 2 per level, capped at 30 -- the
-# size of each JLPT level's question pool (see assets/data/questions.json),
-# so the bar never asks for more distinct questions than actually exist.
-QUESTIONS_PER_LEVEL_START = 10
-QUESTIONS_PER_LEVEL_STEP = 2
-QUESTIONS_PER_LEVEL_MAX = 30
 
-# A level places a couple more question blocks than it strictly
-# requires, so a player can skip one or two (or get unlucky with a
-# tricky one) and still reach the bar rather than needing a clean sweep
-# of every block in the level.
-LEVEL_BLOCK_BUFFER = 2
-
-
-def required_question_count(level_number):
+def required_question_count(level_number=None):
     """How many questions must be answered (not necessarily correctly --
-    see BADGE_PASS_ACCURACY) to be eligible for the level's badge.
+    see BADGE_PASS_ACCURACY) to be eligible for the level's badge. The
+    same for every level; the parameter is kept so callers needn't care.
     """
-    raw = QUESTIONS_PER_LEVEL_START + (level_number - 1) * QUESTIONS_PER_LEVEL_STEP
-    return min(QUESTIONS_PER_LEVEL_MAX, raw)
+    return MIN_QUESTIONS_ANSWERED
 
-# Life gauge: fills from coin/onigiri pickups (by their value), same
-# idea as classic "100 coins = 1UP" -- reaching/exceeding GAUGE_MAX
-# grants a bonus life and the gauge carries over its remainder. A wrong
-# quiz answer or an enemy hit sets the gauge back by GAUGE_DAMAGE, on
-# top of costing a life outright, so mistakes also cost progress toward
-# the next bonus life.
-GAUGE_MAX = 100
+
+# XP: a running total that only ever counts up (minus penalties) --
+# there is no 0-100 bar to refill. Every XP_PER_LIFE earned, though, is
+# a bonus life, like the classic "100 coins = 1UP". A wrong quiz answer
+# or an enemy hit takes XP off the total (GAUGE_DAMAGE for a hit), which
+# delays the next bonus life.
+XP_PER_LIFE = 100
 GAUGE_DAMAGE = 5
 
 # Enemy contact: a brief invulnerability window (with knockback) after
-# getting hit, so touching an enemy costs exactly one life instead of
+# getting hit, so touching an enemy costs exactly one power instead of
 # draining several in the few frames it takes to separate.
 INVULNERABILITY_SECONDS = 1.2
 KNOCKBACK_SPEED_X = 220.0

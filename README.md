@@ -108,7 +108,7 @@ current JLPT level (see Difficulty below).
 
 Question blocks are kept well apart — **at least 8 tiles between any two**
 (`MIN_QUESTION_SPACING_TILES` in `kobito/levels/level1.py`) — and levels
-are long (about 220 tiles), so there are real stretches of running,
+are long (about 400 tiles), so there are real stretches of running,
 jumping, stomping and snack-hunting between quizzes, not a quiz every few
 steps.
 
@@ -123,8 +123,11 @@ as e.g. `N3 · GRAMMAR · 20 XP`:
 | N2 | +30 | −11 XP |
 | N1 | +40 | −15 XP |
 
-Correct answers feed the XP gauge as well as the score, so studying —
-not just coin collecting — is what earns bonus lives. Each block only
+Correct answers add to your **XP** as well as the score. XP is a plain
+running total ("XP 1269"), not a bar that refills — it keeps counting up
+across levels, and every 100 XP earns a bonus life (the HUD shows how far
+you are from the next 1UP). Wrong answers and enemy hits take a little XP
+off. Each block only
 fires once. Add more questions by appending objects to that JSON file — each needs `category`,
 `jlpt` (`N5`-`N1`), `prompt`, a `choices` list, an `answer` index, an
 `explanation`, and a `hint` — a nudge pointing at the useful clue (a
@@ -249,7 +252,7 @@ gaps.
 
 All items are data in `kobito/items.py` (icons are drawn in code in
 `kobito/item_art.py`). They're picked up on touch, add to your score and
-XP gauge, and show up in three families:
+XP, and show up in three families:
 
 - **Konbini snacks — refill power.** Things you'd grab at a Japanese
   convenience store: Genki Can (energy drink, +4), Mega Can (+5), Kan
@@ -348,18 +351,16 @@ staying fixed. It ends at a **Japanese castle**
 (`kobito/entities/goal.py`) — non-solid, the player runs straight into
 it.
 
-### Question count scales with level
+### 30 quiz boxes per level, 20 answers to qualify
 
-Each JLPT level's question pool holds **30 questions**
-(`assets/data/questions.json`), and how many of them a stage actually
-asks climbs as you advance: level 1 needs 10 questions answered, and it
-climbs by 2 per level (`QUESTIONS_PER_LEVEL_STEP` in
-`kobito/constants.py`) up to that 30-question ceiling at level 11 and
-beyond. The level generator keeps adding segments — and their question
-blocks, enemies, and collectibles — until there are enough blocks to
-comfortably clear that requirement, plus a small buffer
-(`LEVEL_BLOCK_BUFFER`) so a player can skip one or two blocks and still
-reach the bar.
+Every level contains **30 yellow "?" quiz boxes** (`QUESTION_BLOCKS_PER_LEVEL`
+in `kobito/constants.py`) — and never repeats a question within a level,
+since each JLPT level's pool holds more than 30 (`assets/data/questions.json`).
+You don't have to answer them all: the badge needs **at least 20 answered**
+(`MIN_QUESTIONS_ANSWERED`), so you can skip up to 10 boxes — a tricky one,
+or one in a risky spot. Later levels get harder through faster enemies and
+tougher JLPT questions, not longer levels. Levels run about 400 tiles, with
+at least 8 tiles between quiz boxes.
 
 ### Badges
 
@@ -382,11 +383,11 @@ without art falls back to a drawn hexagon in that badge's colors with
 its kanji emblem — the same silhouette as the real artwork, so a
 part-finished set still reads as one collection.
 
-You don't need a clean sweep — the bar is **70% correct** of that
-level's required question count (`required_question_count()` and
-`BADGE_PASS_ACCURACY` in `kobito/constants.py`) — 7 of 10 at level 1,
-21 of 30 by level 11. The HUD tracks progress toward it as you play, and
-a badge you narrowly missed is shown greyed out rather than hidden.
+You don't need a clean sweep: answer **at least 20 questions, with 70%
+of the ones you answered correct** (`BADGE_PASS_ACCURACY`) — 14 of 20, or
+21 of 30 if you answer them all. The HUD tracks progress toward it as you
+play ("answer 5 more for the badge"), and a badge you narrowly missed is
+shown greyed out rather than hidden.
 Because the bar is 70%, a wrong quiz answer costs XP but **not** a
 life — otherwise a few mistakes would end the run before you could ever
 reach it.

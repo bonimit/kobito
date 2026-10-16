@@ -13,7 +13,6 @@ from kobito.constants import (
     CORRECT_ANSWER_SCORE,
     FPS,
     GAUGE_DAMAGE,
-    GAUGE_MAX,
     INVULNERABILITY_SECONDS,
     JLPT_GAUGE_PENALTY,
     JLPT_QUESTION_POINTS,
@@ -31,6 +30,7 @@ from kobito.constants import (
     STOMP_BOUNCE_SPEED,
     STOMP_DROP_CHANCE,
     STOMP_GAUGE,
+    XP_PER_LIFE,
     STOMP_SCORE,
     WAKE_INVULNERABILITY_SECONDS,
     required_question_count,
@@ -100,6 +100,7 @@ class Game:
         jlpt_level="N5",
         level_number=1,
         starting_score=0,
+        starting_xp=0,
     ):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -155,7 +156,11 @@ class Game:
         self.correct_count = 0
         self.wrong_count = 0
         self.lives = STARTING_LIVES
-        self.gauge = 0
+        # XP is a running total that carries from level to level; each time
+        # it passes another multiple of XP_PER_LIFE the player earns a life.
+        self.xp = starting_xp
+        self.next_life_xp = (starting_xp // XP_PER_LIFE + 1) * XP_PER_LIFE
+        self.asked_ids = set()  # questions already asked this level (no repeats)
         self.invulnerable_timer = 0.0
 
         # Power: stamina out of POWER_MAX. Enemy hits drain it; konbini
@@ -199,7 +204,7 @@ class Game:
         if self.outcome != OUTCOME_ADVANCE:
             pygame.quit()
 
-        return self.outcome, self.score, self.next_jlpt_level
+        return self.outcome, self.score, self.next_jlpt_level, self.xp
 
     def _handle_events(self):
         for event in pygame.event.get():
@@ -312,14 +317,14 @@ class Game:
                 self._add_effect_text("+1 Life", where, (255, 150, 150))
             else:
                 self.score += pickup.value
-                self._add_gauge(pickup.value)
+                self._add_xp(pickup.value)
 
     def _collect_item(self, item, where, from_gift=False):
         """Applies one item: score, power, life, speed boost -- then has the
         companion react and teach the word."""
         was_sleepy = self.drowsy
         self.score += item.score
-        self._add_gauge(item.score)
+        self._add_xp(item.score)
 
         before = self.power
         self._set_power(POWER_MAX if item.full_power else self.power + item.power)
@@ -365,7 +370,7 @@ class Game:
         if gift["kind"] == "coins":
             earned = gift["coins"] * 5
             self.score += earned
-            self._add_gauge(earned)
+            self._add_xp(earned)
             self._add_effect_text(f"+{gift['coins']} coins!", top, (255, 226, 120))
             self.coach.react("coins", None, self.power)
         elif gift["kind"] == "life":
@@ -375,11 +380,17 @@ class Game:
         else:
             self._collect_item(gift["item"], top, from_gift=True)
 
-    def _add_gauge(self, amount):
-        self.gauge += amount
-        while self.gauge >= GAUGE_MAX:
-            self.gauge -= GAUGE_MAX
-            self.lives += 1
+    def _add_xp(self, amount):
+        self.xp += amount
+        while self.xp >= self.next_life_xp:
+            self.next_life_xp += XP_PER_LIFE
+            self.lives = min(MAX_LIVES, self.lives + 1)
+            self._add_effect_text("1UP!", (self.player.rect.centerx, self.player.rect.top), (255, 150, 150))
+
+    def _lose_xp(self, amount):
+        # Never below zero. A bonus life already earned is kept, and
+        # next_life_xp doesn't move back, so the lost XP has to be won again.
+        self.xp = max(0, self.xp - amount)
 
     async def _check_question_blocks(self):
         # player.touched is whatever solids collision resolution found
@@ -392,7 +403,8 @@ class Game:
 
     async def _trigger_question(self, block):
         block.mark_used()
-        question = self.question_bank.random_question(jlpt=self.jlpt_level)
+        question = self.question_bank.random_question(jlpt=self.jlpt_level, exclude=self.asked_ids)
+        self.asked_ids.add(question["id"])
         companion = self.hint_service.companion
         base_points = JLPT_QUESTION_POINTS.get(question["jlpt"], CORRECT_ANSWER_SCORE)
         # Companion abilities scale the base numbers (see
@@ -423,15 +435,15 @@ class Game:
 
         if correct:
             # Quiz blocks are the main XP source: a right answer both
-            # scores and fills the gauge, so studying -- not just coin
+            # scores and adds XP, so studying -- not just coin
             # collecting -- is what earns bonus lives.
             self.score += points
-            self._add_gauge(points)
+            self._add_xp(points)
             self.correct_count += 1
         else:
             # Costs XP but not a life -- the badge only asks for 70%
             # accuracy, so getting a few wrong has to be survivable.
-            self.gauge = max(0, self.gauge - penalty)
+            self._lose_xp(penalty)
             self.wrong_count += 1
 
         # QuizScreen ran its own loop with its own clock, so the main
@@ -475,7 +487,7 @@ class Game:
         enemy.kill()
         self.stomps += 1
         self.score += STOMP_SCORE
-        self._add_gauge(STOMP_GAUGE)
+        self._add_xp(STOMP_GAUGE)
         self.player.velocity_y = -STOMP_BOUNCE_SPEED
         self.player.on_ground = False
         self._add_effect_text(f"+{STOMP_SCORE}", where, (255, 255, 255))
@@ -490,9 +502,9 @@ class Game:
 
     def _take_hit(self):
         """An enemy hit costs 1 power (ten hits drain a full gauge) and
-        sets the XP gauge back. Running out of power means falling
+        takes a little XP off. Running out of power means falling
         asleep: that costs a life, and the player wakes up groggy."""
-        self.gauge = max(0, self.gauge - GAUGE_DAMAGE)
+        self._lose_xp(GAUGE_DAMAGE)
         self._set_power(self.power - 1)
         if self.power > 0:
             return
@@ -653,18 +665,19 @@ class Game:
             self.screen.blit(letter, (head[0] - self.camera_x + 8 + i * 6 + t * 14, head[1] - 10 - t * 46))
 
     def _draw_quiz_progress(self):
-        """Shows progress toward the badge (e.g. "Quiz 6/8  -  badge at
-        7/10"), so the 70% bar is something the player can actually aim
-        at mid-level rather than a surprise at the castle.
-        """
+        """Progress toward the badge (e.g. "Quiz 12/15  -  answer 5 more"),
+        so the bar -- at least 20 answered, 70% of them right -- is something
+        the player can aim at mid-level rather than a surprise at the castle."""
         answered = self.correct_count + self.wrong_count
         min_questions = required_question_count(self.level_number)
-        needed = round(min_questions * BADGE_PASS_ACCURACY)
+        needed_right = round(min_questions * BADGE_PASS_ACCURACY)
         text = f"Quiz {self.correct_count}/{answered}"
-        if not self._badge_earned():
-            text += f"    badge at {needed}/{min_questions}"
-        else:
+        if self._badge_earned():
             text += "    badge ready!"
+        elif answered < min_questions:
+            text += f"    answer {min_questions - answered} more for the badge"
+        else:
+            text += f"    need {needed_right} right ({needed_right - self.correct_count} more)"
         self._draw_outlined_text(text, self.hud_font_small, (12, 134))
 
     def _draw_outlined_text(self, text, font, pos, color=HUD_TEXT_COLOR, outline_color=HUD_TEXT_OUTLINE):
@@ -674,21 +687,18 @@ class Game:
         self.screen.blit(font.render(text, True, color), pos)
 
     def _draw_gauge_bar(self):
-        width, height = GAUGE_BAR_SIZE
-        bar_rect = pygame.Rect(GAUGE_BAR_POS[0], GAUGE_BAR_POS[1] + 26, *GAUGE_BAR_SIZE)
-        pygame.draw.rect(self.screen, GAUGE_BAR_BG, bar_rect)
+        """XP as a plain running total ("XP 245"), with a slim bar showing
+        progress to the next bonus life -- no fixed 0-100 scale."""
+        x, y = GAUGE_BAR_POS[0], GAUGE_BAR_POS[1] + 22
+        self._draw_outlined_text(f"XP {self.xp}", self.hud_font_small, (x, y - 2))
 
-        fill_width = round(width * (self.gauge / GAUGE_MAX))
-        if fill_width > 0:
-            pygame.draw.rect(self.screen, GAUGE_BAR_FILL, (*bar_rect.topleft, fill_width, height))
-        pygame.draw.rect(self.screen, GAUGE_BAR_BORDER, bar_rect, width=2)
-
-        label_height = self.hud_font_small.get_height()
-        self._draw_outlined_text(
-            f"XP {self.gauge}/{GAUGE_MAX}",
-            self.hud_font_small,
-            (bar_rect.right + 8, bar_rect.centery - label_height // 2),
-        )
+        width, height = 96, 8
+        bar = pygame.Rect(x + 78, y + 2, width, height)
+        into_life = self.xp - (self.next_life_xp - XP_PER_LIFE)
+        pygame.draw.rect(self.screen, GAUGE_BAR_BG, bar)
+        pygame.draw.rect(self.screen, GAUGE_BAR_FILL, (*bar.topleft, round(width * max(0, into_life) / XP_PER_LIFE), height))
+        pygame.draw.rect(self.screen, GAUGE_BAR_BORDER, bar, width=2)
+        self._draw_outlined_text(f"1UP at {self.next_life_xp}", self.hud_font_small, (bar.right + 8, y - 2))
 
     def _wrap(self, text, font, width):
         lines, current = [], ""
@@ -771,7 +781,7 @@ class Game:
             headline_color = (255, 226, 140)
         else:
             headline = f"Badge locked:  {self.badge.name}"
-            sub = f"Answer {needed} of {min_questions} correctly to claim it -- so close!"
+            sub = f"Answer at least {min_questions} questions with {needed} right to claim it -- so close!"
             headline_color = (215, 215, 220)
 
         lines = [
