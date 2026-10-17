@@ -1235,8 +1235,6 @@ class Game:
             tags.append(("SLEEPY... FIND A SNACK!", (120, 30, 44, 220), (255, 190, 190)))
         elif self.boost_timer > 0:
             tags.append((f"BOOST  {math.ceil(self.boost_timer)}s", (24, 70, 44, 220), (170, 255, 190)))
-        if self.sun_power:
-            tags.append(("SUN POWER  ·  RUN BUTTON TO THROW", (110, 60, 10, 220), (255, 200, 90)))
         for i, (words, bg, color) in enumerate(tags):
             width = label.size(words)[0] + 24
             pill = ui.panel(self.screen, (card.x, card.bottom + 6 + i * 30, width, 26), bg=bg, edge=(*color, 160),

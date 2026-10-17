@@ -331,8 +331,8 @@ Like a classic platformer hero, your mascot can do more than walk and jump
 - **Sun power — ひまわり (himawari, sunflower).** Eat a sunflower (three per
   level on the stepping stones, and sometimes in gift boxes) and the run
   button **throws bouncing sunballs** (up to 2 on screen) that defeat any
-  enemy they hit — like Mario's fire flower. While powered up you glow warm
-  and the HUD shows **SUN POWER**; getting hit costs you the sun power
+  enemy they hit — like Mario's fire flower. While powered up you glow warm;
+  getting hit costs you the sun power
   instead of a power pip. Sun power is kept in your save.
 
 ## Power, enemies and stomping
