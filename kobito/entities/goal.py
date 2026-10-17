@@ -1,5 +1,7 @@
 import pygame
 
+from kobito.fonts import pixel_font
+
 WALL_COLOR = (244, 240, 232)
 WALL_SHADE = (214, 208, 198)
 ROOF_COLOR = (58, 78, 106)
@@ -95,4 +97,29 @@ class Goal(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, DOOR_GLOW, door.inflate(-6, 0).move(0, 4))
         pygame.draw.rect(self.image, TRIM_COLOR, (door.left - 4, door.top - 5, door_w + 8, 5))
 
-        self.rect = self.image.get_rect(midbottom=(x, ground_y))
+        # The finish line: a checkered GOAL flag in front of the castle. It's
+        # part of the goal, so crossing the flag finishes the stage.
+        castle = self.image
+        flag_w = 76
+        self.image = pygame.Surface((castle.get_width() + flag_w, castle.get_height()), pygame.SRCALPHA)
+        self.image.blit(castle, (flag_w, 0))
+        pole_x = 18
+        pygame.draw.rect(self.image, (40, 30, 30), (pole_x - 3, 18, 6, height - 18))
+        pygame.draw.rect(self.image, (220, 220, 230), (pole_x - 1, 18, 2, height - 18))
+        pygame.draw.circle(self.image, GOLD, (pole_x, 16), 6)
+        flag = pygame.Rect(pole_x + 3, 24, 52, 34)
+        cell = 6.5
+        for row in range(int(flag.height / cell) + 1):
+            for col in range(int(flag.width / cell) + 1):
+                color = (20, 20, 24) if (row + col) % 2 else (250, 250, 250)
+                pygame.draw.rect(self.image, color, (flag.x + col * cell, flag.y + row * cell, cell + 1, cell + 1))
+        self.image.fill((0, 0, 0, 0), (flag.right, flag.y, 8, flag.height + 8))
+        self.image.fill((0, 0, 0, 0), (flag.x, flag.bottom, flag.width + 8, 8))
+        pygame.draw.rect(self.image, (20, 20, 24), flag, width=2)
+        banner = pygame.Rect(0, 0, 66, 22)
+        banner.midtop = (pole_x + 26, flag.bottom + 8)
+        pygame.draw.rect(self.image, (20, 20, 24), banner.inflate(4, 4), border_radius=5)
+        pygame.draw.rect(self.image, TRIM_COLOR, banner, border_radius=4)
+        label = pixel_font(16).render("ゴール", True, (255, 246, 226))
+        self.image.blit(label, label.get_rect(center=banner.center))
+        self.rect = self.image.get_rect(bottomright=(x + castle.get_width() // 2, ground_y))

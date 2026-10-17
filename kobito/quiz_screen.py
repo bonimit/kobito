@@ -134,9 +134,12 @@ class QuizScreen:
 
     def __init__(
         self, screen, question, background=None, anchor_rect=None, hint_service=None, points=None, penalty=None,
+        title=None,
     ):
         self.screen = screen
         self.question = question
+        self.title = title        # e.g. "TEST 3/12", shown first in the header
+        self.selected = None      # the choice the player picked (None if skipped)
         self.background = background
         self.anchor_rect = anchor_rect or pygame.Rect(SCREEN_WIDTH // 2, 80, 1, 1)
         self.hint_service = hint_service or HintService()
@@ -240,6 +243,7 @@ class QuizScreen:
                 if event.type == pygame.KEYDOWN:
                     if phase == PHASE_ANSWERING and event.key in ANSWER_KEYS:
                         selected = ANSWER_KEYS[event.key]
+                        self.selected = selected
                         phase = PHASE_REVEAL
                     elif phase == PHASE_ANSWERING and event.key in CURSOR_UP_KEYS:
                         self.move_cursor(-1)
@@ -248,6 +252,7 @@ class QuizScreen:
                     elif phase == PHASE_ANSWERING and event.key in CONFIRM_KEYS:
                         if can_confirm:
                             selected = self.cursor
+                            self.selected = selected
                             phase = PHASE_REVEAL
                     elif phase == PHASE_ANSWERING and event.key in SKIP_KEYS:
                         return None  # passed: the question goes unanswered
@@ -272,6 +277,7 @@ class QuizScreen:
                     if phase == PHASE_ANSWERING and event.button in game_input.CONFIRM_BUTTONS:
                         if can_confirm:
                             selected = self.cursor
+                            self.selected = selected
                             phase = PHASE_REVEAL
                     elif phase == PHASE_HINT and event.button in game_input.FACE_BUTTONS:
                         return False
@@ -295,6 +301,7 @@ class QuizScreen:
                         tapped_choice = self._choice_at(tap_pos)
                         if tapped_choice is not None:
                             selected = tapped_choice
+                            self.selected = selected
                             phase = PHASE_REVEAL
                     elif phase == PHASE_HINT and self._rpg_box_rect and self._rpg_box_rect.collidepoint(tap_pos):
                         return False
@@ -584,6 +591,8 @@ class QuizScreen:
         line above the question.
         """
         parts = [self.question["jlpt"], self.question["category"].upper().replace("_", " ")]
+        if self.title:
+            parts.insert(0, self.title)
         if self.points is not None:
             parts.append(f"{self.points} XP")
         return "  ·  ".join(parts)

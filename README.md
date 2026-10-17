@@ -426,8 +426,10 @@ Falling into a gap is no longer endless:
     veins, timber frames, flickering lanterns, mine carts. Moles and bats.
     Treasure: 宝石 gem.
 
-  Each is a bonus room: no quiz boxes, lots of coins, two gift boxes, a
-  snack, a favourite and the treasure. Your companion teaches the place's
+  Each is a short bonus room with no time limit: no quiz boxes, lots of
+  coins, two gift boxes, a snack, a favourite and the treasure. **Falling
+  in a secret stage never costs a life** — it just takes you back up to
+  the main stage. Your companion teaches the place's
   Japanese word when you arrive. Walk to the **出口 (EXIT)** at the far end —
   stairs, a manhole ladder or a mine lift — and you come back up just past
   the gap. Which room is behind which gap changes from level to level, and
@@ -564,9 +566,41 @@ offers three ways to get questions:
 A level is built as a chain of ground segments (`kobito/levels/level1.py`),
 each carrying 2-3 question blocks, two ground patrols and one elevated
 patrol, so enemy density scales with the level's length rather than
-staying fixed. It ends at a **Japanese castle**
+staying fixed. It ends at a **finish flag** (a checkered flag with a red
+ゴール "goal" banner) in front of a **Japanese castle**
 (`kobito/entities/goal.py`) — non-solid, the player runs straight into
 it.
+
+### After the castle: review, Stage Test, lucky draw
+
+Press Enter on the stage-clear card and the stage wraps up in three steps
+(`Game._stage_end`, screens in `kobito/stage_end_screens.py`):
+
+1. **Stage review** — every question from the stage, in order, with a ✓, ✗
+   or — (skipped), your answer, the right answer and its explanation; then
+   **What you learned**: the words you met — from vocabulary questions,
+   items you picked up and secret places you found — each with its kana,
+   romaji and meaning. Scroll with ↑↓ / PgUp/PgDn / the mouse wheel / the
+   stick or by tapping.
+2. **Stage Test** (or **Skip test**) — 12 questions built from the stage
+   (`kobito/stage_test.py`, counts are constants there):
+   - **8 multiple choice**: the ones you got wrong first, then the skipped
+     ones, then others from the stage, topped up from your JLPT level;
+   - **2 reading (読み)**: a word with kanji — build its reading from
+     hiragana tiles (犬 → いぬ);
+   - **2 writing (書き)**: a meaning and its romaji — build the Japanese
+     word from tiles ("Book (hon)" → 本).
+
+   Pick tiles with ←→ and Enter (or tap them), Backspace undoes, S skips.
+   Each right answer is worth **+10 XP**, and the results card gives 1–3
+   stars. The AI tutor learns from the test too.
+3. **Lucky draw** — three mystery boxes float over your mascot: walk
+   under one and **jump into it** to see what's inside — points, XP, a
+   snack, a favourite, a rare item, a treasure or even a sunflower (items go
+   to your item box). The other boxes then show what you missed. A
+   3-star test earns **two** boxes.
+
+The checkpoint is saved again afterwards, so the bonus and prizes are kept.
 
 ### 30 quiz boxes per level, 20 answers to qualify
 

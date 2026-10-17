@@ -52,7 +52,7 @@ from kobito import save_game, ui
 from kobito.hint_service import HintService
 from kobito.item_art import get_icon
 from kobito.item_coach import ItemCoach
-from kobito.items import BIG_DRINKS, SMALL_SNACKS, get_item, roll_gift
+from kobito.items import BIG_DRINKS, ITEMS, SMALL_SNACKS, get_item, roll_gift
 from kobito.levels.level1 import build_level1
 from kobito.levels import sky as sky_levels
 from kobito.levels import underground as underground_levels
@@ -62,6 +62,9 @@ from kobito.questions import QuestionBank, shuffled
 from kobito.quiz_screen import QuizScreen
 from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
 from kobito.sky_background import SkyBackground
+from kobito.stage_end_screens import (LuckyDrawScreen, ResultsScreen, ReviewScreen, TileScreen, roll_prize,
+                                      stars_for)
+from kobito.stage_test import build_test, learned_words, word_from_item, word_from_place
 from kobito.underground_background import UndergroundBackground
 from kobito.world import World
 
@@ -105,6 +108,11 @@ HIDDEN_STYLES = {**underground_levels.STYLES, **sky_levels.STYLES}
 # Outcomes Game.run() can return, telling main.py what to do next.
 OUTCOME_QUIT = "quit"
 OUTCOME_ADVANCE = "advance"
+
+# The Stage Test after the castle: XP per right answer, and the XP a
+# multiple-choice question shows (and pays) during the test.
+TEST_BONUS_XP = 10
+LUCKY_BOXES = 3
 
 
 class Game:
@@ -184,6 +192,11 @@ class Game:
         self._sky_states = {}
         self.sky_found = set()
         self.launch = None              # (spring link, seconds left) while flying up off a spring
+        # For the end-of-stage review: every question asked this level, in
+        # order (id -> {"question", "chosen", "result"}), and the items picked up.
+        self.quiz_log = {}
+        self.level_items = []
+        self.pending_stage_end = False   # set when the player continues past the clear card
 
         self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
         # A "sprite group" is pygame's container for a batch of sprites; the
@@ -267,6 +280,9 @@ class Game:
             if self.pending_settings:
                 await self._open_settings(self.pending_settings)
                 continue
+            if self.pending_stage_end:
+                await self._stage_end()
+                break
             await self._update(dt)
             self._draw()
             # Yields to the browser's event loop every frame -- required
@@ -294,8 +310,7 @@ class Game:
                 elif event.key in SETTINGS_KEYS:
                     self.pending_settings = PAGE_MENU
                 elif self.level_complete and event.key in CONTINUE_KEYS:
-                    self.outcome = OUTCOME_ADVANCE
-                    self.running = False
+                    self.pending_stage_end = True
 
             game_input.handle_hotplug(event)
 
@@ -303,8 +318,7 @@ class Game:
                 if self.game_over and event.button in game_input.CONFIRM_BUTTONS + SETTINGS_BUTTONS:
                     self.running = False
                 elif self.level_complete and event.button in game_input.CONFIRM_BUTTONS:
-                    self.outcome = OUTCOME_ADVANCE
-                    self.running = False
+                    self.pending_stage_end = True
                 elif event.button in SETTINGS_BUTTONS:
                     self.pending_settings = PAGE_MENU
 
@@ -320,8 +334,7 @@ class Game:
             if self.touch_controls:
                 jump_tapped = self.touch_controls.handle_event(event)
                 if jump_tapped and self.level_complete:
-                    self.outcome = OUTCOME_ADVANCE
-                    self.running = False
+                    self.pending_stage_end = True
 
     async def _open_settings(self, page):
         """Pauses the level under the settings menu. Quit there ends the
@@ -371,6 +384,10 @@ class Game:
             "underground": {str(i): w.objects_state() for i, w in self.underground_worlds.items()},
             "sky_found": sorted(self.sky_found),
             "sky": {str(i): w.objects_state() for i, w in self.sky_worlds.items()},
+            "quiz_log": [{"id": e["question"]["id"], "result": e["result"],
+                          "chosen": None if e["chosen"] is None else e["question"]["choices"][e["chosen"]]}
+                         for e in self.quiz_log.values()],
+            "level_items": list(self.level_items),
         }
         state.update(self.surface.objects_state())
         return state
@@ -399,12 +416,24 @@ class Game:
             self.sky_found = {int(i) for i in state.get("sky_found", [])}
             rooms = state.get("sky", {})
             self._sky_states = {int(k): v for k, v in rooms.items() if isinstance(v, dict)}
+            self.level_items = [i for i in state.get("level_items", []) if i in ITEMS]
+            self._restore_quiz_log(state.get("quiz_log", []))
         except (KeyError, TypeError, ValueError):
             return  # a damaged spot just means starting the level fresh
         self.drowsy_warned = self.drowsy
         self.camera_x = max(0.0, self.player.rect.centerx - SCREEN_WIDTH / 2)
         # A moment of safety, in case an enemy is standing on the spot.
         self.invulnerable_timer = WAKE_INVULNERABILITY_SECONDS
+
+    def _restore_quiz_log(self, rows):
+        by_id = {q["id"]: q for q in self.question_bank.questions}
+        for row in rows:
+            question = by_id.get(row.get("id"))
+            if question is None or row.get("result") not in ("right", "wrong", "skipped"):
+                continue
+            chosen = row.get("chosen")
+            chosen = question["choices"].index(chosen) if chosen in question["choices"] else None
+            self.quiz_log[question["id"]] = {"question": question, "chosen": chosen, "result": row["result"]}
 
     def save_progress(self):
         """Saves the run with the player's exact spot in this level. Returns
@@ -509,17 +538,15 @@ class Game:
     def _fell_out(self):
         """The player dropped below the screen. Over a secret pit that's the
         way into a hidden room; anywhere else it's a fall -- one life."""
-        if self.world.kind == "sky":
-            # No floor up there: falling through the clouds just drifts you
-            # back down to the surface -- the sky's own way down.
+        if self.world.hidden:
+            # Secret stages are a bonus, never a trap: falling through the
+            # clouds or off a ledge underground just takes you back up to
+            # the main stage, no life lost.
             self._start_transition(self._leave_hidden)
             return
-        pit = None if self.world.hidden else self.world.secret_pit_at(self.player.rect.centerx)
+        pit = self.world.secret_pit_at(self.player.rect.centerx)
         if pit is not None:
             self._start_transition(lambda: self._enter_underground(pit))
-            return
-        if self.world.underground:      # no holes down there, but never get stuck
-            self._start_transition(lambda: self._place_player(self.world.entry_x, -self.player.rect.height))
             return
 
         self.pits_fallen += 1
@@ -731,6 +758,7 @@ class Game:
         companion react and teach the word."""
         was_sleepy = self.drowsy
         self.item_box[item.id] = self.item_box.get(item.id, 0) + 1
+        self.level_items.append(item.id)
         self.score += item.score
         self._add_xp(item.score)
 
@@ -854,7 +882,7 @@ class Game:
         background = self.screen.copy()
         anchor_rect = block.rect.move(-self.camera_x, 0)
 
-        correct = await QuizScreen(
+        quiz = QuizScreen(
             self.screen,
             question,
             background=background,
@@ -862,7 +890,9 @@ class Game:
             hint_service=self.hint_service,
             points=points,
             penalty=penalty,
-        ).run()
+        )
+        correct = await quiz.run()
+        self._log_answer(question, quiz.selected, correct)
 
         if correct is None:
             # Passed: nothing answered, nothing lost. The box stays a "?" box
@@ -896,6 +926,88 @@ class Game:
         # loop's clock has an artificially large elapsed time queued up
         # for its next tick. Draining it here stops that showing up as
         # one huge dt (e.g. a sudden gravity jump) on the next frame.
+        self.clock.tick(FPS)
+
+    def _log_answer(self, question, chosen, correct):
+        """Remembers how a question went, for the end-of-stage review. A
+        skip never overwrites an answer given since (or before)."""
+        result = "skipped" if correct is None else "right" if correct else "wrong"
+        previous = self.quiz_log.get(question["id"])
+        if result == "skipped" and previous and previous["result"] != "skipped":
+            return
+        self.quiz_log[question["id"]] = {"question": question, "chosen": chosen, "result": result}
+
+    # -- After the castle: review, Stage Test, lucky draw -------------------------
+
+    def _places_found(self):
+        """The secret places found this level, as their HIDDEN_STYLES specs."""
+        pits = {pit["index"]: pit["style"] for pit in self.surface.secret_pits}
+        springs = {spring.link["index"]: spring.style for spring in self.surface.springs}
+        styles = [pits[i] for i in sorted(self.secrets_found) if i in pits]
+        styles += [springs[i] for i in sorted(self.sky_found) if i in springs]
+        return [HIDDEN_STYLES[style] for style in styles]
+
+    async def _stage_end(self):
+        """Runs once the player continues past the stage-clear card: a
+        review of every question (with explanations) and the words met,
+        an optional Stage Test built from them, then a lucky draw. Ends
+        the level with OUTCOME_ADVANCE."""
+        self.pending_stage_end = False
+        # The stage itself, without the clear card, behind every screen.
+        self.level_complete = False
+        self._draw()
+        self.level_complete = True
+        background = self.screen.copy()
+
+        entries = list(self.quiz_log.values())
+        items = [get_item(item_id) for item_id in dict.fromkeys(self.level_items)]
+        words = learned_words(entries, items, self._places_found())
+        extra = [word_from_item(item) for item in ITEMS.values()]
+        extra += [word_from_place(spec) for spec in HIDDEN_STYLES.values()]
+        test = build_test(entries, words, self.question_bank.questions, self.jlpt_level, self.rng, extra_words=extra)
+
+        results = []
+        if await ReviewScreen(self.screen, background, self.level_number, entries, words, len(test)).run() == "test":
+            for number, item in enumerate(test, 1):
+                if item["kind"] == "mc":
+                    question = item["question"]
+                    correct = await QuizScreen(
+                        self.screen, question, background=background,
+                        anchor_rect=pygame.Rect(SCREEN_WIDTH // 2, 40, 1, 1), hint_service=self.hint_service,
+                        points=TEST_BONUS_XP, title=f"TEST {number}/{len(test)}",
+                    ).run()
+                    if correct is not None and self.tutor is not None:
+                        self.tutor.record(question, correct)
+                else:
+                    correct = await TileScreen(self.screen, background, item, number, len(test)).run()
+                    if correct == "skip":
+                        correct = None
+                results.append((item["kind"], correct))
+            bonus = TEST_BONUS_XP * sum(1 for _, correct in results if correct)
+            self.score += bonus
+            self._add_xp(bonus)
+            if self.tutor is not None:
+                self.next_jlpt_level = self.tutor.estimated_level()
+            await ResultsScreen(self.screen, background, results, bonus).run()
+
+        # Lucky draw: one box to open -- two after a 3-star test.
+        stars = stars_for(sum(1 for _, correct in results if correct), len(results)) if results else 0
+        prizes = [roll_prize(self.rng, self.character["favorites"]) for _ in range(LUCKY_BOXES)]
+        won = await LuckyDrawScreen(self.screen, background, self.character, prizes,
+                                    draws=2 if stars == 3 else 1).run()
+        for prize in won:
+            if prize["kind"] == "coins":
+                self.score += prize["amount"]
+            elif prize["kind"] == "xp":
+                self._add_xp(prize["amount"])
+            else:
+                self.item_box[prize["item"].id] = self.item_box.get(prize["item"].id, 0) + 1
+
+        # The checkpoint saved at the castle didn't have the test's XP or the
+        # prizes yet.
+        save_game.save_run(self._run_record(level_number=self.level_number + 1, jlpt_level=self.next_jlpt_level))
+        self.outcome = OUTCOME_ADVANCE
+        self.running = False
         self.clock.tick(FPS)
 
     def _check_enemy_contact(self, dt):
@@ -1547,4 +1659,4 @@ class Game:
         extras = (f"STOMPED {self.stomps}     SNACKS {self.snacks_eaten}     FAVORITES {self.favorites_found}"
                   f"     GIFTS {self.gifts_opened}     SECRETS {self.secrets_total_found}/{self.secrets_total}")
         ui.text(self.screen, extras, ui.label_font(16), (cx, 422), color=ui.SKY, anchor="center", thickness=1)
-        self._prompt("PRESS ENTER TO CONTINUE", 456)
+        self._prompt("PRESS ENTER FOR THE LESSON REVIEW", 456)
