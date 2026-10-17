@@ -1233,7 +1233,9 @@ class Game:
         favorites = self.character["favorites"]
         fav_w = 26 * len(favorites) + label.size(f"×{self.favorites_found}")[0] + 8
         width = 12 + fav_w + 16 + 40 + 8 + 36 + 8
-        tray = pygame.Rect(HUD_RIGHT_CARD.right - width, HUD_RIGHT_CARD.bottom + 6, width, HUD_TRAY_HEIGHT)
+        # Left-aligned with the quiz lines above it (they start 14px in); the
+        # icons have ~3px of transparent padding, so start that much earlier.
+        tray = pygame.Rect(HUD_RIGHT_CARD.x - 1, HUD_RIGHT_CARD.bottom + 6, width, HUD_TRAY_HEIGHT)
 
         x = tray.x + 12
         for item_id in favorites:
