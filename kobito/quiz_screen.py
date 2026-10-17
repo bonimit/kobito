@@ -397,17 +397,11 @@ class QuizScreen:
 
         self._choice_rects = []
         for index, choice_text in enumerate(self.question["choices"]):
-            line_h = self._line_height(f"{index + 1}. {choice_text}", self.font_choice, min_height=CHOICE_HEIGHT)
-            if phase == PHASE_ANSWERING and index == self.cursor:
-                # The highlighted row: a soft gold bar with a pointer.
-                bar = pygame.Rect(box.x + 4, y - 2, box.width - 8, line_h + 4)
-                highlight = pygame.Surface(bar.size, pygame.SRCALPHA)
-                pygame.draw.rect(highlight, (*accent, 52), highlight.get_rect(), border_radius=6)
-                pygame.draw.rect(highlight, (*accent, 220), highlight.get_rect(), width=1, border_radius=6)
-                self.screen.blit(highlight, bar.topleft)
-                cy = bar.centery
-                pygame.draw.polygon(self.screen, accent, [(box.x + 3, cy - 4), (box.x + 8, cy), (box.x + 3, cy + 4)])
             color = TEXT_COLOR
+            if phase == PHASE_ANSWERING and index == self.cursor:
+                # The highlighted choice: just its text, lit up in the
+                # question type's colour (brightened so it reads on the card).
+                color = tuple(min(255, round(c + (255 - c) * 0.35)) for c in accent)
             if selected is not None:
                 if index == self.question["answer"]:
                     color = CORRECT_COLOR
