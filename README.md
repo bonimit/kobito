@@ -2,6 +2,13 @@
 
 An 8-bit style Japanese-learning platformer built with Pygame.
 
+![Kobito playing itself in the Tokyo world: running, a quiz block, sun power, a secret subway stage, a sky stage, the stage review, a kana-tile test and the lucky draw](docs/cover.gif)
+
+*The game playing itself ([MP4, 50 s](docs/cover.mp4)). Re-record it with
+`python tools/record_cover.py` (needs ffmpeg): it runs the real game
+headless with a scripted player and writes `docs/cover.mp4` and
+`docs/cover.gif`.*
+
 ## Setup
 
 ```
