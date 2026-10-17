@@ -78,7 +78,7 @@ ITEMS = {item.id: item for item in [
          power=10, score=40, full_power=True, boost_seconds=8.0),
 
     # Treasures: one waits in each hidden underground stage (see
-    # kobito/levels/underground.py) and nowhere else.
+    # kobito/levels/underground.py) and nowhere else...
     Item("ekiben", "Ekiben", "駅弁", "ekiben", "station bento (a boxed lunch sold at train stations)",
          "駅弁を電車で食べます。", "I eat a station bento on the train.", "treasure",
          power=10, score=80, full_power=True),
@@ -88,6 +88,17 @@ ITEMS = {item.id: item for item in [
     Item("gem", "Gem", "宝石", "houseki", "gem, jewel",
          "宝石を見つけました。", "I found a gem.", "treasure",
          power=2, score=150, life=1),
+    # ...and one in each hidden sky stage (kobito/levels/sky.py).
+    Item("kaminari_okoshi", "Kaminari Okoshi", "雷おこし", "kaminari okoshi",
+         "kaminari okoshi (a crunchy puffed-rice sweet from Asakusa)",
+         "雷おこしはかたいです。", "Kaminari okoshi is crunchy.", "treasure",
+         power=4, score=80, boost_seconds=8.0),
+    Item("wataame", "Cotton Candy", "綿あめ", "wataame", "cotton candy",
+         "綿あめは雲みたいです。", "Cotton candy is like a cloud.", "treasure",
+         power=6, score=70),
+    Item("tsukimi_dango", "Tsukimi Dango", "月見団子", "tsukimi dango", "moon-viewing dumplings",
+         "月見団子を食べます。", "I eat moon-viewing dumplings.", "treasure",
+         power=10, score=100, life=1, full_power=True),
 
     _favorite("yuzu", "Yuzu", "ゆず", "yuzu", "yuzu citrus",
               "ゆずの匂いが好きです。", "I like the smell of yuzu."),

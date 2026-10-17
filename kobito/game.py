@@ -48,10 +48,14 @@ from kobito.item_art import get_icon
 from kobito.item_coach import ItemCoach
 from kobito.items import BIG_DRINKS, SMALL_SNACKS, get_item, roll_gift
 from kobito.levels.level1 import build_level1
-from kobito.levels.underground import STYLES as UNDERGROUND_STYLES, build_underground, place_lesson
+from kobito.levels import sky as sky_levels
+from kobito.levels import underground as underground_levels
+from kobito.levels.sky import build_sky
+from kobito.levels.underground import build_underground
 from kobito.questions import QuestionBank
 from kobito.quiz_screen import QuizScreen
 from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
+from kobito.sky_background import SkyBackground
 from kobito.underground_background import UndergroundBackground
 from kobito.world import World
 
@@ -83,6 +87,14 @@ SPEECH_FONT_SIZES = (19, 17, 15)   # largest that fits in two lines wins
 FADE_SECONDS = 0.35        # each half of a room change / respawn fade
 BANNER_SECONDS = 3.0       # "SECRET AREA!" title when entering one
 FALL_LIMIT_Y = SCREEN_HEIGHT + 24   # below this, the player has fallen out of the world
+SPRING_SPEED = 1450.0      # a cloud spring's launch -- well off the top of the screen
+SKY_ENTRY_SPEED = 950.0    # shooting up into a sky room from below
+LAUNCH_SECONDS = 1.6       # how long a launch can take to clear the top before it fizzles
+
+SPRING_RAINBOW = [(232, 72, 72), (250, 200, 60), (110, 200, 100), (80, 160, 230), (170, 110, 210), (255, 150, 200)]
+
+# Every hidden room's look and words, underground and sky alike.
+HIDDEN_STYLES = {**underground_levels.STYLES, **sky_levels.STYLES}
 
 # Outcomes Game.run() can return, telling main.py what to do next.
 OUTCOME_QUIT = "quit"
@@ -153,6 +165,10 @@ class Game:
         self.underground_worlds = {}
         self._underground_states = {}   # saved coins/enemies for rooms not yet rebuilt
         self.secrets_found = set()      # pit indices visited this level
+        self.sky_worlds = {}            # ...and the same for the sky rooms, keyed by spring index
+        self._sky_states = {}
+        self.sky_found = set()
+        self.launch = None              # (spring link, seconds left) while flying up off a spring
 
         self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
         # A "sprite group" is pygame's container for a batch of sprites; the
@@ -316,9 +332,9 @@ class Game:
         hidden room visited. (Enemies still around restart from their spawn
         spot.) Saved while underground, the spot is just past the pit they
         dropped into: they continue on the surface and can drop in again."""
-        if self.world.underground:
-            pit = self.world.pit
-            spot = [pit["return_x"] - self.player.rect.width // 2, self.surface.ground_y - self.player.rect.height]
+        if self.world.hidden:
+            link = self.world.link
+            spot = [link["return_x"] - self.player.rect.width // 2, self.surface.ground_y - self.player.rect.height]
         else:
             spot = [self.player.rect.x, self.player.rect.y]
         state = {
@@ -329,6 +345,8 @@ class Game:
             "gifts": self.gifts_opened, "asked_ids": sorted(self.asked_ids, key=str),
             "pits_fallen": self.pits_fallen, "secrets_found": sorted(self.secrets_found),
             "underground": {str(i): w.objects_state() for i, w in self.underground_worlds.items()},
+            "sky_found": sorted(self.sky_found),
+            "sky": {str(i): w.objects_state() for i, w in self.sky_worlds.items()},
         }
         state.update(self.surface.objects_state())
         return state
@@ -352,6 +370,9 @@ class Game:
             self.secrets_found = {int(i) for i in state.get("secrets_found", [])}
             rooms = state.get("underground", {})
             self._underground_states = {int(k): v for k, v in rooms.items() if isinstance(v, dict)}
+            self.sky_found = {int(i) for i in state.get("sky_found", [])}
+            rooms = state.get("sky", {})
+            self._sky_states = {int(k): v for k, v in rooms.items() if isinstance(v, dict)}
         except (KeyError, TypeError, ValueError):
             return  # a damaged spot just means starting the level fresh
         self.drowsy_warned = self.drowsy
@@ -380,6 +401,8 @@ class Game:
         self._apply_power_effects(dt)
         self.player.update(dt, self.platforms)
         self.enemies.update(dt, self.platforms)
+        for spring in self.world.springs:
+            spring.update_squash(dt)
         self.background.update(dt)
         self.coach.update(dt)
         self._update_effects(dt)
@@ -389,10 +412,13 @@ class Game:
         await self._check_question_blocks()
         self._check_gift_boxes()
         self._check_collectibles()
-        if self.world.underground:
+        if self.world.hidden:
             self._check_exit()
         else:
             self._check_goal()
+            self._check_springs(dt)
+            if self.transition:
+                return
         if self.player.rect.top > FALL_LIMIT_Y:
             self._fell_out()
             return
@@ -412,7 +438,12 @@ class Game:
     def _fell_out(self):
         """The player dropped below the screen. Over a secret pit that's the
         way into a hidden room; anywhere else it's a fall -- one life."""
-        pit = None if self.world.underground else self.world.secret_pit_at(self.player.rect.centerx)
+        if self.world.kind == "sky":
+            # No floor up there: falling through the clouds just drifts you
+            # back down to the surface -- the sky's own way down.
+            self._start_transition(self._leave_hidden)
+            return
+        pit = None if self.world.hidden else self.world.secret_pit_at(self.player.rect.centerx)
         if pit is not None:
             self._start_transition(lambda: self._enter_underground(pit))
             return
@@ -451,7 +482,7 @@ class Game:
         if index not in self.underground_worlds:
             level, entry_x = build_underground(pit["style"], self.level_number, index, self.character["favorites"])
             background = UndergroundBackground(level.width_px, level.ground_y, pit["style"], entry_x, seed=index)
-            world = World(level, background, kind="underground", style=pit["style"], entry_x=entry_x, pit=pit)
+            world = World(level, background, kind="underground", style=pit["style"], entry_x=entry_x, link=pit)
             if index in self._underground_states:
                 world.restore_objects(self._underground_states.pop(index))
             self.underground_worlds[index] = world
@@ -462,23 +493,81 @@ class Game:
         self._switch_world(world)
         # Drop in through the hole in the ceiling.
         self._place_player(world.entry_x, 0)
-        spec = UNDERGROUND_STYLES[pit["style"]]
+        spec = HIDDEN_STYLES[pit["style"]]
         self.banner = ("SECRET AREA!", f"{spec['jp']}  ·  {spec['name'].upper()}", BANNER_SECONDS)
         first_visit = pit["index"] not in self.secrets_found
         self.secrets_found.add(pit["index"])
         if first_visit:
-            self.coach.secret(spec["name"], place_lesson(pit["style"]))
+            self.coach.secret(spec["name"], underground_levels.place_lesson(pit["style"]))
+
+    # -- The way up: cloud springs and sky rooms --------------------------------
+
+    def _check_springs(self, dt):
+        """Landing on a cloud spring launches the player straight up; once
+        they're off the top of the screen, the sky room fades in."""
+        player = self.player
+        for spring in self.world.springs:
+            # Only a landing with the player's middle over the spring counts,
+            # so the launch path straight up is always clear.
+            if (player.velocity_y >= 0 and player.rect.colliderect(spring.rect)
+                    and spring.rect.left <= player.rect.centerx <= spring.rect.right
+                    and player.rect.bottom <= spring.rect.top + 18):
+                player.velocity_y = -SPRING_SPEED
+                player.on_ground = False
+                spring.boing()
+                self.launch = (spring.link, LAUNCH_SECONDS)
+                self._add_effect_puff((spring.rect.centerx, spring.rect.top))
+                break
+        if self.launch:
+            link, left = self.launch
+            if player.rect.bottom < -30:
+                self.launch = None
+                self._start_transition(lambda: self._enter_sky(link))
+            else:
+                self.launch = (link, left - dt) if left > dt else None
+
+    def _sky_world(self, link):
+        index = link["index"]
+        if index not in self.sky_worlds:
+            level, entry_x = build_sky(link["style"], self.level_number, index, self.character["favorites"])
+            world = World(level, SkyBackground(level.width_px, link["style"], seed=index), kind="sky",
+                          style=link["style"], entry_x=entry_x, link=link)
+            if index in self._sky_states:
+                world.restore_objects(self._sky_states.pop(index))
+            self.sky_worlds[index] = world
+        return self.sky_worlds[index]
+
+    def _enter_sky(self, link):
+        world = self._sky_world(link)
+        self._switch_world(world)
+        # Shoot up from below the screen, through the first (one-way) cloud,
+        # and land on it.
+        self._place_player(world.entry_x, SCREEN_HEIGHT + 40)
+        self.player.velocity_y = -SKY_ENTRY_SPEED
+        spec = HIDDEN_STYLES[link["style"]]
+        self.banner = ("SECRET SKY!", f"{spec['jp']}  ·  {spec['name'].upper()}", BANNER_SECONDS)
+        first_visit = link["index"] not in self.sky_found
+        self.sky_found.add(link["index"])
+        if first_visit:
+            self.coach.secret(spec["name"], sky_levels.place_lesson(link["style"]))
+
+    # -- Leaving a hidden room ---------------------------------------------------
 
     def _check_exit(self):
         if self.player.rect.colliderect(self.goal.rect.inflate(-60, 0)):
-            self._start_transition(self._leave_underground)
+            self._start_transition(self._leave_hidden)
 
-    def _leave_underground(self):
-        pit = self.world.pit
+    def _leave_hidden(self):
+        """Back to the surface, just past the pit or spring that led in."""
+        came_from_sky = self.world.kind == "sky"
+        link = self.world.link
         self._switch_world(self.surface)
-        self._place_player(pit["return_x"], self.surface.ground_y)
+        self._place_player(link["return_x"], self.surface.ground_y)
         self.invulnerable_timer = 1.0
-        self.coach.surface()
+        if came_from_sky:
+            self.coach.landed()
+        else:
+            self.coach.surface()
 
     def _start_transition(self, action):
         """Fades to black, runs `action` (move rooms / respawn) while the
@@ -808,8 +897,9 @@ class Game:
 
     def _draw(self):
         self.background.draw(self.screen, self.camera_x)
-        if not self.world.underground:
+        if not self.world.hidden:
             self._draw_pit_hints()
+            self._draw_spring_hints()
 
         # Treasures pulse with a soft halo, so they stand out from the scenery.
         for pickup in self.collectibles:
@@ -864,7 +954,7 @@ class Game:
             x0, x1 = pit["x0"] - self.camera_x, pit["x1"] - self.camera_x
             if x1 < -40 or x0 > SCREEN_WIDTH + 40:
                 continue
-            hint = UNDERGROUND_STYLES[pit["style"]]["hint"]
+            hint = HIDDEN_STYLES[pit["style"]]["hint"]
             width = x1 - x0
             # The pit looks deeper than an ordinary one: a dark, tinted shaft
             # fading in towards the bottom of the screen.
@@ -894,6 +984,44 @@ class Game:
             if hint == "glow":
                 pygame.draw.ellipse(layer, (120, 255, 150, 50), (30, base - 40, width + 20, 60))
             self.screen.blit(layer, (x0 - 40, self.surface.ground_y + 70 - base))
+
+    def _draw_spring_hints(self):
+        """A cloud spring gives itself away with a little updraft rising off
+        it: rainbow sparkles, crackling sparks, or twinkling stars."""
+        for spring in self.surface.springs:
+            sx = spring.rect.centerx - self.camera_x
+            if not -60 < sx < SCREEN_WIDTH + 60:
+                continue
+            hint = HIDDEN_STYLES[spring.style]["hint"]
+            for i in range(6):
+                phase = (self.clock_time * 0.45 + i / 6) % 1.0
+                px = sx - 22 + (i * 17) % 44 + math.sin(phase * 7 + i) * 4
+                py = spring.rect.top - 4 - phase * 120
+                fade = 1 - phase
+                if hint == "rainbow":
+                    color = SPRING_RAINBOW[i % len(SPRING_RAINBOW)]
+                    pygame.draw.circle(self.screen, color, (px, py), max(1, round(3 * fade)))
+                elif hint == "spark":
+                    if int(self.clock_time * 12 + i) % 3:
+                        pygame.draw.lines(self.screen, (255, 230, 90), False,
+                                          [(px, py), (px + 3, py + 4), (px - 1, py + 6), (px + 2, py + 10)], 2)
+                else:
+                    size = max(1, round(4 * fade))
+                    pygame.draw.line(self.screen, (255, 250, 200), (px - size, py), (px + size, py), 2)
+                    pygame.draw.line(self.screen, (255, 250, 200), (px, py - size), (px, py + size), 2)
+            # Wind streaks rushing upward.
+            for i in range(3):
+                phase = (self.clock_time * 1.2 + i / 3) % 1.0
+                y = spring.rect.top - 10 - phase * 90
+                pygame.draw.line(self.screen, (255, 255, 255), (sx - 18 + i * 18, y), (sx - 18 + i * 18, y - 14), 1)
+
+    @property
+    def secrets_total(self):
+        return len(self.surface.secret_pits) + len(self.surface.springs)
+
+    @property
+    def secrets_total_found(self):
+        return len(self.secrets_found) + len(self.sky_found)
 
     def _draw_banner(self):
         if not self.banner:
@@ -979,8 +1107,8 @@ class Game:
     def _draw_level_pill(self):
         label = ui.label_font(16)
         words = f"LEVEL {self.level_number}  ·  {self.jlpt_level}"
-        if self.world.underground:
-            words = f"SECRET  ·  {UNDERGROUND_STYLES[self.world.style]['name'].upper()}"
+        if self.world.hidden:
+            words = f"SECRET  ·  {HIDDEN_STYLES[self.world.style]['name'].upper()}"
         pill = pygame.Rect(0, 0, label.size(words)[0] + 32, 28)
         pill.midtop = (SCREEN_WIDTH // 2, 12)
         ui.panel(self.screen, pill, radius=14)
@@ -1215,6 +1343,6 @@ class Game:
         ui.text(self.screen, f"Next up: {JLPT_DESCRIPTIONS[self.next_jlpt_level]}", ui.body_font(16),
                 (cx, 394), color=ui.CREAM, anchor="center", thickness=1)
         extras = (f"STOMPED {self.stomps}     SNACKS {self.snacks_eaten}     FAVORITES {self.favorites_found}"
-                  f"     GIFTS {self.gifts_opened}     SECRETS {len(self.secrets_found)}/{len(self.surface.secret_pits)}")
+                  f"     GIFTS {self.gifts_opened}     SECRETS {self.secrets_total_found}/{self.secrets_total}")
         ui.text(self.screen, extras, ui.label_font(16), (cx, 422), color=ui.SKY, anchor="center", thickness=1)
         self._prompt("PRESS ENTER TO CONTINUE", 456)

@@ -1,20 +1,22 @@
-"""One playable space: the level's surface, or one hidden underground room.
+"""One playable space: the level's surface, or one hidden room -- an
+underground stage (reached by dropping into a secret pit) or a sky stage
+(reached by bouncing on a secret cloud spring).
 
-Game holds the surface World for the whole level and builds an
-underground World the first time the player drops into a secret pit
-(kept afterwards, so coins taken down there stay taken). Switching rooms
-is just pointing Game at a different World.
+Game holds the surface World for the whole level and builds a hidden World
+the first time the player finds its way in (kept afterwards, so coins
+taken there stay taken). Switching rooms is just pointing Game at a
+different World.
 """
 
 import pygame
 
 
 class World:
-    def __init__(self, level, background, kind="surface", style=None, entry_x=None, pit=None):
-        self.kind = kind                  # "surface" | "underground"
-        self.style = style                # underground only: "subway" | "sewer" | "mine"
-        self.entry_x = entry_x            # underground only: where the player drops in
-        self.pit = pit                    # underground only: the surface pit that leads here
+    def __init__(self, level, background, kind="surface", style=None, entry_x=None, link=None):
+        self.kind = kind                  # "surface" | "underground" | "sky"
+        self.style = style                # hidden rooms: "subway" | "sewer" | "mine" | "rainbow" | "thunder" | "moon"
+        self.entry_x = entry_x            # hidden rooms: where the player arrives
+        self.link = link                  # hidden rooms: the surface pit / spring that leads here
         self.platforms = level.platforms
         self.question_blocks = level.question_blocks
         self.gift_boxes = level.gift_boxes
@@ -25,9 +27,10 @@ class World:
         self.ground_y = level.ground_y
         self.ground_segments_px = level.ground_segments_px
         self.secret_pits = getattr(level, "secret_pits", [])
+        self.springs = getattr(level, "springs", None) or pygame.sprite.Group()
         self.background = background
         self.all_sprites = pygame.sprite.Group(
-            *self.platforms, *self.enemies, *self.collectibles, self.goal
+            *self.springs, *self.platforms, *self.enemies, *self.collectibles, self.goal
         )
         # Levels are built the same way every time (seeded), so a save can
         # name "the 4th coin" or "the 2nd enemy" by its spawn index.
@@ -39,6 +42,15 @@ class World:
     @property
     def underground(self):
         return self.kind == "underground"
+
+    @property
+    def hidden(self):
+        """True in any secret room (underground or sky)."""
+        return self.kind != "surface"
+
+    @property
+    def pit(self):
+        return self.link
 
     def objects_state(self):
         """Which question boxes / gift boxes are used and which coins,

@@ -281,11 +281,44 @@ def _gem(s):
     pygame.draw.polygon(s, WHITE, [(22, 1), (23, 3), (25, 4), (23, 5), (22, 7), (21, 5), (19, 4), (21, 3)])
 
 
+def _kaminari_okoshi(s):
+    # a block of puffed rice in a red wrapper with a lightning mark
+    _rr(s, (232, 200, 140), (3, 6, 20, 16), 3)
+    for x, y in ((7, 9), (12, 11), (17, 9), (9, 15), (15, 17), (19, 14), (6, 18)):
+        pygame.draw.circle(s, (250, 232, 190), (x, y), 2)
+        pygame.draw.circle(s, (196, 150, 90), (x + 1, y + 1), 1)
+    pygame.draw.rect(s, (200, 40, 40), (10, 5, 6, 18))
+    pygame.draw.rect(s, INK, (10, 5, 6, 18), width=1)
+    pygame.draw.polygon(s, (255, 220, 70), [(14, 7), (11, 13), (13, 13), (12, 19), (15, 12), (13, 12)])
+
+
+def _wataame(s):
+    pygame.draw.line(s, (230, 210, 170), (13, 14), (13, 25), 3)
+    pygame.draw.line(s, INK, (14, 15), (14, 25), 1)
+    for x, y, r in ((9, 9, 7), (17, 9, 7), (13, 5, 6), (13, 12, 7)):
+        pygame.draw.circle(s, INK, (x, y), r + 1)
+    for x, y, r in ((9, 9, 7), (17, 9, 7), (13, 5, 6), (13, 12, 7)):
+        pygame.draw.circle(s, (255, 170, 205), (x, y), r)
+    for x, y in ((9, 6), (15, 4), (18, 10)):
+        pygame.draw.circle(s, (255, 220, 236), (x, y), 2)
+
+
+def _tsukimi_dango(s):
+    # a pyramid of white dumplings on a little wooden stand (sanbo)
+    pygame.draw.polygon(s, (200, 150, 90), [(3, 20), (23, 20), (21, 25), (5, 25)])
+    pygame.draw.polygon(s, INK, [(3, 20), (23, 20), (21, 25), (5, 25)], width=1)
+    for x, y in ((7, 16), (13, 16), (19, 16), (10, 10), (16, 10), (13, 4)):
+        pygame.draw.circle(s, INK, (x, y), 4)
+        pygame.draw.circle(s, (252, 250, 240), (x, y), 3)
+        pygame.draw.circle(s, WHITE, (x - 1, y - 1), 1)
+
+
 DRAWERS = {
     "energy_drink": _energy_drink, "mega_can": _mega_can, "ume_soda": _ume_soda, "candy": _candy,
     "onigiri": _onigiri, "gummy": _gummy, "dried_ume": _dried_ume, "nuts": _nuts, "canned_coffee": _canned_coffee, "melon_pan": _melon_pan, "green_tea": _green_tea,
     "lucky_bag": _lucky_bag, "golden_can": _golden_can,
     "ekiben": _ekiben, "pizza_bun": _pizza_bun, "gem": _gem,
+    "kaminari_okoshi": _kaminari_okoshi, "wataame": _wataame, "tsukimi_dango": _tsukimi_dango,
     "yuzu": _yuzu, "watermelon": _watermelon, "leaf": _leaf, "hibiscus": _hibiscus, "inari": _inari,
     "aburaage": _aburaage, "sweet_potato": _sweet_potato, "grass": _grass, "clam": _clam, "fish": _fish,
     "tuna": _tuna, "milk": _milk, "bone": _bone, "sausage": _sausage,

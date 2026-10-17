@@ -23,7 +23,9 @@ category-based canned hint instead of an AI-generated one.
 
 - **Left/Right arrows or A/D** — choose mascot/companion/world/difficulty (select screens) / run (in-level)
 - **Space / W / Up** — jump; **Enter/Space** — confirm a selection
-- **1-4** — answer a question block's quiz
+- **Up/Down + Enter (or Space)** — move the highlight through a quiz's
+  choices and answer with it; **1-4** still picks a choice directly, and
+  the mouse can hover/click a choice
 - **S** — skip (pass on) the question instead of answering it
 - **Enter/Space** — dismiss Kobito's hint after a wrong answer, or continue after completing a level
 - **Esc / P** — pause and open **Settings** (save, item box, furigana, translation, save & quit)
@@ -35,7 +37,7 @@ during play, it's picked up automatically (hot-plug supported):
 - **A** (button 0) — jump; confirm a selection; continue after Kobito's hint or a level
 - **B** (button 1) — back (in Settings)
 - **Start / Back** — open Settings
-- **A/B/X/Y** (buttons 0-3) — answer a question block's quiz (choices 1-4)
+- **D-pad / stick up-down + A** — choose and answer in a quiz
 - **LB / RB / Start** — skip the question
 
 Button numbers follow the common Xbox-style layout most gamepads report.
@@ -357,13 +359,42 @@ Falling into a gap is no longer endless:
   Japanese word when you arrive. Walk to the **出口 (EXIT)** at the far end —
   stairs, a manhole ladder or a mine lift — and you come back up just past
   the gap. Which room is behind which gap changes from level to level, and
-  the stage-clear card shows how many secrets you found (e.g. SECRETS 2/3).
+  the stage-clear card shows how many secrets you found.
 
 Saving underground keeps everything you picked up down there; you continue
 on the surface just past that pit and can drop back in for the rest.
 Code: `kobito/levels/underground.py` (layout + styles),
 `kobito/underground_background.py` (backdrops), `kobito/entities/exit.py`,
 `kobito/world.py` (switching between the surface and a room).
+
+## Hidden sky stages (the way up)
+
+Every level also hides **three secret ways up**: a small cloud tuft sitting
+in the grass, with a spring underneath. It's given away by a little updraft
+rising off it — rainbow sparkles, crackling sparks, or twinkling stars.
+Walking over it does nothing; **jump and land on it** and it launches you
+straight off the top of the screen into a hidden sky stage:
+
+- **Rainbow Bridge** (虹 niji) — a bright pastel sky with giant rainbows.
+  Cloud sheep and pink birds. Treasure: 綿あめ cotton candy. Exit: a rainbow arch.
+- **Thunder Clouds** (雷 kaminari) — a storm with lightning flashes, slanting
+  rain and the thunder god Raijin's ring of drums. Thunder imps and storm
+  puffs. Treasure: 雷おこし kaminari okoshi. Exit: a giant lightning bolt.
+- **Moonlit Clouds** (月 tsuki) — a starry night with a huge full moon and the
+  moon rabbit pounding mochi. Moon rabbits and night bats. Treasure:
+  月見団子 tsukimi dango. Exit: a vermilion torii gate.
+
+Sky stages are built from **one-way clouds**: jump up through them from
+below, land on top. There's no floor — **fall through a gap and you drift
+back down to the surface, with no life lost** — so the way down is always
+open, and the 出口 (EXIT) at the far end takes you down too. Like the
+underground, each has coins, two gift boxes, a snack, a favourite and a
+glowing treasure, and your companion teaches the sky word when you arrive.
+
+So each level has six secrets: three pits down and three springs up. The
+stage-clear card shows how many you found (SECRETS n/6).
+Code: `kobito/levels/sky.py`, `kobito/sky_background.py`,
+`kobito/entities/sky_spring.py`, `CloudPlatform` in `kobito/entities/platform.py`.
 
 ## Gift boxes
 

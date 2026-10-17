@@ -101,6 +101,8 @@ class Player(pygame.sprite.Sprite):
         colliding = pygame.sprite.spritecollide(self, platforms, dokill=False)
         self.touched.update(colliding)
         for platform in colliding:
+            if getattr(platform, "one_way", False):
+                continue  # clouds never block sideways
             if self.velocity_x > 0:
                 self.rect.right = platform.rect.left
             elif self.velocity_x < 0:
@@ -108,12 +110,19 @@ class Player(pygame.sprite.Sprite):
             self.velocity_x = 0
 
     def _move_and_collide_y(self, dt, platforms):
+        previous_bottom = self.rect.bottom
         self.rect.y += round(self.velocity_y * dt)
         self.on_ground = False
 
         colliding = pygame.sprite.spritecollide(self, platforms, dokill=False)
         self.touched.update(colliding)
         for platform in colliding:
+            # A one-way cloud only catches a player coming down onto it from
+            # above -- jumping up from underneath passes straight through.
+            if getattr(platform, "one_way", False) and (
+                self.velocity_y <= 0 or previous_bottom > platform.rect.top
+            ):
+                continue
             if self.velocity_y > 0:
                 self.rect.bottom = platform.rect.top
                 self.on_ground = True

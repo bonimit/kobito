@@ -56,6 +56,8 @@ class Enemy(pygame.sprite.Sprite):
     def _move_and_collide_x(self, dt, platforms):
         self.rect.x += round(self.velocity_x * dt)
         for platform in pygame.sprite.spritecollide(self, platforms, dokill=False):
+            if getattr(platform, "one_way", False):
+                continue
             if self.velocity_x > 0:
                 self.rect.right = platform.rect.left
             elif self.velocity_x < 0:
@@ -63,8 +65,11 @@ class Enemy(pygame.sprite.Sprite):
             self.velocity_x *= -1
 
     def _move_and_collide_y(self, dt, platforms):
+        previous_bottom = self.rect.bottom
         self.rect.y += round(self.velocity_y * dt)
         for platform in pygame.sprite.spritecollide(self, platforms, dokill=False):
+            if getattr(platform, "one_way", False) and (self.velocity_y <= 0 or previous_bottom > platform.rect.top):
+                continue
             if self.velocity_y > 0:
                 self.rect.bottom = platform.rect.top
             elif self.velocity_y < 0:

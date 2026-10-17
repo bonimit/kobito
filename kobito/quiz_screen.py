@@ -53,6 +53,17 @@ RESULT_DISPLAY_SECONDS = 1.0
 REVEAL_BEFORE_HINT_SECONDS = 0.8  # let the wrong-answer highlight register before the companion shows up
 ANSWER_KEYS = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3}
 CONTINUE_KEYS = (pygame.K_RETURN, pygame.K_SPACE)
+# Choosing with a cursor: Up/Down (keyboard, d-pad or stick) moves the
+# highlight, Enter/Space or the gamepad's A button answers with it.
+CURSOR_UP_KEYS = (pygame.K_UP,)
+CURSOR_DOWN_KEYS = (pygame.K_DOWN,)
+CONFIRM_KEYS = (pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER)
+STICK_Y_AXIS = 1
+# Ignore confirm presses for a moment after the box opens, so the jump
+# that bumped the block can't also pick an answer by accident.
+CONFIRM_GRACE_SECONDS = 0.3
+CURSOR_COLOR = (255, 210, 110)
+CURSOR_BG = (255, 210, 110, 46)
 SKIP_KEYS = (pygame.K_s,)
 SKIP_BUTTON_SIZE = (92, 22)
 
@@ -73,8 +84,9 @@ RPG_CONTINUE_BLINK_MS = 500
 class QuizScreen:
     """A question-block encounter: a small translucent tooltip box pops
     up from the block itself -- with a pointer tail toward it, like a
-    speech bubble -- and shows the question. Waits for the player to
-    press 1-4 and briefly highlights right/wrong.
+    speech bubble -- and shows the question. The player picks a choice
+    with the highlight (Up/Down + Enter, or d-pad/stick + A), with 1-4 as
+    a quick pick, or by tapping/clicking it; then right/wrong is shown.
 
     On a wrong answer, the player's chosen AI companion (see
     kobito/companions.py) shows up next to the box with its own speech
@@ -144,6 +156,12 @@ class QuizScreen:
         self._choice_rects = []
         self._rpg_box_rect = None
         self._skip_rect = None  # the on-screen Skip button, set each _draw while answering
+        self.cursor = 0           # highlighted choice while answering
+        self._stick_y = 0         # last stick direction, so a held stick moves once
+        self._age = 0.0           # seconds since the box opened
+
+    def move_cursor(self, step):
+        self.cursor = (self.cursor + step) % len(self.question["choices"])
 
     async def run(self):
         phase = PHASE_ANSWERING
@@ -153,6 +171,8 @@ class QuizScreen:
 
         while True:
             dt = self.clock.tick(FPS) / 1000.0
+            self._age += dt
+            can_confirm = self._age >= CONFIRM_GRACE_SECONDS
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -164,6 +184,14 @@ class QuizScreen:
                     if phase == PHASE_ANSWERING and event.key in ANSWER_KEYS:
                         selected = ANSWER_KEYS[event.key]
                         phase = PHASE_REVEAL
+                    elif phase == PHASE_ANSWERING and event.key in CURSOR_UP_KEYS:
+                        self.move_cursor(-1)
+                    elif phase == PHASE_ANSWERING and event.key in CURSOR_DOWN_KEYS:
+                        self.move_cursor(1)
+                    elif phase == PHASE_ANSWERING and event.key in CONFIRM_KEYS:
+                        if can_confirm:
+                            selected = self.cursor
+                            phase = PHASE_REVEAL
                     elif phase == PHASE_ANSWERING and event.key in SKIP_KEYS:
                         return None  # passed: the question goes unanswered
                     elif phase == PHASE_HINT and event.key in CONTINUE_KEYS:
@@ -179,16 +207,28 @@ class QuizScreen:
                         furigana.toggle_translation()
 
                 elif event.type == pygame.JOYBUTTONDOWN:
-                    # Face buttons (A/B/X/Y) double as answer choices
-                    # 1-4 while answering, and as "continue" (any of
-                    # them) once the companion's hint is showing.
+                    # While answering: d-pad/stick moves the highlight and
+                    # A answers with it. Once the companion's hint is
+                    # showing, any face button continues.
                     if phase == PHASE_ANSWERING and event.button in game_input.SKIP_BUTTONS:
                         return None
-                    if phase == PHASE_ANSWERING and event.button in game_input.FACE_BUTTONS:
-                        selected = game_input.FACE_BUTTONS.index(event.button)
-                        phase = PHASE_REVEAL
+                    if phase == PHASE_ANSWERING and event.button in game_input.CONFIRM_BUTTONS:
+                        if can_confirm:
+                            selected = self.cursor
+                            phase = PHASE_REVEAL
                     elif phase == PHASE_HINT and event.button in game_input.FACE_BUTTONS:
                         return False
+                elif event.type == pygame.JOYHATMOTION and phase == PHASE_ANSWERING and event.value[1]:
+                    self.move_cursor(-event.value[1])   # hat y is +1 for up
+                elif event.type == pygame.JOYAXISMOTION and event.axis == STICK_Y_AXIS:
+                    direction = 0 if abs(event.value) < game_input.AXIS_DEADZONE else (1 if event.value > 0 else -1)
+                    if phase == PHASE_ANSWERING and direction and direction != self._stick_y:
+                        self.move_cursor(direction)
+                    self._stick_y = direction
+                elif event.type == pygame.MOUSEMOTION and phase == PHASE_ANSWERING:
+                    hovered = self._choice_at(event.pos)
+                    if hovered is not None:
+                        self.cursor = hovered
 
                 tap_pos = game_input.touch_tap_pos(event)
                 if tap_pos is not None:
@@ -291,6 +331,16 @@ class QuizScreen:
 
         self._choice_rects = []
         for index, choice_text in enumerate(self.question["choices"]):
+            line_h = self._line_height(f"{index + 1}. {choice_text}", self.font_choice, min_height=CHOICE_HEIGHT)
+            if phase == PHASE_ANSWERING and index == self.cursor:
+                # The highlighted row: a soft gold bar with a pointer.
+                bar = pygame.Rect(box.x + 4, y - 2, box.width - 8, line_h + 4)
+                highlight = pygame.Surface(bar.size, pygame.SRCALPHA)
+                pygame.draw.rect(highlight, CURSOR_BG, highlight.get_rect(), border_radius=6)
+                pygame.draw.rect(highlight, (*CURSOR_COLOR, 200), highlight.get_rect(), width=1, border_radius=6)
+                self.screen.blit(highlight, bar.topleft)
+                cy = bar.centery
+                pygame.draw.polygon(self.screen, CURSOR_COLOR, [(box.x + 3, cy - 4), (box.x + 8, cy), (box.x + 3, cy + 4)])
             color = TEXT_COLOR
             if selected is not None:
                 if index == self.question["answer"]:
@@ -485,7 +535,7 @@ class QuizScreen:
 
     def _footer_text(self, phase, selected):
         if phase == PHASE_ANSWERING:
-            return "Tap a choice to answer" if IS_WEB else "Press 1-4 to answer"
+            return "Tap a choice to answer" if IS_WEB else "↑↓ choose · Enter answer"
         return None  # once answered, the companion's dialogue box carries the message instead
 
     def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False):

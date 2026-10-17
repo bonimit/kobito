@@ -35,3 +35,32 @@ class Platform(pygame.sprite.Sprite):
                 self.image.fill(shade_color, (seam_x, 0, 1, height))
 
         self.rect = self.image.get_rect(topleft=(x, y))
+        # One-way platforms (clouds) can be jumped up through from below and
+        # only hold you up when you land on them from above.
+        self.one_way = False
+
+
+class CloudPlatform(pygame.sprite.Sprite):
+    """A fluffy one-way cloud for the sky stages: jump up through it from
+    below, land on it from above. Drawn as a row of overlapping puffs with
+    a lit top and a shaded belly."""
+
+    def __init__(self, x, y, width, color=(250, 250, 255), shade=(214, 220, 240), height=TILE_SIZE):
+        super().__init__()
+        self.one_way = True
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
+        r = height // 2
+        edge = tuple(max(0, c - 70) for c in shade)   # a soft outline so clouds read on any sky
+        bumps = [(cx, r - 1 if i % 2 else r - 4) for i, cx in enumerate(range(r, width - r + 1, max(1, r)))]
+        pygame.draw.rect(self.image, edge, (0, r - 4, width, height - r + 4), border_radius=r)
+        for cx, bump in bumps:
+            pygame.draw.circle(self.image, edge, (cx, r + 2), bump + 2)
+        belly = pygame.Rect(2, r - 2, width - 4, height - r)
+        pygame.draw.rect(self.image, shade, belly, border_radius=r)
+        for cx, bump in bumps:
+            pygame.draw.circle(self.image, color, (cx, r + 2), bump)
+        pygame.draw.rect(self.image, color, (0, r, width, height - r - 6), border_radius=r)
+        light = tuple(min(255, c + 12) for c in color)
+        for cx in range(r, width - r + 1, max(1, r * 2)):
+            pygame.draw.circle(self.image, light, (cx - 3, r - 1), max(2, r // 3))
+        self.rect = self.image.get_rect(topleft=(x, y))

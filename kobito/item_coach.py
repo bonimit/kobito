@@ -22,7 +22,7 @@ import threading
 from dataclasses import dataclass
 
 SITUATIONS = ("snack", "rescue", "favorite", "rare", "life", "coins", "drowsy", "asleep",
-              "fell", "secret", "surface")
+              "fell", "secret", "surface", "landed")
 
 # {item} English name, {jp} Japanese word, {pet} the player's mascot,
 # {power} current power out of 10, {place} a hidden stage's name. Short: they sit in a small bubble.
@@ -39,6 +39,7 @@ VOICES = {
         "fell": ["Oh! Mind the gap, {pet}. Let's try that jump again.", "A tumble... a life lost, but you're safe now."],
         "secret": ["A secret place, {pet}! The {place}... how mysterious.", "Shh -- we've found the hidden {place}."],
         "surface": ["Fresh air again. What a little adventure!", "Back in the light, {pet}. Well explored."],
+        "landed": ["Down from the clouds, soft as a leaf.", "Feet on the ground again, {pet}. What a view that was."],
     },
     "ushi": {
         "snack": ["There, there -- {item}. Eat up, dear.", "Mmm, {item}. Good for the road, {pet}."],
@@ -52,6 +53,7 @@ VOICES = {
         "fell": ["Oh dear, careful! Mama's got you -- up you get.", "Watch your step, sweetheart. One life gone."],
         "secret": ["Goodness, the {place}! Stay close to me, dear.", "A hidden {place}... let's be careful, dear."],
         "surface": ["There, back upstairs. Good child.", "Out we come. Let's dust you off, dear."],
+        "landed": ["Down you come, dear -- gently now.", "Back on the ground. Mama was watching the whole time."],
     },
     "hana": {
         "snack": ["Ooh, {item}! Sparkle-time, {pet}!", "Yay, {item}! Energy bloom!"],
@@ -65,6 +67,7 @@ VOICES = {
         "fell": ["Eek! Down the hole! Shake it off, {pet}!", "Oopsie-daisy! Petals up -- try again!"],
         "secret": ["WHOA, a secret {place}! Sparkle hunt time!", "Hidden {place}!! I'm blooming with excitement!"],
         "surface": ["Sunshine! We're back, {pet}!", "Up and out -- bloom, bloom!"],
+        "landed": ["Wheee -- and DOWN! That was dreamy!", "Back from the sky! My petals are still fluttering!"],
     },
     "umeshu": {
         "snack": ["A modest {item}. Quietly satisfying.", "Mm. {item}. A civilised pause, {pet}."],
@@ -78,6 +81,7 @@ VOICES = {
         "fell": ["A misstep. The ground was, regrettably, absent.", "Gravity wins this round. Gather yourself, {pet}."],
         "secret": ["How delightful -- a concealed {place}.", "The {place}. Few ever find it."],
         "surface": ["Daylight. A most refreshing return.", "Back above ground, with pockets fuller."],
+        "landed": ["A graceful descent. Mostly.", "Returned from the heavens, none the worse."],
     },
     "kinoko": {
         "snack": ["{item}? That's snack-tastic, {pet}!", "Gobble gobble -- {item}! Fun-gi to eat!"],
@@ -91,6 +95,7 @@ VOICES = {
         "fell": ["Whoops, you fell in the hole-y moley! One life down!", "Pit-iful jump, {pet}! Try again!"],
         "secret": ["A secret {place}! I'm totally under-ground-ed by this!", "Hidden {place} -- what a fun-gi find!"],
         "surface": ["Back up top! That was a ground-breaking trip!", "Surface again -- spore-tacular!"],
+        "landed": ["Cloud-nine and back again!", "What goes up must come down -- fun-gi physics!"],
     },
 }
 
@@ -157,6 +162,9 @@ class ItemCoach:
 
     def surface(self):
         self._say([self._local_line("surface", None, 10)], "happy", seconds=3.5)
+
+    def landed(self):
+        self._say([self._local_line("landed", None, 10)], "happy", seconds=3.5)
 
     def update(self, dt):
         if self.speech is None:

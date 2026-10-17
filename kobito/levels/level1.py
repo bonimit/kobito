@@ -10,6 +10,7 @@ from kobito.entities.gift_box import GiftBox
 from kobito.entities.goal import Goal
 from kobito.entities.platform import Platform
 from kobito.entities.question_block import QuestionBlock
+from kobito.entities.sky_spring import SkySpring
 from kobito.items import KONBINI_IDS
 from kobito.themes import ENEMY_PALETTES, FLYING_ENEMY_PALETTES, get_theme
 
@@ -40,6 +41,13 @@ MIN_QUESTION_SPACING_TILES = 8
 SECRET_GAP_SEGMENTS = (2, 7, 12)
 UNDERGROUND_STYLES = ("subway", "sewer", "mine")
 
+# ...and three secret ways UP: a cloud spring hidden in the grass that
+# launches you into a hidden sky stage (kobito/levels/sky.py). Placed in
+# segments without a secret pit, on open ground with nothing overhead.
+SECRET_SPRING_SEGMENTS = (4, 9, 14)
+SPRING_COL = 17       # centred in the open stretch between the gift box and the last "?" box
+SKY_STYLES = ("rainbow", "thunder", "moon")
+
 
 @dataclass
 class Level:
@@ -57,6 +65,8 @@ class Level:
     # [{"index", "style", "x0", "x1", "return_x"}] -- gaps (x0..x1, pixels)
     # that lead underground; return_x is where the player comes back up.
     secret_pits: list = field(default_factory=list)
+    # Cloud springs (SkySpring sprites) leading up to the sky stages.
+    springs: pygame.sprite.Group = field(default_factory=pygame.sprite.Group)
 
 
 def build_level1(theme_id="forest", level_number=1, favorites=()):
@@ -97,6 +107,7 @@ class _LevelBuilder:
         self.theme = theme
         self.level_number = level_number
         self.secret_pits = []
+        self.springs = pygame.sprite.Group()
         self.favorites = list(favorites)
         # Seeded per level so a level's layout is the same every time it's
         # built (and testable), but differs from level to level.
@@ -230,6 +241,19 @@ class _LevelBuilder:
             for i, dy in enumerate((0, 1, 2)):
                 self._add_collectible(high_col + i - 1, 8 - 3 - dy, kind="coin")
 
+        if segment_index in SECRET_SPRING_SEGMENTS:
+            index = len(self.springs)
+            x = (s + SPRING_COL) * TILE_SIZE + TILE_SIZE // 2
+            link = {
+                "index": index,
+                "style": SKY_STYLES[(self.level_number - 1 + index) % len(SKY_STYLES)],
+                "x": x,
+                # Back down just before the spring (walking onto it doesn't
+                # launch you -- only landing on it from a jump does).
+                "return_x": x - 3 * TILE_SIZE,
+            }
+            self.springs.add(SkySpring(x, GROUND_ROW * TILE_SIZE, link["style"], link))
+
         if segment_index in SECRET_GAP_SEGMENTS:
             index = len(self.secret_pits)
             self.secret_pits.append({
@@ -276,4 +300,5 @@ class _LevelBuilder:
             theme=self.theme,
             ground_segments_px=self.ground_segments_px,
             secret_pits=self.secret_pits,
+            springs=self.springs,
         )
