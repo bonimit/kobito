@@ -15,7 +15,7 @@ BOB_PIXELS = 3
 
 # The halo behind each kind of pickup: what it is, at a glance.
 HALO_COLORS = {"konbini": (120, 200, 255), "favorite": (255, 140, 200), "rare": (255, 214, 90),
-               "treasure": (255, 226, 120), "shiitake": (255, 150, 150)}
+               "treasure": (255, 226, 120), "power": (255, 170, 60), "shiitake": (255, 150, 150)}
 
 SHIITAKE_CAP = (121, 74, 45)
 SHIITAKE_CAP_EDGE = (95, 56, 33)

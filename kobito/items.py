@@ -29,7 +29,7 @@ class Item:
     meaning: str
     example: str
     example_en: str
-    group: str            # "konbini" | "rare" | "favorite" | "treasure"
+    group: str            # "konbini" | "rare" | "favorite" | "treasure" | "power"
     power: int = 0
     score: int = 10
     life: int = 0
@@ -100,6 +100,12 @@ ITEMS = {item.id: item for item in [
          "月見団子を食べます。", "I eat moon-viewing dumplings.", "treasure",
          power=10, score=100, life=1, full_power=True),
 
+    # Power-up: eat it and the run button throws bouncing sunballs that
+    # defeat enemies (like Mario's fire flower) -- until you get hit.
+    Item("sunflower", "Sunflower", "ひまわり", "himawari", "sunflower",
+         "ひまわりは太陽が好きです。", "Sunflowers love the sun.", "power",
+         power=2, score=50),
+
     _favorite("yuzu", "Yuzu", "ゆず", "yuzu", "yuzu citrus",
               "ゆずの匂いが好きです。", "I like the smell of yuzu."),
     _favorite("watermelon", "Watermelon", "すいか", "suika", "watermelon",
@@ -144,12 +150,12 @@ def get_item(item_id):
 # What a gift box can hold. Weights add up to 100. A sleepy player gets a
 # better table -- see roll_gift -- so a gift box is also a lifeline.
 GIFT_TABLE = [
-    ("coins", 24), ("snack", 30), ("drink", 18),
-    ("favorite", 10), ("life", 10), ("rare", 8),
+    ("coins", 20), ("snack", 28), ("drink", 18),
+    ("favorite", 10), ("life", 10), ("rare", 8), ("sunflower", 6),
 ]
 SLEEPY_GIFT_TABLE = [
-    ("coins", 6), ("snack", 30), ("drink", 40),
-    ("favorite", 6), ("life", 8), ("rare", 10),
+    ("coins", 6), ("snack", 28), ("drink", 40),
+    ("favorite", 6), ("life", 8), ("rare", 10), ("sunflower", 2),
 ]
 
 
@@ -172,7 +178,7 @@ def roll_gift(rng, favorites, sleepy=False):
     if kind == "life":
         return {"kind": "life", "item": None, "coins": 0}
     pool = {
-        "snack": SMALL_SNACKS, "drink": BIG_DRINKS, "rare": RARE_IDS,
+        "snack": SMALL_SNACKS, "drink": BIG_DRINKS, "rare": RARE_IDS, "sunflower": ["sunflower"],
         "favorite": list(favorites) or SMALL_SNACKS,
     }[kind]
     return {"kind": "item", "item": get_item(rng.choice(pool)), "coins": 0}

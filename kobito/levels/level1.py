@@ -248,6 +248,10 @@ class _LevelBuilder:
         self._add_collectible(high_col, 7, kind="coin")
         if segment_index % 4 == 3:
             self._add_collectible(support_col + 1, 11, kind="shiitake")
+        # A sunflower (sun power: throw sunballs) on the stepping stone, a few
+        # times a level.
+        if segment_index % 5 == 1:
+            self._add_collectible(support_col + 2, 11, kind="sunflower")
 
         # One konbini snack per segment (power), alternating sides of the
         # question boxes so there's always one to find; and one of the

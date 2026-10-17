@@ -22,6 +22,7 @@ FACE_BUTTONS = (0, 1, 2, 3)
 CONFIRM_BUTTONS = (0,)  # A
 CANCEL_BUTTONS = (1,)  # B
 JUMP_BUTTONS = (0,)  # A
+RUN_BUTTONS = (1, 2)  # B / X: hold to run; press to throw a sunball with sun power
 SKIP_BUTTONS = (4, 5, 7)  # shoulder buttons / Start: skip a quiz question (face buttons are the answers)
 
 _joysticks = None
@@ -78,6 +79,14 @@ def jump_held():
         joystick.get_numbuttons() > button and joystick.get_button(button)
         for joystick in get_joysticks()
         for button in JUMP_BUTTONS
+    )
+
+
+def run_held():
+    return any(
+        joystick.get_numbuttons() > button and joystick.get_button(button)
+        for joystick in get_joysticks()
+        for button in RUN_BUTTONS
     )
 
 
@@ -192,6 +201,8 @@ class GameplayTouchControls:
             "left": (left_x, cy),
             "right": (left_x + TOUCH_BUTTON_RADIUS * 2 + TOUCH_BUTTON_GAP, cy),
             "jump": (screen_width - TOUCH_BUTTON_MARGIN - TOUCH_BUTTON_RADIUS, cy),
+            # Run (hold) / throw a sunball (tap, with sun power), left of jump.
+            "run": (screen_width - TOUCH_BUTTON_MARGIN - TOUCH_BUTTON_RADIUS * 3 - TOUCH_BUTTON_GAP, cy),
         }
         self._held = {}  # touch/mouse id -> button name
 
@@ -233,10 +244,14 @@ class GameplayTouchControls:
     def jump_held(self):
         return "jump" in self._held.values()
 
+    def run_held(self):
+        return "run" in self._held.values()
+
     def draw(self, screen):
         self._draw_button(screen, "left", "<")
         self._draw_button(screen, "right", ">")
         self._draw_button(screen, "jump", "^")
+        self._draw_button(screen, "run", "B")
 
     def _draw_button(self, screen, name, label):
         center = self.buttons[name]
@@ -327,3 +342,7 @@ def touch_move_axis():
 
 def touch_jump_held():
     return _gameplay_touch.jump_held() if _gameplay_touch else False
+
+
+def touch_run_held():
+    return _gameplay_touch.run_held() if _gameplay_touch else False

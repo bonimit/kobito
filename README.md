@@ -23,6 +23,9 @@ category-based canned hint instead of an AI-generated one.
 
 - **Left/Right arrows or A/D** — choose mascot/companion/world/difficulty (select screens) / run (in-level)
 - **Space / W / Up** — jump; **Enter/Space** — confirm a selection
+- **Shift / X / J** — hold to **run**; with sun power, press to **throw a sunball**
+- **Jump again in mid-air** — flap upward (twice per jump); **hold jump while falling** — glide
+- **Jump at a wall and hold toward it** — climb it; **jump while on the wall** — wall jump
 - **Up/Down + Enter (or Space)** — move the highlight through a quiz's
   choices and answer with it; **1-4** still picks a choice directly, and
   the mouse can hover/click a choice
@@ -38,6 +41,7 @@ during play, it's picked up automatically (hot-plug supported):
 - **B** (button 1) — back (in Settings)
 - **Start / Back** — open Settings
 - **D-pad / stick up-down + A** — choose and answer in a quiz
+- **B / X** (buttons 1-2) — hold to run; with sun power, press to throw a sunball
 - **LB / RB / Start** — skip the question
 
 Button numbers follow the common Xbox-style layout most gamepads report.
@@ -310,6 +314,26 @@ name, tagline, personality, placeholder color, and an ability —
 `xp_gain_multiplier`, `xp_penalty_multiplier`, `bonus_score`, and/or
 `always_show_explanation`) and dropping its five expression frames into
 `assets/sprites/<id>/` — nothing else changes.
+
+## Moves: run, fly, climb — and sun power
+
+Like a classic platformer hero, your mascot can do more than walk and jump
+(`kobito/entities/player.py`, all tunable at the top of the file):
+
+- **Run** — hold Shift / X / J (gamepad B or X, or the web build's **B**
+  touch button) to go 1.6× faster; running jumps carry much further.
+- **Fly** — press jump again in mid-air to **flap** upward (two flaps per
+  jump, restored on landing), and **hold jump while falling to glide** down
+  slowly.
+- **Climb walls** — jump at a wall and hold toward it to climb (about 1.2 s
+  per wall, then you slide down slowly). Press jump while on the wall to
+  **wall-jump** off it. This also lets you climb back out of a pit.
+- **Sun power — ひまわり (himawari, sunflower).** Eat a sunflower (three per
+  level on the stepping stones, and sometimes in gift boxes) and the run
+  button **throws bouncing sunballs** (up to 2 on screen) that defeat any
+  enemy they hit — like Mario's fire flower. While powered up you glow warm
+  and the HUD shows **SUN POWER**; getting hit costs you the sun power
+  instead of a power pip. Sun power is kept in your save.
 
 ## Power, enemies and stomping
 

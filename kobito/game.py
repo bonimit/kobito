@@ -44,6 +44,7 @@ from kobito.entities.enemy import FlyingEnemy
 from kobito.entities.gift_box import GiftBox
 from kobito.entities.player import Player
 from kobito.entities.question_block import QuestionBlock
+from kobito.entities.sun_shot import MAX_SHOTS, SunShot
 from kobito import save_game, ui
 from kobito.hint_service import HintService
 from kobito.item_art import get_icon
@@ -215,6 +216,9 @@ class Game:
         self.fell_in_pit_flag = False
         self.pits_fallen = 0
         self.transition = None   # an in-progress fade, see _start_transition
+        # Sun power (from eating a sunflower): the run button throws sunballs.
+        self.sun_power = False
+        self.shots = pygame.sprite.Group()
         self.banner = None       # (title, subtitle, seconds left)
         self.rng = random.Random()
         self.coach = ItemCoach(self.hint_service, character["name"])
@@ -357,6 +361,7 @@ class Game:
             "stomps": self.stomps, "snacks": self.snacks_eaten, "favorites": self.favorites_found,
             "gifts": self.gifts_opened, "asked_ids": sorted(self.asked_ids, key=str),
             "pits_fallen": self.pits_fallen, "secrets_found": sorted(self.secrets_found),
+            "sun_power": self.sun_power,
             "underground": {str(i): w.objects_state() for i, w in self.underground_worlds.items()},
             "sky_found": sorted(self.sky_found),
             "sky": {str(i): w.objects_state() for i, w in self.sky_worlds.items()},
@@ -380,6 +385,7 @@ class Game:
             self.gifts_opened = int(state.get("gifts", 0))
             self.asked_ids = set(state.get("asked_ids", []))
             self.pits_fallen = int(state.get("pits_fallen", 0))
+            self.sun_power = bool(state.get("sun_power", False))
             self.secrets_found = {int(i) for i in state.get("secrets_found", [])}
             rooms = state.get("underground", {})
             self._underground_states = {int(k): v for k, v in rooms.items() if isinstance(v, dict)}
@@ -414,6 +420,7 @@ class Game:
         self._apply_power_effects(dt)
         self.player.update(dt, self.platforms)
         self.enemies.update(dt, self.platforms)
+        self._update_sun(dt)
         for spring in self.world.springs:
             spring.update_squash(dt)
         for block in self.question_blocks:
@@ -442,6 +449,39 @@ class Game:
         if self.invulnerable_timer > 0:
             self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
         self._check_enemy_contact(dt)
+
+    # -- Sun power ---------------------------------------------------------------
+
+    def _update_sun(self, dt):
+        """With sun power, a fresh press of the run button throws a sunball
+        (at most MAX_SHOTS at once); sunballs defeat the enemies they hit."""
+        player = self.player
+        if player.fire_requested and self.sun_power and len(self.shots) < MAX_SHOTS:
+            direction = 1 if player.facing_right else -1
+            self.shots.add(SunShot(player.rect.centerx + direction * 18, player.rect.centery - 4, direction))
+        self.shots.update(dt, self.platforms)
+        for shot in list(self.shots):
+            enemy = pygame.sprite.spritecollideany(shot, self.enemies)
+            if enemy is not None:
+                shot.kill()
+                self._zap(enemy)
+            elif not -60 < shot.rect.centerx - self.camera_x < SCREEN_WIDTH + 60:
+                shot.kill()
+
+    def _zap(self, enemy):
+        where = (enemy.rect.centerx, enemy.rect.top)
+        enemy.kill()
+        self.stomps += 1
+        self.score += STOMP_SCORE
+        self._add_xp(STOMP_GAUGE)
+        self._add_effect_text(f"+{STOMP_SCORE}", where, (255, 210, 110))
+        self._add_effect_puff(where)
+
+    def _gain_sun_power(self, where):
+        first_time = not self.sun_power
+        self.sun_power = True
+        self._add_effect_text("SUN POWER!", where, (255, 190, 60))
+        return first_time
 
     def _follow_camera(self):
         # Keep the player roughly centered horizontally by shifting the
@@ -488,6 +528,7 @@ class Game:
         self._follow_camera()
 
     def _switch_world(self, world):
+        self.shots.empty()
         self.all_sprites.remove(self.player)
         self.world = world
         self.all_sprites.add(self.player)
@@ -704,7 +745,10 @@ class Game:
         self._add_effect_text(label, where, color)
         if from_gift:
             self._add_effect_icon(item.id, where)
-        self.coach.react(situation, item, self.power)
+        if item.group == "power":
+            self.coach.power_up(item, first_time=self._gain_sun_power(where))
+        else:
+            self.coach.react(situation, item, self.power)
 
     def _check_gift_boxes(self):
         # Same trick as the question blocks: player.touched is whatever the
@@ -888,7 +932,13 @@ class Game:
     def _take_hit(self):
         """An enemy hit costs 1 power (ten hits drain a full gauge) and
         takes a little XP off. Running out of power means falling
-        asleep: that costs a life, and the player wakes up groggy."""
+        asleep: that costs a life, and the player wakes up groggy.
+        With sun power, the hit just takes the sun power away instead
+        (like losing Mario's fire flower)."""
+        if self.sun_power:
+            self.sun_power = False
+            self._add_effect_text("Sun power lost", (self.player.rect.centerx, self.player.rect.top), (255, 190, 120))
+            return
         self._lose_xp(GAUGE_DAMAGE)
         self._set_power(self.power - 1)
         if self.power > 0:
@@ -963,6 +1013,9 @@ class Game:
                 self.screen.blit(sprite.frame(t), (rect.x - self.camera_x, rect.y + sprite.bob(t)))
             else:
                 self.screen.blit(sprite.image, (rect.x - self.camera_x, rect.y))
+        for shot in self.shots:
+            rect = shot.draw_rect()
+            self.screen.blit(shot.image, (rect.x - self.camera_x, rect.y))
 
         self._draw_effects()
         if self.drowsy and not self.game_over:
@@ -1011,6 +1064,11 @@ class Game:
                 glow = self._glow_surface(block.glow_color, 40, 150)
                 glow.set_alpha(round(255 * block.glow_strength(t)))
                 self.screen.blit(glow, glow.get_rect(center=(block.rect.centerx - self.camera_x, block.rect.centery)))
+        if self.sun_power:   # a warm glow around the player while powered up
+            glow = self._glow_surface((255, 190, 70), 46, 120)
+            glow.set_alpha(round(255 * (0.7 + 0.3 * math.sin(t * 5))))
+            self.screen.blit(glow, glow.get_rect(center=(self.player.rect.centerx - self.camera_x,
+                                                       self.player.rect.centery)))
         for pickup in self.collectibles:
             color = pickup.halo_color
             if color is None or not left < pickup.rect.centerx < right:
@@ -1172,15 +1230,17 @@ class Game:
 
         # Temporary states get their own tag under the card, so they're
         # noticed without crowding the numbers above.
-        tag = None
+        tags = []
         if self.drowsy:
-            tag = ("SLEEPY... FIND A SNACK!", (120, 30, 44, 220), (255, 190, 190))
+            tags.append(("SLEEPY... FIND A SNACK!", (120, 30, 44, 220), (255, 190, 190)))
         elif self.boost_timer > 0:
-            tag = (f"BOOST  {math.ceil(self.boost_timer)}s", (24, 70, 44, 220), (170, 255, 190))
-        if tag:
-            words, bg, color = tag
+            tags.append((f"BOOST  {math.ceil(self.boost_timer)}s", (24, 70, 44, 220), (170, 255, 190)))
+        if self.sun_power:
+            tags.append(("SUN POWER  ·  RUN BUTTON TO THROW", (110, 60, 10, 220), (255, 200, 90)))
+        for i, (words, bg, color) in enumerate(tags):
             width = label.size(words)[0] + 24
-            pill = ui.panel(self.screen, (card.x, card.bottom + 6, width, 26), bg=bg, edge=(*color, 160), radius=13)
+            pill = ui.panel(self.screen, (card.x, card.bottom + 6 + i * 30, width, 26), bg=bg, edge=(*color, 160),
+                            radius=13)
             ui.text(self.screen, words, label, pill.center, color=color, anchor="center", thickness=1)
 
     def _draw_level_pill(self):

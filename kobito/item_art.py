@@ -8,6 +8,8 @@ with nearest-neighbour when a bigger icon is wanted (HUD, popups), so
 the pixels stay crisp.
 """
 
+import math
+
 import pygame
 
 CANVAS = 26
@@ -131,7 +133,6 @@ def _leaf(s):
 
 
 def _hibiscus(s):
-    import math
     for i in range(5):
         a = -math.pi / 2 + i * 2 * math.pi / 5
         pygame.draw.circle(s, (240, 70, 90), (13 + math.cos(a) * 6, 13 + math.sin(a) * 6), 5)
@@ -313,10 +314,30 @@ def _tsukimi_dango(s):
         pygame.draw.circle(s, WHITE, (x - 1, y - 1), 1)
 
 
+def _sunflower(s):
+    pygame.draw.line(s, INK, (13, 16), (13, 25), 4)                     # stem
+    pygame.draw.line(s, (80, 170, 70), (13, 16), (13, 25), 2)
+    pygame.draw.ellipse(s, INK, (14, 18, 9, 6))                          # leaf
+    pygame.draw.ellipse(s, (100, 190, 80), (15, 19, 7, 4))
+    for i in range(10):                                                  # petals
+        a = i * math.pi / 5
+        cx, cy = 13 + math.cos(a) * 7, 10 + math.sin(a) * 7
+        pygame.draw.circle(s, INK, (round(cx), round(cy)), 4)
+    for i in range(10):
+        a = i * math.pi / 5
+        cx, cy = 13 + math.cos(a) * 7, 10 + math.sin(a) * 7
+        pygame.draw.circle(s, (255, 206, 40), (round(cx), round(cy)), 3)
+    pygame.draw.circle(s, INK, (13, 10), 6)
+    pygame.draw.circle(s, (130, 80, 40), (13, 10), 5)                    # seed face
+    for x, y in ((11, 8), (15, 9), (12, 12), (14, 11)):
+        pygame.draw.circle(s, (90, 50, 24), (x, y), 1)
+
+
 DRAWERS = {
     "energy_drink": _energy_drink, "mega_can": _mega_can, "ume_soda": _ume_soda, "candy": _candy,
     "onigiri": _onigiri, "gummy": _gummy, "dried_ume": _dried_ume, "nuts": _nuts, "canned_coffee": _canned_coffee, "melon_pan": _melon_pan, "green_tea": _green_tea,
     "lucky_bag": _lucky_bag, "golden_can": _golden_can,
+    "sunflower": _sunflower,
     "ekiben": _ekiben, "pizza_bun": _pizza_bun, "gem": _gem,
     "kaminari_okoshi": _kaminari_okoshi, "wataame": _wataame, "tsukimi_dango": _tsukimi_dango,
     "yuzu": _yuzu, "watermelon": _watermelon, "leaf": _leaf, "hibiscus": _hibiscus, "inari": _inari,

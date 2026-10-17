@@ -164,6 +164,12 @@ class ItemCoach:
     def landed(self):
         self._say([self._local_line("landed", None, 10)], "happy", seconds=3.5)
 
+    def power_up(self, item, first_time=True):
+        """A sunflower: explain the new power the first time, then the word."""
+        tip = ("Sun power! Press the run button -- Shift or X (gamepad B/X) -- to throw sunballs!"
+               if first_time else "More sun! Your sunballs are still burning bright.")
+        self._say([tip, self.lesson_line(item)], "happy", seconds=7.0)
+
     def update(self, dt):
         if self.speech is None:
             return

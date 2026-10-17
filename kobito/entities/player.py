@@ -10,6 +10,18 @@ from kobito.constants import (
     TILE_SIZE,
 )
 
+# Moves (all tunable here):
+RUN_BOOST = 1.6            # hold run: this much faster (jumps carry further too)
+FLAPS_PER_JUMP = 2         # press jump again in mid-air to flap up, this many times
+FLAP_SPEED = 430.0
+GLIDE_FALL_SPEED = 130.0   # hold jump while falling to glide down slowly
+CLIMB_SPEED = 150.0        # hold toward a wall in mid-air to climb it...
+CLIMB_SECONDS = 1.2        # ...for this long per wall, then you slide
+WALL_SLIDE_SPEED = 90.0
+WALL_JUMP_PUSH = 1.3       # jump off a wall: kick away at this x RUN_SPEED
+WALL_KICK_SECONDS = 0.18   # steering is ignored briefly so the kick carries
+RUN_KEYS = (pygame.K_LSHIFT, pygame.K_RSHIFT, pygame.K_x, pygame.K_j)
+
 
 class Player(pygame.sprite.Sprite):
     """The mascot character: physics/collision plus animation state."""
@@ -36,6 +48,20 @@ class Player(pygame.sprite.Sprite):
         self.velocity_y = 0.0
         self.on_ground = False
 
+        # Moves: run, flap/glide ("fly"), wall climb / wall jump. Game reads
+        # fire_requested (a fresh press of the run button) to throw sunballs.
+        self.running = False
+        self.flaps_left = FLAPS_PER_JUMP
+        self.gliding = False
+        self.climbing = False
+        self.wall_sliding = False
+        self.climb_time = 0.0
+        self.wall_dir = 0          # -1 / +1: pushing into a wall on that side this frame
+        self.wall_kick = 0.0
+        self.fire_requested = False
+        self._jump_was_held = False
+        self._run_was_held = False
+
         # Game sets these every frame: below 1.0 when the player is
         # drowsy (low power), above 1.0 during a golden-can speed boost.
         self.run_scale = 1.0
@@ -49,47 +75,86 @@ class Player(pygame.sprite.Sprite):
         # the rects are touching but not overlapping.
         self.touched = set()
 
-    def handle_input(self):
+    def handle_input(self, dt=1 / 60):
         keys = pygame.key.get_pressed()
 
-        self.velocity_x = 0.0
+        # Left/right from keyboard, gamepad and (web) touch -- whichever the
+        # player is actually using just works.
+        direction = 0
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.velocity_x = -RUN_SPEED * self.run_scale
+            direction = -1
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.velocity_x = RUN_SPEED * self.run_scale
+            direction = 1
+        for axis in (game_input.move_axis(), game_input.touch_move_axis()):
+            if axis < 0:
+                direction = -1
+            elif axis > 0:
+                direction = 1
 
-        # Gamepad d-pad/left stick, on top of (not instead of) keyboard --
-        # whichever the player is actually using just works.
-        joy_axis = game_input.move_axis()
-        if joy_axis < 0:
-            self.velocity_x = -RUN_SPEED * self.run_scale
-        elif joy_axis > 0:
-            self.velocity_x = RUN_SPEED * self.run_scale
-
-        # On-screen touch buttons (web build only -- see kobito.input.IS_WEB)
-        # layered in the same way: whichever input the player has just works.
-        touch_axis = game_input.touch_move_axis()
-        if touch_axis < 0:
-            self.velocity_x = -RUN_SPEED * self.run_scale
-        elif touch_axis > 0:
-            self.velocity_x = RUN_SPEED * self.run_scale
-
-        jump_pressed = (
+        jump_held = (
             keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]
             or game_input.jump_held() or game_input.touch_jump_held()
         )
-        if jump_pressed and self.on_ground:
+        run_held = any(keys[k] for k in RUN_KEYS) or game_input.run_held() or game_input.touch_run_held()
+        jump_pressed = jump_held and not self._jump_was_held
+        self.fire_requested = run_held and not self._run_was_held
+        self._jump_was_held, self._run_was_held = jump_held, run_held
+        self.running = run_held
+
+        if self.on_ground:
+            self.flaps_left = FLAPS_PER_JUMP
+            self.climb_time = 0.0
+
+        # Horizontal: walk / run (a wall kick briefly overrides steering).
+        if self.wall_kick > 0:
+            self.wall_kick = max(0.0, self.wall_kick - dt)
+        else:
+            speed = RUN_SPEED * self.run_scale * (RUN_BOOST if run_held else 1.0)
+            self.velocity_x = direction * speed
+
+        # Wall climb: in the air, pushing into a wall -> climb it (for a
+        # while), then slide. Jump while on the wall -> kick off it.
+        on_wall = not self.on_ground and self.wall_dir != 0 and direction == self.wall_dir
+        self.climbing = False
+        self.wall_sliding = False
+        if on_wall and jump_pressed:
+            self.velocity_y = -JUMP_SPEED * self.jump_scale
+            self.velocity_x = -self.wall_dir * RUN_SPEED * WALL_JUMP_PUSH
+            self.wall_kick = WALL_KICK_SECONDS
+            self.climb_time = 0.0
+            self.flaps_left = FLAPS_PER_JUMP
+            return
+        if on_wall:
+            if self.climb_time < CLIMB_SECONDS:
+                self.climbing = True
+                self.climb_time += dt
+                self.velocity_y = -CLIMB_SPEED
+            else:
+                self.wall_sliding = True
+
+        # Jumping, flapping and gliding ("fly").
+        if jump_held and self.on_ground:
             self.velocity_y = -JUMP_SPEED * self.jump_scale
             self.on_ground = False
+        elif jump_pressed and not self.on_ground and not on_wall and self.flaps_left > 0:
+            self.flaps_left -= 1
+            self.velocity_y = min(self.velocity_y, -FLAP_SPEED * self.jump_scale)
+        self.gliding = jump_held and not self.on_ground and not self.climbing and self.velocity_y > 0
 
     def apply_gravity(self, dt):
+        if self.climbing:
+            return  # climbing holds its own steady speed up the wall
         self.velocity_y += GRAVITY * dt
+        if self.gliding:
+            self.velocity_y = min(self.velocity_y, GLIDE_FALL_SPEED)
+        if self.wall_sliding:
+            self.velocity_y = min(self.velocity_y, WALL_SLIDE_SPEED)
         if self.velocity_y > MAX_FALL_SPEED:
             self.velocity_y = MAX_FALL_SPEED
 
     def update(self, dt, platforms):
         self.touched = set()
-        self.handle_input()
+        self.handle_input(dt)
         self.apply_gravity(dt)
         self._move_and_collide_x(dt, platforms)
         self._move_and_collide_y(dt, platforms)
@@ -97,6 +162,7 @@ class Player(pygame.sprite.Sprite):
 
     def _move_and_collide_x(self, dt, platforms):
         self.rect.x += round(self.velocity_x * dt)
+        self.wall_dir = 0
 
         colliding = pygame.sprite.spritecollide(self, platforms, dokill=False)
         self.touched.update(colliding)
@@ -105,8 +171,10 @@ class Player(pygame.sprite.Sprite):
                 continue  # clouds never block sideways
             if self.velocity_x > 0:
                 self.rect.right = platform.rect.left
+                self.wall_dir = 1
             elif self.velocity_x < 0:
                 self.rect.left = platform.rect.right
+                self.wall_dir = -1
             self.velocity_x = 0
 
     def _move_and_collide_y(self, dt, platforms):
