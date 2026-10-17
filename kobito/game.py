@@ -823,6 +823,8 @@ class Game:
             # accuracy, so getting a few wrong has to be survivable.
             self._lose_xp(penalty)
             self.wrong_count += 1
+        if correct is not None:
+            block.mark_answered(correct)
         if correct is not None and self.tutor is not None:
             # The tutor learns from every answer; the HUD shows the level it
             # now thinks suits the player.

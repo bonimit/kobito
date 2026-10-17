@@ -106,7 +106,9 @@ few seconds, in a colour picked per world to stand out from its scenery
 (gold in the forest, turquoise in the desert, coral underwater, jade in
 Korea, …). Their faces vary through a level: a classic **?**, a **?**
 medallion with stars, or **問** (*mon*, "question"). Answered blocks turn to
-grey stone with a check mark (`kobito/entities/question_block.py`). The quiz
+grey stone with a green **✓** if you got it right or a red **✗** if you got
+it wrong (kept when you save and continue); skipped ones stay "?" boxes
+(`kobito/entities/question_block.py`). The quiz
 card that pops up is nearly solid, with a coloured header band and border per
 question type — **vocabulary** blue, **kanji** vermilion, **grammar** green,
 **verbs** purple — and the choice highlight takes the same colour.

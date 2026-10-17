@@ -58,6 +58,8 @@ class World:
         alive_pickups, alive_enemies = set(self.collectibles), set(self.enemies)
         return {
             "used_blocks": [i for i, b in enumerate(self.spawned["blocks"]) if b.used],
+            "wrong_blocks": [i for i, b in enumerate(self.spawned["blocks"])
+                             if b.used and getattr(b, "answered_wrong", False)],
             "used_gifts": [i for i, b in enumerate(self.spawned["gifts"]) if b.used],
             "taken": [i for i, c in enumerate(self.spawned["collectibles"]) if c not in alive_pickups],
             "defeated": [i for i, e in enumerate(self.spawned["enemies"]) if e not in alive_enemies],
@@ -67,8 +69,9 @@ class World:
         def picked(key, pool):
             return [pool[i] for i in state.get(key, []) if isinstance(i, int) and 0 <= i < len(pool)]
 
+        wrong = set(picked("wrong_blocks", self.spawned["blocks"]))
         for block in picked("used_blocks", self.spawned["blocks"]):
-            block.mark_used()
+            block.mark_answered(block not in wrong)
         for box in picked("used_gifts", self.spawned["gifts"]):
             box.mark_used()
         for sprite in picked("taken", self.spawned["collectibles"]) + picked("defeated", self.spawned["enemies"]):

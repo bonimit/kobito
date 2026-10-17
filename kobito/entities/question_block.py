@@ -57,7 +57,7 @@ class QuestionBlock(Platform):
     Its face varies through a level -- a classic "?", a "?" medallion with
     stars, or 問 (mon, "question") -- and a shine sweeps
     across it every few seconds (see animate). Once answered it turns to
-    dull stone with a check mark.
+    dull stone with a green check (right) or a red cross (wrong).
     """
 
     def __init__(self, cell_x, cell_y, cell_size, theme_id="forest", variant=0):
@@ -73,6 +73,8 @@ class QuestionBlock(Platform):
         self.resting = False           # just skipped: don't reopen until the player steps away
         self._active_frame = self._render(active=True)
         self._used_frame = self._render(active=False)
+        self._wrong_frame = self._render(active=False, wrong=True)
+        self.answered_wrong = False
         self.image = self._active_frame.copy()
 
     @property
@@ -81,7 +83,7 @@ class QuestionBlock(Platform):
 
     # -- Drawing ---------------------------------------------------------------
 
-    def _render(self, active):
+    def _render(self, active, wrong=False):
         size = self.rect.width
         image = pygame.Surface((size, size), pygame.SRCALPHA)
         face = self.base_color if active else USED_FACE
@@ -98,9 +100,17 @@ class QuestionBlock(Platform):
                        (top.left + 2, top.bottom - 3), (top.right - 3, top.bottom - 3)):
             pygame.draw.circle(image, dark, (cx, cy), 2)              # rivets
         if not active:
-            # Answered: a check mark.
             c = outer.center
-            pygame.draw.lines(image, (190, 230, 190), False, [(c[0] - 7, c[1]), (c[0] - 2, c[1] + 6), (c[0] + 8, c[1] - 6)], 4)
+            if wrong:
+                # Answered wrong: a red cross.
+                for (x1, y1), (x2, y2) in (((-7, -7), (7, 7)), ((7, -7), (-7, 7))):
+                    pygame.draw.line(image, INK, (c[0] + x1, c[1] + y1), (c[0] + x2, c[1] + y2), 6)
+                    pygame.draw.line(image, (240, 96, 96), (c[0] + x1, c[1] + y1), (c[0] + x2, c[1] + y2), 4)
+            else:
+                # Answered right: a green check.
+                pts = [(c[0] - 7, c[1]), (c[0] - 2, c[1] + 6), (c[0] + 8, c[1] - 6)]
+                pygame.draw.lines(image, INK, False, pts, 6)
+                pygame.draw.lines(image, (150, 230, 150), False, pts, 4)
             return image
 
         mark_color = _mix(face, INK, 0.75)
@@ -153,6 +163,12 @@ class QuestionBlock(Platform):
     def mark_used(self):
         self.used = True
         self.image = self._used_frame.copy()
+
+    def mark_answered(self, correct):
+        """Shows how the question went: a green check, or a red cross."""
+        self.used = True
+        self.answered_wrong = not correct
+        self.image = (self._used_frame if correct else self._wrong_frame).copy()
 
     def reopen(self):
         """Back to a fresh "?" box -- after the player skipped its question,
