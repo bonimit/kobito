@@ -34,6 +34,9 @@ CATEGORY_ACCENTS = {
     "kanji": (240, 96, 80),
     "grammar": (90, 205, 130),
     "verb_conjugation": (185, 125, 245),
+    "expression": (250, 190, 70),
+    "loanword": (60, 205, 200),
+    "reading": (245, 130, 190),
 }
 HEADER_BAND = 24
 CORRECT_COLOR = (140, 220, 140)

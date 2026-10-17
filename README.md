@@ -115,18 +115,38 @@ it wrong (kept when you save and continue); skipped ones stay "?" boxes
 (`kobito/entities/question_block.py`). The quiz
 card that pops up is nearly solid, with a coloured header band and border per
 question type — **vocabulary** blue, **kanji** vermilion, **grammar** green,
-**verbs** purple — and the choice highlight takes the same colour.
+**verbs** purple, **expressions** gold, **loanwords** teal, **reading** pink —
+and the choice highlight takes the same colour.
 
 Yellow "?" blocks (drawn slightly larger than a tile, Mario-block style)
 pause gameplay and show a small black box — anchored right next to the
 block, above it if there's room or below otherwise, rest of the level
 still visible, with a tooltip-style tail that touches the block itself
 (no floating gap) so the box clearly reads as popping up *from* it —
-with a multiple-choice Japanese question (vocabulary,
-kanji, grammar, or verb conjugation) drawn from
-`assets/data/questions.json` (**190 questions** — 38 per JLPT level,
-spread evenly across the four categories), filtered to the level's
-current JLPT level (see Difficulty below).
+with a multiple-choice Japanese question drawn from
+`assets/data/questions.json` (**280 questions** — 56 per JLPT level),
+filtered to the level's current JLPT level (see Difficulty below). There
+are seven kinds:
+
+- **Vocabulary** — what does 犬 (inu) mean?
+- **Kanji** — how do you read 日本語?
+- **Grammar** — which particle or pattern fills the gap?
+- **Verbs** — conjugate 食べる into the polite past, and so on.
+- **Expressions** — what do you say when you leave the office first, enter
+  a friend's home or meet someone new? At N2/N1: idioms (猫の手も借りたい,
+  顔が広い) and four-character sayings (一石二鳥, 十人十色).
+- **Loanwords** — katakana words: コンビニ, アルバイト, and false friends like
+  マンション (an apartment, not a mansion).
+- **Reading** — a short sentence or two, then a question about it (who is
+  taller? when is the deadline? what does the sign forbid?).
+
+**Variety.** Questions come in a random order, and so do the four answers.
+The next question is never the same kind as either of the last two (no
+three kanji questions in a row). The run also remembers which questions
+you've already met (saved with your game), so each new level asks ones
+you haven't seen yet before repeating any — and when it has to repeat, it
+picks the ones you saw longest ago. AI Adaptive mode follows the same
+variety rule while it picks questions at the right difficulty.
 
 Question blocks are kept well apart — **at least 8 tiles between any two**
 (`MIN_QUESTION_SPACING_TILES` in `kobito/levels/level1.py`) — and levels

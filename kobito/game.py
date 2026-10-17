@@ -112,6 +112,12 @@ OUTCOME_ADVANCE = "advance"
 # multiple-choice question shows (and pays) during the test.
 TEST_BONUS_XP = 10
 
+# Question variety: the next question is never the same kind as the last
+# RECENT_CATEGORIES asked, and the run remembers up to HISTORY_SIZE
+# question ids so each level favours ones you haven't met yet.
+RECENT_CATEGORIES = 2
+HISTORY_SIZE = 600
+
 
 class Game:
     """Owns the window, the main loop, and the current level's state.
@@ -143,6 +149,7 @@ class Game:
         resume_state=None,
         difficulty_mode=MODE_CHOOSE,
         tutor=None,
+        question_history=None,
     ):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -219,6 +226,10 @@ class Game:
         self.xp = starting_xp
         self.next_life_xp = (starting_xp // XP_PER_LIFE + 1) * XP_PER_LIFE
         self.asked_ids = set()  # questions already asked this level (no repeats)
+        # Every question asked this run, oldest first -- shared with main.py
+        # (like the item box) so later levels favour questions not seen yet.
+        self.question_history = question_history if question_history is not None else []
+        self.recent_categories = []
         self.invulnerable_timer = 0.0
 
         # Power: stamina out of POWER_MAX. Enemy hits drain it; konbini
@@ -357,6 +368,7 @@ class Game:
             "item_box": dict(self.item_box), "badges": list(self.badges),
             "difficulty_mode": self.difficulty_mode,
             "tutor": self.tutor.to_state() if self.tutor is not None else None,
+            "question_history": list(self.question_history),
         }
 
     def snapshot(self):
@@ -847,10 +859,18 @@ class Game:
     def _next_question(self):
         bank = self.question_bank
         if self.tutor is not None:
-            return self.tutor.pick(bank.questions, exclude=self.asked_ids)
-        if self.difficulty_mode == MODE_RANDOM:
-            return bank.random_question(jlpt=self.rng.choice(JLPT_LEVELS), exclude=self.asked_ids)
-        return bank.random_question(jlpt=self.jlpt_level, exclude=self.asked_ids)
+            return self.tutor.pick(bank.questions, exclude=self.asked_ids, avoid_categories=self.recent_categories)
+        jlpt = self.rng.choice(JLPT_LEVELS) if self.difficulty_mode == MODE_RANDOM else self.jlpt_level
+        return bank.pick(jlpt, exclude=self.asked_ids, history=self.question_history,
+                         recent_categories=self.recent_categories, rng=self.rng)
+
+    def _remember_question(self, question):
+        history = self.question_history
+        if question["id"] in history:
+            history.remove(question["id"])
+        history.append(question["id"])
+        del history[:-HISTORY_SIZE]
+        self.recent_categories = (self.recent_categories + [question["category"]])[-RECENT_CATEGORIES:]
 
     async def _trigger_question(self, block):
         block.mark_used()
@@ -860,6 +880,7 @@ class Game:
         question = block.pending_question or shuffled(self._next_question(), self.rng)
         block.pending_question = None
         self.asked_ids.add(question["id"])
+        self._remember_question(question)
         companion = self.hint_service.companion
         base_points = JLPT_QUESTION_POINTS.get(question["jlpt"], CORRECT_ANSWER_SCORE)
         # Companion abilities scale the base numbers (see

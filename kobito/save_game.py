@@ -143,6 +143,8 @@ def load_run():
     box = run.get("item_box") if isinstance(run.get("item_box"), dict) else {}
     run["item_box"] = {k: int(v) for k, v in box.items() if k in ITEMS and int(v) > 0}
     run["badges"] = [b for b in run.get("badges", []) if isinstance(b, str)]
+    history = run.get("question_history") if isinstance(run.get("question_history"), list) else []
+    run["question_history"] = [q for q in history if isinstance(q, str)]
     from kobito.difficulty import MODE_CHOOSE, MODES
     if run.get("difficulty_mode") not in MODES:
         run["difficulty_mode"] = MODE_CHOOSE

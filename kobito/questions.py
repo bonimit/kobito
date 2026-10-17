@@ -25,6 +25,28 @@ class QuestionBank:
             pool = unseen or pool
         return random.choice(pool)
 
+    def pick(self, jlpt=None, exclude=(), history=(), recent_categories=(), rng=random):
+        """The next question to ask, chosen for variety:
+
+          * never one already asked this level (`exclude`) while others remain;
+          * a different kind of question from the last ones asked
+            (`recent_categories`) -- no three kanji questions in a row;
+          * questions not met earlier in the run first (`history`: ids,
+            oldest first); once all have been seen, one of the ones seen
+            longest ago -- so a new level doesn't replay the last one.
+        Random among whatever is left."""
+        pool = self.questions
+        if jlpt is not None:
+            pool = [q for q in pool if q["jlpt"] == jlpt] or pool
+        pool = [q for q in pool if q["id"] not in exclude] or pool
+        pool = [q for q in pool if q["category"] not in recent_categories] or pool
+        last_seen = {qid: i for i, qid in enumerate(history)}
+        fresh = [q for q in pool if q["id"] not in last_seen]
+        if fresh:
+            return rng.choice(fresh)
+        pool = sorted(pool, key=lambda q: last_seen[q["id"]])
+        return rng.choice(pool[:max(1, len(pool) // 3)])
+
 
 def shuffled(question, rng=random):
     """A copy of `question` with its choices in a random order (and

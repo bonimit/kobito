@@ -2848,5 +2848,1355 @@
     "answer": 0,
     "explanation": "U-verb causative-passive contracts ～せられる to ～される: 帰らせられる shortens to 帰らされる, \"to be made to go home\".",
     "hint": "This is the \"forced to do it\" form -- someone else made this happen."
+  },
+  {
+    "id": "expr_n5_001",
+    "category": "expression",
+    "jlpt": "N5",
+    "prompt": "Dinner is on the table and you pick up your chopsticks. What do you say first?",
+    "choices": [
+      "いただきます",
+      "ごちそうさまでした",
+      "おやすみなさい",
+      "いってきます"
+    ],
+    "answer": 0,
+    "explanation": "いただきます (\"I humbly receive\") is said before eating; ごちそうさまでした is said after.",
+    "hint": "This phrase opens the meal -- the other food phrase closes it."
+  },
+  {
+    "id": "expr_n5_002",
+    "category": "expression",
+    "jlpt": "N5",
+    "prompt": "You're heading out the door to school. What do you call to your family?",
+    "choices": [
+      "いらっしゃいませ",
+      "いってきます",
+      "ただいま",
+      "おかえりなさい"
+    ],
+    "answer": 1,
+    "explanation": "いってきます means \"I'm off (and I'll be back)\". Your family answers いってらっしゃい.",
+    "hint": "You're leaving, not arriving -- and you're not a shop clerk."
+  },
+  {
+    "id": "expr_n5_003",
+    "category": "expression",
+    "jlpt": "N5",
+    "prompt": "You bump into someone on a crowded train. What do you say?",
+    "choices": [
+      "おめでとう",
+      "はじめまして",
+      "すみません",
+      "ありがとう"
+    ],
+    "answer": 2,
+    "explanation": "すみません is the everyday \"excuse me / sorry\".",
+    "hint": "You want to apologise, not thank or congratulate anyone."
+  },
+  {
+    "id": "expr_n5_004",
+    "category": "expression",
+    "jlpt": "N5",
+    "prompt": "You meet your new classmate for the very first time. What do you say?",
+    "choices": [
+      "さようなら",
+      "おかえりなさい",
+      "いただきます",
+      "はじめまして"
+    ],
+    "answer": 3,
+    "explanation": "はじめまして (\"nice to meet you\") is only used the first time you meet someone.",
+    "hint": "It literally contains 'beginning' -- it's for a first meeting."
+  },
+  {
+    "id": "expr_n5_005",
+    "category": "expression",
+    "jlpt": "N5",
+    "prompt": "You open the front door after school. What do you call out?",
+    "choices": [
+      "ただいま",
+      "いってきます",
+      "おやすみなさい",
+      "いただきます"
+    ],
+    "answer": 0,
+    "explanation": "ただいま means \"I'm home!\" -- the family replies おかえりなさい (\"welcome back\").",
+    "hint": "You've just arrived home, so it's the opposite of the leaving phrase."
+  },
+  {
+    "id": "expr_n5_006",
+    "category": "expression",
+    "jlpt": "N5",
+    "prompt": "A friend says ありがとう for your help. What's a polite reply?",
+    "choices": [
+      "いただきます",
+      "どういたしまして",
+      "ごめんなさい",
+      "いってきます"
+    ],
+    "answer": 1,
+    "explanation": "どういたしまして means \"you're welcome\".",
+    "hint": "They thanked you -- how do you answer a thank-you?"
+  },
+  {
+    "id": "loan_n5_001",
+    "category": "loanword",
+    "jlpt": "N5",
+    "prompt": "You grab an onigiri at the コンビニ (konbini). What is a コンビニ?",
+    "choices": [
+      "Computer",
+      "Train station",
+      "Convenience store",
+      "Concert hall"
+    ],
+    "answer": 2,
+    "explanation": "コンビニ is short for コンビニエンスストア -- a convenience store.",
+    "hint": "Say it out loud: kon-bi-ni... convenience!"
+  },
+  {
+    "id": "loan_n5_002",
+    "category": "loanword",
+    "jlpt": "N5",
+    "prompt": "It's cold, so you order a hot コーヒー (koohii). What is it?",
+    "choices": [
+      "Cola",
+      "Cocoa",
+      "Cookie",
+      "Coffee"
+    ],
+    "answer": 3,
+    "explanation": "コーヒー (koohii) is coffee. The long ー stretches the vowel.",
+    "hint": "A hot drink -- read koo-hii slowly."
+  },
+  {
+    "id": "loan_n5_003",
+    "category": "loanword",
+    "jlpt": "N5",
+    "prompt": "Your family watches the news on the テレビ (terebi). What is it?",
+    "choices": [
+      "Television",
+      "Telephone",
+      "Taxi",
+      "Table"
+    ],
+    "answer": 0,
+    "explanation": "テレビ (terebi) is the Japanese shortening of \"television\".",
+    "hint": "You watch the news on it."
+  },
+  {
+    "id": "loan_n5_004",
+    "category": "loanword",
+    "jlpt": "N5",
+    "prompt": "At the hotel you ride the エレベーター (erebeetaa) to the 5th floor. What is it?",
+    "choices": [
+      "Entrance",
+      "Elevator",
+      "Escalator",
+      "Stairs"
+    ],
+    "answer": 1,
+    "explanation": "エレベーター is an elevator; an escalator is エスカレーター.",
+    "hint": "e-re-bee-taa... it takes you straight up to a floor."
+  },
+  {
+    "id": "loan_n5_005",
+    "category": "loanword",
+    "jlpt": "N5",
+    "prompt": "For breakfast you have パン (pan) with jam. What is パン?",
+    "choices": [
+      "Pancake",
+      "Pasta",
+      "Bread",
+      "A frying pan"
+    ],
+    "answer": 2,
+    "explanation": "パン comes from Portuguese \"pão\" and means bread. A frying pan is フライパン.",
+    "hint": "You eat it with jam -- it's not the cooking tool!"
+  },
+  {
+    "id": "loan_n5_006",
+    "category": "loanword",
+    "jlpt": "N5",
+    "prompt": "It's raining hard, so you take a タクシー (takushii) home. What is it?",
+    "choices": [
+      "Bus",
+      "Train",
+      "Bicycle",
+      "Taxi"
+    ],
+    "answer": 3,
+    "explanation": "タクシー (takushii) is a taxi.",
+    "hint": "ta-ku-shii -- a car you pay to ride."
+  },
+  {
+    "id": "read_n5_001",
+    "category": "reading",
+    "jlpt": "N5",
+    "prompt": "Read: 「わたしは まいあさ 七時に おきます。」 When does the writer get up?",
+    "choices": [
+      "At 7 every morning",
+      "At 7 every evening",
+      "At 7 on Sundays only",
+      "At noon every day"
+    ],
+    "answer": 0,
+    "explanation": "まいあさ = every morning, 七時に = at seven o'clock, おきます = get up.",
+    "hint": "まい means 'every' and あさ means 'morning'."
+  },
+  {
+    "id": "read_n5_002",
+    "category": "reading",
+    "jlpt": "N5",
+    "prompt": "Read: 「きのう ともだちと えいがを みました。」 What did the writer do yesterday?",
+    "choices": [
+      "Went to school with a friend",
+      "Watched a movie with a friend",
+      "Ate dinner with a friend",
+      "Read a book alone"
+    ],
+    "answer": 1,
+    "explanation": "きのう = yesterday, ともだちと = with a friend, えいがを みました = watched a movie.",
+    "hint": "えいが is a movie, and みました is the past of 'see/watch'."
+  },
+  {
+    "id": "read_n5_003",
+    "category": "reading",
+    "jlpt": "N5",
+    "prompt": "Read: 「つくえの 上に ねこが います。」 Where is the cat?",
+    "choices": [
+      "Next to the door",
+      "In the box",
+      "On the desk",
+      "Under the desk"
+    ],
+    "answer": 2,
+    "explanation": "つくえ = desk, 上 (うえ) = on top of. Under would be 下 (した).",
+    "hint": "上 points up -- think of it sitting on top."
+  },
+  {
+    "id": "read_n5_004",
+    "category": "reading",
+    "jlpt": "N5",
+    "prompt": "Read: 「この りんごは 一つ 百円です。」 How much is one apple?",
+    "choices": [
+      "10 yen",
+      "1,000 yen",
+      "1 yen",
+      "100 yen"
+    ],
+    "answer": 3,
+    "explanation": "一つ (ひとつ) = one (thing), 百円 (ひゃくえん) = 100 yen.",
+    "hint": "百 is the kanji for a hundred."
+  },
+  {
+    "id": "read_n5_005",
+    "category": "reading",
+    "jlpt": "N5",
+    "prompt": "Read: 「あしたは 雨ですから、うちで べんきょうします。」 What will the writer do tomorrow?",
+    "choices": [
+      "Study at home",
+      "Go out in the rain",
+      "Play in the park",
+      "Go shopping"
+    ],
+    "answer": 0,
+    "explanation": "雨 (あめ) = rain, ～から = so/because, うちで = at home, べんきょうします = will study.",
+    "hint": "うち means home, and べんきょう means study."
+  },
+  {
+    "id": "read_n5_006",
+    "category": "reading",
+    "jlpt": "N5",
+    "prompt": "Read: 「わたしの いもうとは 十さいです。」 Who is ten years old?",
+    "choices": [
+      "The writer",
+      "The writer's little sister",
+      "The writer's big sister",
+      "The writer's little brother"
+    ],
+    "answer": 1,
+    "explanation": "いもうと = younger sister (big sister is あね, little brother おとうと), 十さい = ten years old.",
+    "hint": "いもうと is a younger sibling -- a girl."
+  },
+  {
+    "id": "expr_n4_001",
+    "category": "expression",
+    "jlpt": "N4",
+    "prompt": "You leave the office while your coworkers are still working. What do you say?",
+    "choices": [
+      "いってらっしゃい",
+      "おじゃまします",
+      "おさきに しつれいします",
+      "おつかれさまでした"
+    ],
+    "answer": 2,
+    "explanation": "お先に失礼します = \"excuse me for leaving before you\". Coworkers reply お疲れさまでした.",
+    "hint": "You're the one leaving first -- さき means 'ahead'."
+  },
+  {
+    "id": "expr_n4_002",
+    "category": "expression",
+    "jlpt": "N4",
+    "prompt": "You step into a friend's home for a visit. What do you say at the door?",
+    "choices": [
+      "ただいま",
+      "いらっしゃい",
+      "おかえり",
+      "おじゃまします"
+    ],
+    "answer": 3,
+    "explanation": "おじゃまします (\"I'm intruding\") is the polite thing to say entering someone else's home.",
+    "hint": "It's not your home, so ただいま doesn't fit."
+  },
+  {
+    "id": "expr_n4_003",
+    "category": "expression",
+    "jlpt": "N4",
+    "prompt": "Your friend has a bad cold. What do you say when you leave?",
+    "choices": [
+      "おだいじに",
+      "おめでとう",
+      "おさきに",
+      "おまたせしました"
+    ],
+    "answer": 0,
+    "explanation": "お大事に means \"take care of yourself\" -- said to someone who's sick or hurt.",
+    "hint": "だいじ means 'important / precious' -- look after yourself."
+  },
+  {
+    "id": "expr_n4_004",
+    "category": "expression",
+    "jlpt": "N4",
+    "prompt": "You arrive ten minutes late to meet a friend. What do you say?",
+    "choices": [
+      "おひさしぶりです",
+      "おまたせしました",
+      "おまちください",
+      "おかげさまで"
+    ],
+    "answer": 1,
+    "explanation": "お待たせしました = \"sorry to have kept you waiting\". お待ちください asks someone to wait.",
+    "hint": "まつ means wait -- did you make them wait, or ask them to?"
+  },
+  {
+    "id": "expr_n4_005",
+    "category": "expression",
+    "jlpt": "N4",
+    "prompt": "You run into a friend you haven't seen for a year. What do you say?",
+    "choices": [
+      "おやすみなさい",
+      "いってきます",
+      "おひさしぶりです",
+      "はじめまして"
+    ],
+    "answer": 2,
+    "explanation": "お久しぶりです = \"long time no see\".",
+    "hint": "ひさしぶり means 'after a long time'."
+  },
+  {
+    "id": "expr_n4_006",
+    "category": "expression",
+    "jlpt": "N4",
+    "prompt": "A shop clerk says 「しょうしょう おまちください」. What do they want?",
+    "choices": [
+      "Please come in",
+      "Please pay now",
+      "Please come again",
+      "Please wait a moment"
+    ],
+    "answer": 3,
+    "explanation": "少々 (しょうしょう) = a little, お待ちください = please wait (polite).",
+    "hint": "まち comes from まつ, 'to wait'."
+  },
+  {
+    "id": "loan_n4_001",
+    "category": "loanword",
+    "jlpt": "N4",
+    "prompt": "After work you stop by the スーパー (suupaa) for groceries. What is it?",
+    "choices": [
+      "Supermarket",
+      "Superhero",
+      "Soup shop",
+      "Express train"
+    ],
+    "answer": 0,
+    "explanation": "スーパー is short for スーパーマーケット -- a supermarket.",
+    "hint": "You go there for groceries."
+  },
+  {
+    "id": "loan_n4_002",
+    "category": "loanword",
+    "jlpt": "N4",
+    "prompt": "You need your パソコン (pasokon) to write a report. What is it?",
+    "choices": [
+      "Smartphone",
+      "Personal computer",
+      "Passport",
+      "Password"
+    ],
+    "answer": 1,
+    "explanation": "パソコン is short for パーソナルコンピューター -- a personal computer.",
+    "hint": "paso = personal, kon = computer."
+  },
+  {
+    "id": "loan_n4_003",
+    "category": "loanword",
+    "jlpt": "N4",
+    "prompt": "Your friend has an アルバイト (arubaito) at a café. What is it?",
+    "choices": [
+      "A photo album",
+      "An alarm clock",
+      "A part-time job",
+      "An allergy"
+    ],
+    "answer": 2,
+    "explanation": "アルバイト comes from German \"Arbeit\" (work) and means a part-time job -- often shortened to バイト.",
+    "hint": "It's what students do at a café for pocket money."
+  },
+  {
+    "id": "loan_n4_004",
+    "category": "loanword",
+    "jlpt": "N4",
+    "prompt": "It's a hot summer night, so you turn on the エアコン (eakon). What is it?",
+    "choices": [
+      "Airport",
+      "Earphones",
+      "Elevator",
+      "Air conditioner"
+    ],
+    "answer": 3,
+    "explanation": "エアコン is short for エアコンディショナー -- an air conditioner.",
+    "hint": "ea = air, kon = conditioner. It cools the room."
+  },
+  {
+    "id": "loan_n4_005",
+    "category": "loanword",
+    "jlpt": "N4",
+    "prompt": "The waiter hands you the メニュー (menyuu). What is it?",
+    "choices": [
+      "Menu",
+      "Money",
+      "Message",
+      "Manager"
+    ],
+    "answer": 0,
+    "explanation": "メニュー (menyuu) is a menu.",
+    "hint": "You choose your food from it."
+  },
+  {
+    "id": "loan_n4_006",
+    "category": "loanword",
+    "jlpt": "N4",
+    "prompt": "On Sunday you eat at a ファミレス (famiresu) with your family. What is it?",
+    "choices": [
+      "A fast-food stand",
+      "A family restaurant",
+      "A family photo",
+      "A famous restaurant"
+    ],
+    "answer": 1,
+    "explanation": "ファミレス is short for ファミリーレストラン -- a casual family restaurant chain.",
+    "hint": "fami = family, resu = restaurant."
+  },
+  {
+    "id": "read_n4_001",
+    "category": "reading",
+    "jlpt": "N4",
+    "prompt": "Read: 「駅から 学校まで あるいて 十五分 かかります。」 How long is the walk from the station to school?",
+    "choices": [
+      "5 minutes",
+      "1.5 hours",
+      "15 minutes",
+      "50 minutes"
+    ],
+    "answer": 2,
+    "explanation": "～から～まで = from ~ to ~, あるいて = on foot, 十五分 (じゅうごふん) = 15 minutes.",
+    "hint": "十五 is ten + five."
+  },
+  {
+    "id": "read_n4_002",
+    "category": "reading",
+    "jlpt": "N4",
+    "prompt": "Read: 「かぜを ひいたので、きょうは 会社を 休みます。」 Why is the writer off work today?",
+    "choices": [
+      "They're going on a trip",
+      "The company is closed",
+      "It's a national holiday",
+      "They caught a cold"
+    ],
+    "answer": 3,
+    "explanation": "かぜを ひく = catch a cold, ～ので = because, 休みます = take the day off.",
+    "hint": "かぜを ひく is something you catch in winter."
+  },
+  {
+    "id": "read_n4_003",
+    "category": "reading",
+    "jlpt": "N4",
+    "prompt": "Read: 「田中さんは 山田さんより せが 高いです。」 Who is taller?",
+    "choices": [
+      "Tanaka",
+      "Yamada",
+      "They're the same height",
+      "It doesn't say"
+    ],
+    "answer": 0,
+    "explanation": "AはBより～ = A is more ~ than B. せが 高い = tall.",
+    "hint": "より marks the one being compared against."
+  },
+  {
+    "id": "read_n4_004",
+    "category": "reading",
+    "jlpt": "N4",
+    "prompt": "Read: 「レポートは 金曜日までに 出して ください。」 What is the deadline?",
+    "choices": [
+      "Read it on Friday",
+      "Hand in the report by Friday",
+      "Hand it in after Friday",
+      "Start it on Friday"
+    ],
+    "answer": 1,
+    "explanation": "までに = by (a deadline), 出して ください = please hand in.",
+    "hint": "までに sets a deadline -- no later than."
+  },
+  {
+    "id": "read_n4_005",
+    "category": "reading",
+    "jlpt": "N4",
+    "prompt": "Read: 「あの レストランは 安くて おいしいですが、いつも こんで います。」 What's the problem?",
+    "choices": [
+      "The food isn't good",
+      "It's always closed",
+      "It's always crowded",
+      "It's expensive"
+    ],
+    "answer": 2,
+    "explanation": "安くて おいしい = cheap and tasty; ～が = but; こんで いる = crowded.",
+    "hint": "The good points come before が -- the problem comes after it."
+  },
+  {
+    "id": "read_n4_006",
+    "category": "reading",
+    "jlpt": "N4",
+    "prompt": "Read: 「日曜日に 母の たんじょうびの プレゼントを 買いに 行きました。」 Why did the writer go out on Sunday?",
+    "choices": [
+      "To celebrate their own birthday",
+      "To meet their mother for lunch",
+      "To buy a present for a friend",
+      "To buy a birthday present for their mother"
+    ],
+    "answer": 3,
+    "explanation": "母の たんじょうび = mother's birthday, 買いに 行きました = went (out) to buy.",
+    "hint": "～に 行く with a verb stem means 'go in order to ~'."
+  },
+  {
+    "id": "expr_n3_001",
+    "category": "expression",
+    "jlpt": "N3",
+    "prompt": "On the first day at a new job you bow and say 「よろしく おねがいします」. What does it express?",
+    "choices": [
+      "\"I look forward to working with you\"",
+      "\"Goodbye for now\"",
+      "\"Sorry for interrupting\"",
+      "\"Thank you for the meal\""
+    ],
+    "answer": 0,
+    "explanation": "よろしくお願いします asks for the other person's goodwill -- \"please treat me well / I look forward to working with you\".",
+    "hint": "It's said at the start of a relationship, not the end."
+  },
+  {
+    "id": "expr_n3_002",
+    "category": "expression",
+    "jlpt": "N3",
+    "prompt": "Someone asks if you've been well. Fill in: 「はい、＿＿で 元気です。」",
+    "choices": [
+      "ごくろうさま",
+      "おかげさま",
+      "おたがいさま",
+      "おつかれさま"
+    ],
+    "answer": 1,
+    "explanation": "おかげさまで = \"thanks to you (and everyone)\" -- a humble way to say things are going well.",
+    "hint": "かげ is a shadow -- you were well 'in the shadow' of their kindness."
+  },
+  {
+    "id": "expr_n3_003",
+    "category": "expression",
+    "jlpt": "N3",
+    "prompt": "You need to interrupt a stranger to ask a favour. Which phrase softens the request?",
+    "choices": [
+      "おめでとうございますが",
+      "おさきにしつれいしますが",
+      "おそれいりますが",
+      "おまたせしましたが"
+    ],
+    "answer": 2,
+    "explanation": "恐れ入りますが (\"I'm sorry to trouble you, but...\") is a polite cushion before a request.",
+    "hint": "You're apologising in advance for the trouble you're about to cause."
+  },
+  {
+    "id": "expr_n3_004",
+    "category": "expression",
+    "jlpt": "N3",
+    "prompt": "A customer service agent says 「申し訳ございません」. What do they mean?",
+    "choices": [
+      "Thank you very much",
+      "Please wait",
+      "Welcome",
+      "We are very sorry"
+    ],
+    "answer": 3,
+    "explanation": "申し訳ございません is a very polite apology -- \"there's no excuse; we're truly sorry\".",
+    "hint": "申し訳 means 'excuse' -- and ございません says there isn't one."
+  },
+  {
+    "id": "expr_n3_005",
+    "category": "expression",
+    "jlpt": "N3",
+    "prompt": "Handing over a gift, your host says 「つまらない ものですが…」. What do they mean?",
+    "choices": [
+      "\"It's just a small thing, but...\"",
+      "\"This is boring, so take it\"",
+      "\"I didn't like this, but...\"",
+      "\"This was very expensive\""
+    ],
+    "answer": 0,
+    "explanation": "つまらないものですが is a modest set phrase when giving a gift -- it plays down the present out of politeness.",
+    "hint": "Japanese gift-giving is humble -- the giver downplays the gift."
+  },
+  {
+    "id": "expr_n3_006",
+    "category": "expression",
+    "jlpt": "N3",
+    "prompt": "Someone thanks you, but you're just as grateful to them. How do you reply?",
+    "choices": [
+      "あちらこそ",
+      "こちらこそ",
+      "どちらでも",
+      "そちらこそ"
+    ],
+    "answer": 1,
+    "explanation": "こちらこそ = \"the same goes for me / I should be the one thanking you\".",
+    "hint": "こちら points to your own side."
+  },
+  {
+    "id": "loan_n3_001",
+    "category": "loanword",
+    "jlpt": "N3",
+    "prompt": "The meeting was cancelled because of a トラブル (toraburu). What is it?",
+    "choices": [
+      "A truck",
+      "A tunnel",
+      "Trouble, a problem",
+      "Travel"
+    ],
+    "answer": 2,
+    "explanation": "トラブル (toraburu) is trouble -- a problem or breakdown.",
+    "hint": "to-ra-bu-ru... the reason a meeting gets cancelled."
+  },
+  {
+    "id": "loan_n3_002",
+    "category": "loanword",
+    "jlpt": "N3",
+    "prompt": "Your boss asks you to send the スケジュール (sukejuuru). What is it?",
+    "choices": [
+      "School",
+      "Scale",
+      "Sketch",
+      "Schedule"
+    ],
+    "answer": 3,
+    "explanation": "スケジュール (sukejuuru) is a schedule.",
+    "hint": "su-ke-juu-ru -- a plan of times and dates."
+  },
+  {
+    "id": "loan_n3_003",
+    "category": "loanword",
+    "jlpt": "N3",
+    "prompt": "Tonight there's a ライブ (raibu) in Shibuya. What is a ライブ here?",
+    "choices": [
+      "A live concert",
+      "A place to live",
+      "A lifetime",
+      "A library"
+    ],
+    "answer": 0,
+    "explanation": "In Japanese, ライブ means a live music performance.",
+    "hint": "Bands play at it -- think 'live show'."
+  },
+  {
+    "id": "loan_n3_004",
+    "category": "loanword",
+    "jlpt": "N3",
+    "prompt": "After shopping, the clerk hands you a レシート (reshiito). What is it?",
+    "choices": [
+      "Reservation",
+      "Receipt",
+      "Recipe",
+      "Reception"
+    ],
+    "answer": 1,
+    "explanation": "レシート is a receipt; a recipe is レシピ.",
+    "hint": "You get it after you pay."
+  },
+  {
+    "id": "loan_n3_005",
+    "category": "loanword",
+    "jlpt": "N3",
+    "prompt": "He's on a ダイエット (daietto), so he skips the cake. What is it?",
+    "choices": [
+      "A daily routine",
+      "A dinner party",
+      "A diet (eating less to lose weight)",
+      "Hair dye"
+    ],
+    "answer": 2,
+    "explanation": "ダイエット means a diet -- usually to lose weight.",
+    "hint": "That's why he skips the cake!"
+  },
+  {
+    "id": "loan_n3_006",
+    "category": "loanword",
+    "jlpt": "N3",
+    "prompt": "Please tell me your メールアドレス (meeru adoresu). What is it?",
+    "choices": [
+      "Mail order",
+      "Home address",
+      "Phone number",
+      "Email address"
+    ],
+    "answer": 3,
+    "explanation": "メール = email (in Japanese, メール usually means e-mail), アドレス = address.",
+    "hint": "meeru = (e)mail, adoresu = address."
+  },
+  {
+    "id": "read_n3_001",
+    "category": "reading",
+    "jlpt": "N3",
+    "prompt": "Read: 「雨が 降りそうだから、かさを 持って 行った ほうが いいよ。」 What is the speaker advising?",
+    "choices": [
+      "Take an umbrella -- it looks like rain",
+      "Stay home because it's raining",
+      "Buy a new umbrella",
+      "Leave the umbrella -- the rain stopped"
+    ],
+    "answer": 0,
+    "explanation": "降りそう = looks like it will fall (rain), ～た方がいい = you'd better ~.",
+    "hint": "～そう here means 'looks like it's about to'."
+  },
+  {
+    "id": "read_n3_002",
+    "category": "reading",
+    "jlpt": "N3",
+    "prompt": "Read: 「この 薬は 一日に 三回、食事の 後に 飲んで ください。」 How should the medicine be taken?",
+    "choices": [
+      "Once, after dinner",
+      "Three times a day, after meals",
+      "Once a day, before meals",
+      "Three times a day, before meals"
+    ],
+    "answer": 1,
+    "explanation": "一日に三回 = three times a day, 食事の後に = after meals.",
+    "hint": "後 (あと) means after; before would be 前 (まえ)."
+  },
+  {
+    "id": "read_n3_003",
+    "category": "reading",
+    "jlpt": "N3",
+    "prompt": "Read: 「せっかく 来たのに、店は 休みだった。」 How does the writer feel?",
+    "choices": [
+      "Relieved that the shop was closed",
+      "Surprised the shop had moved",
+      "Disappointed -- they came all this way and the shop was closed",
+      "Happy that the shop was open"
+    ],
+    "answer": 2,
+    "explanation": "せっかく～のに = went to the trouble of ~, but... -- it expresses disappointment.",
+    "hint": "のに signals a let-down."
+  },
+  {
+    "id": "read_n3_004",
+    "category": "reading",
+    "jlpt": "N3",
+    "prompt": "Read: 「部屋が 寒かったので、窓を 閉めて おきました。」 What did the writer do?",
+    "choices": [
+      "Opened the window because it was hot",
+      "Left the window open",
+      "Turned on the heater",
+      "Closed the window because the room was cold"
+    ],
+    "answer": 3,
+    "explanation": "寒かったので = because it was cold, 閉めておきました = closed (and left it that way).",
+    "hint": "閉める is to close; 開ける would be to open."
+  },
+  {
+    "id": "read_n3_005",
+    "category": "reading",
+    "jlpt": "N3",
+    "prompt": "Read: 「明日の 会議は 十時から 十一時に 変更に なりました。」 What changed?",
+    "choices": [
+      "The meeting moved from 10:00 to 11:00",
+      "The meeting was cancelled",
+      "The meeting moved from 11:00 to 10:00",
+      "The meeting room changed"
+    ],
+    "answer": 0,
+    "explanation": "XからYに変更になる = be changed from X to Y.",
+    "hint": "から is the old time, に is the new one."
+  },
+  {
+    "id": "read_n3_006",
+    "category": "reading",
+    "jlpt": "N3",
+    "prompt": "Read: 「兄は 料理が 得意ですが、私は 全然 できません。」 Which is true?",
+    "choices": [
+      "Both are good cooks",
+      "The older brother is good at cooking; the writer can't cook at all",
+      "The writer is good at cooking",
+      "Neither of them can cook"
+    ],
+    "answer": 1,
+    "explanation": "得意 = good at, 全然できません = can't do it at all.",
+    "hint": "が (but) contrasts the brother with the writer."
+  },
+  {
+    "id": "expr_n2_001",
+    "category": "expression",
+    "jlpt": "N2",
+    "prompt": "Your coworker groans 「猫の手も借りたい」. What's going on?",
+    "choices": [
+      "They're bored",
+      "They need money",
+      "They're extremely busy",
+      "They want a pet cat"
+    ],
+    "answer": 2,
+    "explanation": "猫の手も借りたい -- \"I'd even borrow a cat's paws\" -- means you're so busy you'd take any help at all.",
+    "hint": "Even a cat's help would be welcome... why?"
+  },
+  {
+    "id": "expr_n2_002",
+    "category": "expression",
+    "jlpt": "N2",
+    "prompt": "Someone who is 「顔が広い」 (kao ga hiroi)...",
+    "choices": [
+      "has a big face",
+      "is very shy",
+      "is famous on TV",
+      "knows a lot of people"
+    ],
+    "answer": 3,
+    "explanation": "顔が広い (lit. \"wide face\") means having a wide circle of acquaintances.",
+    "hint": "Your 'face' is known in many places."
+  },
+  {
+    "id": "expr_n2_003",
+    "category": "expression",
+    "jlpt": "N2",
+    "prompt": "After months of practice, your teacher says your 「腕が あがった」. What does that mean?",
+    "choices": [
+      "Your skill has improved",
+      "You raised your hand",
+      "Your muscles got bigger",
+      "Your salary went up"
+    ],
+    "answer": 0,
+    "explanation": "腕 (lit. arm) also means skill -- 腕が上がる = one's skill improves.",
+    "hint": "腕 here isn't about the body -- think 'ability'."
+  },
+  {
+    "id": "expr_n2_004",
+    "category": "expression",
+    "jlpt": "N2",
+    "prompt": "A 「頭が痛い問題」 is a problem that...",
+    "choices": [
+      "is about your health",
+      "is troublesome and hard to deal with",
+      "causes an injury",
+      "is easy to solve"
+    ],
+    "answer": 1,
+    "explanation": "頭が痛い (\"head hurts\") also means something is a headache -- worrying and troublesome.",
+    "hint": "Same image as 'a real headache' in English."
+  },
+  {
+    "id": "expr_n2_005",
+    "category": "expression",
+    "jlpt": "N2",
+    "prompt": "Don't tell him the secret -- he's 「口が軽い」. What kind of person is he?",
+    "choices": [
+      "Someone who eats very little",
+      "Someone who speaks politely",
+      "Someone who can't keep a secret",
+      "Someone who speaks quietly"
+    ],
+    "answer": 2,
+    "explanation": "口が軽い (\"light mouth\") = a blabbermouth; 口が堅い (\"hard mouth\") = someone who keeps secrets.",
+    "hint": "A 'light' mouth lets words slip out easily."
+  },
+  {
+    "id": "expr_n2_006",
+    "category": "expression",
+    "jlpt": "N2",
+    "prompt": "When your boss points out your mistakes, it's 「耳が痛い」. What does that mean?",
+    "choices": [
+      "Your ears hurt from noise",
+      "You can't hear well",
+      "The talk is too long",
+      "The criticism hits home"
+    ],
+    "answer": 3,
+    "explanation": "耳が痛い = it's painful to hear (because it's true about you).",
+    "hint": "It's not your actual ears that hurt."
+  },
+  {
+    "id": "loan_n2_001",
+    "category": "loanword",
+    "jlpt": "N2",
+    "prompt": "We need better コミュニケーション (komyunikeeshon) in this team. What is it?",
+    "choices": [
+      "Communication",
+      "Community",
+      "Commission",
+      "Competition"
+    ],
+    "answer": 0,
+    "explanation": "コミュニケーション is communication.",
+    "hint": "ko-myu-ni-kee-shon -- talking and sharing information."
+  },
+  {
+    "id": "loan_n2_002",
+    "category": "loanword",
+    "jlpt": "N2",
+    "prompt": "Let's list the メリット (meritto) of this plan. What is a メリット?",
+    "choices": [
+      "A method",
+      "An advantage",
+      "A medal",
+      "A memory"
+    ],
+    "answer": 1,
+    "explanation": "メリット (from \"merit\") means an advantage; its opposite is デメリット, a disadvantage.",
+    "hint": "Its opposite is デメリット."
+  },
+  {
+    "id": "loan_n2_003",
+    "category": "loanword",
+    "jlpt": "N2",
+    "prompt": "Our new manager shows strong リーダーシップ (riidaashippu). What is it?",
+    "choices": [
+      "Relationship",
+      "Ownership",
+      "Leadership",
+      "Readership"
+    ],
+    "answer": 2,
+    "explanation": "リーダーシップ is leadership.",
+    "hint": "rii-daa = leader."
+  },
+  {
+    "id": "loan_n2_004",
+    "category": "loanword",
+    "jlpt": "N2",
+    "prompt": "She lives in a マンション (manshon) near the station. What is it, in Japan?",
+    "choices": [
+      "A huge mansion for the rich",
+      "A hotel",
+      "A detached house",
+      "An apartment building / condo"
+    ],
+    "answer": 3,
+    "explanation": "A false friend: マンション in Japan means a (usually concrete) apartment or condo, not a mansion.",
+    "hint": "Careful -- it doesn't mean what it does in English."
+  },
+  {
+    "id": "loan_n2_005",
+    "category": "loanword",
+    "jlpt": "N2",
+    "prompt": "This word has a different ニュアンス (nyuansu) from that one. What is it?",
+    "choices": [
+      "Nuance",
+      "Nuisance",
+      "News",
+      "Number"
+    ],
+    "answer": 0,
+    "explanation": "ニュアンス is nuance -- a subtle shade of meaning.",
+    "hint": "nyu-an-su -- a fine difference in meaning."
+  },
+  {
+    "id": "loan_n2_006",
+    "category": "loanword",
+    "jlpt": "N2",
+    "prompt": "The sales target puts a lot of プレッシャー (puresshaa) on us. What is it?",
+    "choices": [
+      "A presentation",
+      "Pressure",
+      "A present",
+      "Pleasure"
+    ],
+    "answer": 1,
+    "explanation": "プレッシャー is pressure (stress from expectations).",
+    "hint": "pu-res-shaa -- a heavy weight on your shoulders."
+  },
+  {
+    "id": "read_n2_001",
+    "category": "reading",
+    "jlpt": "N2",
+    "prompt": "Read: 「彼の 言う ことにも 一理 ある。」 What does the writer think?",
+    "choices": [
+      "He only said one thing",
+      "He is always right",
+      "What he says has some merit",
+      "He is completely wrong"
+    ],
+    "answer": 2,
+    "explanation": "一理ある = there's some truth / logic in it.",
+    "hint": "理 means reason -- there's 'one reason' in it."
+  },
+  {
+    "id": "read_n2_002",
+    "category": "reading",
+    "jlpt": "N2",
+    "prompt": "Read: 「この 仕事は 忙しい わりに、給料が 安い。」 What's the complaint?",
+    "choices": [
+      "The job isn't busy",
+      "The pay is high",
+      "They're too busy to get paid",
+      "The pay is low for how busy the job is"
+    ],
+    "answer": 3,
+    "explanation": "～わりに = considering ~ / for ~ -- the pay doesn't match the workload.",
+    "hint": "わりに compares what you'd expect with what you get."
+  },
+  {
+    "id": "read_n2_003",
+    "category": "reading",
+    "jlpt": "N2",
+    "prompt": "Read: 「天気予報に よると、明日は 晴れる らしい。」 Where does this information come from?",
+    "choices": [
+      "The weather forecast",
+      "The writer's own guess",
+      "A friend",
+      "Looking at today's sky"
+    ],
+    "answer": 0,
+    "explanation": "～によると = according to ~, らしい = apparently / I hear.",
+    "hint": "によると names the source."
+  },
+  {
+    "id": "read_n2_004",
+    "category": "reading",
+    "jlpt": "N2",
+    "prompt": "Read: 「この 店は 味は もちろん、サービスも 素晴らしい。」 What does the writer say?",
+    "choices": [
+      "Neither is good",
+      "The food tastes great, and the service is wonderful too",
+      "Only the service is good",
+      "The food is bad but the service is good"
+    ],
+    "answer": 1,
+    "explanation": "AはもちろんBも = not only A (of course) but B as well.",
+    "hint": "もちろん means 'of course' -- A is a given."
+  },
+  {
+    "id": "read_n2_005",
+    "category": "reading",
+    "jlpt": "N2",
+    "prompt": "Read: 「試験に 合格する ために、毎晩 遅くまで 勉強して いる。」 Why does the writer study late?",
+    "choices": [
+      "Because they failed",
+      "To help a friend",
+      "To pass the exam",
+      "Because the exam is over"
+    ],
+    "answer": 2,
+    "explanation": "～ために = in order to ~. 合格する = pass.",
+    "hint": "ために shows the purpose."
+  },
+  {
+    "id": "read_n2_006",
+    "category": "reading",
+    "jlpt": "N2",
+    "prompt": "Read: 「いくら たのんでも、彼は 引き受けて くれなかった。」 What happened?",
+    "choices": [
+      "He agreed straight away",
+      "He asked them for help",
+      "He accepted after one request",
+      "No matter how often they asked, he wouldn't take it on"
+    ],
+    "answer": 3,
+    "explanation": "いくら～ても = no matter how much ~, 引き受ける = take on (a task).",
+    "hint": "いくら...ても means 'however much'."
+  },
+  {
+    "id": "expr_n1_001",
+    "category": "expression",
+    "jlpt": "N1",
+    "prompt": "What does 「一石二鳥」 (isseki nichou) mean?",
+    "choices": [
+      "Two gains from one action",
+      "Two birds sharing one stone",
+      "A very rare event",
+      "Wasted effort"
+    ],
+    "answer": 0,
+    "explanation": "一石二鳥 -- \"one stone, two birds\" -- is the same idea as \"kill two birds with one stone\".",
+    "hint": "Read the kanji: one stone, two birds."
+  },
+  {
+    "id": "expr_n1_002",
+    "category": "expression",
+    "jlpt": "N1",
+    "prompt": "What does 「猿も木から落ちる」 mean?",
+    "choices": [
+      "Pride comes before a fall",
+      "Even experts make mistakes",
+      "Monkeys are clumsy",
+      "Be careful when climbing"
+    ],
+    "answer": 1,
+    "explanation": "\"Even monkeys fall from trees\" -- even someone skilled can slip up.",
+    "hint": "Monkeys are expert climbers... and still..."
+  },
+  {
+    "id": "expr_n1_003",
+    "category": "expression",
+    "jlpt": "N1",
+    "prompt": "What does 「七転び八起き」 (nana korobi ya oki) mean?",
+    "choices": [
+      "Being very lucky",
+      "Always failing",
+      "Never giving up",
+      "Seven days a week"
+    ],
+    "answer": 2,
+    "explanation": "\"Fall seven times, get up eight\" -- perseverance.",
+    "hint": "Count the falls and the get-ups."
+  },
+  {
+    "id": "expr_n1_004",
+    "category": "expression",
+    "jlpt": "N1",
+    "prompt": "What does 「十人十色」 (juunin toiro) mean?",
+    "choices": [
+      "Ten people in a team",
+      "A colourful painting",
+      "All people are alike",
+      "Everyone has different tastes"
+    ],
+    "answer": 3,
+    "explanation": "\"Ten people, ten colours\" -- every person is different.",
+    "hint": "Each person gets their own colour."
+  },
+  {
+    "id": "expr_n1_005",
+    "category": "expression",
+    "jlpt": "N1",
+    "prompt": "What does 「花より団子」 (hana yori dango) mean?",
+    "choices": [
+      "Practical things matter more than looks",
+      "Flowers are prettier than dumplings",
+      "Spring is the best season",
+      "Eat sweets under the cherry blossoms"
+    ],
+    "answer": 0,
+    "explanation": "\"Dumplings over flowers\" -- preferring substance (food) to beauty (blossoms).",
+    "hint": "At a flower-viewing party, some people only care about the food..."
+  },
+  {
+    "id": "expr_n1_006",
+    "category": "expression",
+    "jlpt": "N1",
+    "prompt": "What does 「以心伝心」 (ishin denshin) mean?",
+    "choices": [
+      "Changing one's mind",
+      "Understanding each other without words",
+      "Writing a heartfelt letter",
+      "Always telling the truth"
+    ],
+    "answer": 1,
+    "explanation": "以心伝心 -- \"mind to mind\" -- is unspoken understanding, like telepathy.",
+    "hint": "心 (heart/mind) appears twice -- passed from one to the other."
+  },
+  {
+    "id": "loan_n1_001",
+    "category": "loanword",
+    "jlpt": "N1",
+    "prompt": "After long talks, the two companies reached a コンセンサス (konsensasu). What is it?",
+    "choices": [
+      "Concert",
+      "Conscience",
+      "Consensus",
+      "Census"
+    ],
+    "answer": 2,
+    "explanation": "コンセンサス is consensus -- general agreement.",
+    "hint": "What two sides reach after long talks."
+  },
+  {
+    "id": "loan_n1_002",
+    "category": "loanword",
+    "jlpt": "N1",
+    "prompt": "Investors worry about the リスク (risuku) of the project. What is it?",
+    "choices": [
+      "Wrist",
+      "List",
+      "Request",
+      "Risk"
+    ],
+    "answer": 3,
+    "explanation": "リスク is risk.",
+    "hint": "Investors worry about it."
+  },
+  {
+    "id": "loan_n1_003",
+    "category": "loanword",
+    "jlpt": "N1",
+    "prompt": "That claim has no エビデンス (ebidensu). What is it?",
+    "choices": [
+      "Evidence",
+      "Event",
+      "Evaluation",
+      "Advance"
+    ],
+    "answer": 0,
+    "explanation": "エビデンス is evidence -- common in business and science.",
+    "hint": "A claim needs it to be believed."
+  },
+  {
+    "id": "loan_n1_004",
+    "category": "loanword",
+    "jlpt": "N1",
+    "prompt": "The firm is known for its イノベーション (inobeeshon). What is it?",
+    "choices": [
+      "Investigation",
+      "Innovation",
+      "Invitation",
+      "Inflation"
+    ],
+    "answer": 1,
+    "explanation": "イノベーション is innovation.",
+    "hint": "i-no-bee-shon -- new ideas and inventions."
+  },
+  {
+    "id": "loan_n1_005",
+    "category": "loanword",
+    "jlpt": "N1",
+    "prompt": "The new policy will have a big インパクト (inpakuto) on prices. What is it?",
+    "choices": [
+      "Input",
+      "Impression",
+      "Impact",
+      "Import"
+    ],
+    "answer": 2,
+    "explanation": "インパクト is impact -- a strong effect.",
+    "hint": "in-pa-ku-to -- a strong effect."
+  },
+  {
+    "id": "loan_n1_006",
+    "category": "loanword",
+    "jlpt": "N1",
+    "prompt": "Please send the アジェンダ (ajenda) before the meeting. What is it?",
+    "choices": [
+      "Agent",
+      "Agency",
+      "Addendum",
+      "Agenda"
+    ],
+    "answer": 3,
+    "explanation": "アジェンダ is an agenda -- the list of topics for a meeting.",
+    "hint": "The list of what a meeting will cover."
+  },
+  {
+    "id": "read_n1_001",
+    "category": "reading",
+    "jlpt": "N1",
+    "prompt": "Read: 「彼の 努力なくして、この 成功は あり得なかった。」 What does the writer mean?",
+    "choices": [
+      "Without his effort, this success would have been impossible",
+      "His effort wasn't needed",
+      "The success came without him",
+      "He succeeded without trying"
+    ],
+    "answer": 0,
+    "explanation": "～なくして(は) = without ~; あり得なかった = could not have happened.",
+    "hint": "なくして means 'without'."
+  },
+  {
+    "id": "read_n1_002",
+    "category": "reading",
+    "jlpt": "N1",
+    "prompt": "Read: 「雨が 降ろうが 降るまいが、試合は おこなわれる。」 What happens to the match?",
+    "choices": [
+      "It's postponed",
+      "It goes ahead whether it rains or not",
+      "It's cancelled if it rains",
+      "It's only held in the rain"
+    ],
+    "answer": 1,
+    "explanation": "～(よ)うが～まいが = whether ~ or not.",
+    "hint": "降ろう (will rain) and 降るまい (won't rain) -- both cases."
+  },
+  {
+    "id": "read_n1_003",
+    "category": "reading",
+    "jlpt": "N1",
+    "prompt": "Read the sign: 「許可なく この 部屋に 入る べからず。」 What does it say?",
+    "choices": [
+      "Permission is given inside",
+      "Please enter quietly",
+      "Do not enter this room without permission",
+      "Anyone may enter this room"
+    ],
+    "answer": 2,
+    "explanation": "べからず is a formal prohibition -- \"must not\". 許可なく = without permission.",
+    "hint": "べからず is how old signs say 'do not'."
+  },
+  {
+    "id": "read_n1_004",
+    "category": "reading",
+    "jlpt": "N1",
+    "prompt": "Read: 「このような 結果に なったのは、ひとえに 私の 責任です。」 What is the speaker saying?",
+    "choices": [
+      "It's partly their fault",
+      "It's someone else's fault",
+      "Nobody is responsible",
+      "The result is entirely their responsibility"
+    ],
+    "answer": 3,
+    "explanation": "ひとえに = solely, entirely.",
+    "hint": "ひとえに leaves no room for anyone else."
+  },
+  {
+    "id": "read_n1_005",
+    "category": "reading",
+    "jlpt": "N1",
+    "prompt": "Read: 「彼女は 疲れて いる にも かかわらず、笑顔を 絶やさなかった。」 What did she do?",
+    "choices": [
+      "Kept smiling despite being tired",
+      "Stopped smiling because she was tired",
+      "Rested instead",
+      "Was too tired to come"
+    ],
+    "answer": 0,
+    "explanation": "～にもかかわらず = despite ~, 笑顔を絶やさない = never stop smiling.",
+    "hint": "絶やさない means 'not let it die out'."
+  },
+  {
+    "id": "read_n1_006",
+    "category": "reading",
+    "jlpt": "N1",
+    "prompt": "Read: 「これは 言わずと 知れた 名作だ。」 What kind of work is it?",
+    "choices": [
+      "An unfinished work",
+      "A masterpiece everyone knows, needless to say",
+      "A little-known work",
+      "A work nobody talks about"
+    ],
+    "answer": 1,
+    "explanation": "言わずと知れた = known without being said -- famous. 名作 = masterpiece.",
+    "hint": "So famous you don't even need to say it."
   }
 ]

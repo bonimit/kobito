@@ -29,6 +29,9 @@ FALLBACK_HINTS = {
     "kanji": "Look at the shape and any radicals in the kanji -- they often hint at the meaning.",
     "grammar": "Think about the job each word is doing in the sentence -- is it the subject, the object, or showing direction?",
     "verb_conjugation": "Check whether it's a ru-verb or an u-verb first -- they follow different conjugation patterns.",
+    "expression": "Picture the moment -- who's speaking, and are they arriving, leaving, thanking or apologising?",
+    "loanword": "Say the katakana out loud slowly -- it's borrowed from another language, often English.",
+    "reading": "Find the key words first -- who, when, where -- then check each answer against the sentence.",
 }
 DEFAULT_FALLBACK_HINT = "Take another look at the sentence's structure -- you're closer than you think!"
 

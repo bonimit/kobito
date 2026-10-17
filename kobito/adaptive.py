@@ -49,7 +49,8 @@ TARGET_SUCCESS = 0.85
 COMFORT_BAND = (0.65, 0.95)
 # Where each JLPT level starts on the difficulty scale (in logits).
 JLPT_DIFFICULTY = {"N5": -2.0, "N4": -1.0, "N3": 0.0, "N2": 1.0, "N1": 2.0}
-CATEGORY_OFFSET = {"kanji": 0.15, "grammar": 0.1, "verb_conjugation": 0.05, "vocabulary": 0.0}
+CATEGORY_OFFSET = {"kanji": 0.15, "grammar": 0.1, "reading": 0.1, "verb_conjugation": 0.05, "expression": 0.05,
+                   "vocabulary": 0.0, "loanword": -0.05}
 
 # K = a / (1 + b * n): big steps while we know little, smaller later.
 # Early on the tutor knows little, so it moves boldly (a strong player
@@ -119,17 +120,22 @@ class AdaptiveTutor:
 
     # -- Choosing the next question -------------------------------------------
 
-    def pick(self, questions, exclude=()):
+    def pick(self, questions, exclude=(), avoid_categories=()):
         """The next question: a review that's due, or else the unseen
         question closest to the target success rate, inside the comfort band
-        when possible."""
+        when possible -- of a different kind from the last few asked
+        (`avoid_categories`) when there's one that fits."""
         by_id = {q["id"]: q for q in questions}
         due = [qid for qid, r in self.reviews.items() if r["due"] <= self.answers and qid in by_id]
+        # A due review of the same kind as the last question waits one turn.
+        due = [qid for qid in due if by_id[qid].get("category") not in avoid_categories] or \
+            (due if not avoid_categories else [])
         if due:
             return by_id[min(due, key=lambda qid: self.reviews[qid]["due"])]
 
         pool = [q for q in questions if q["id"] not in exclude and q["id"] not in self.reviews] or \
             [q for q in questions if q["id"] not in exclude] or list(questions)
+        pool = [q for q in pool if q.get("category") not in avoid_categories] or pool
         scored = [(abs(self.predict(q) - TARGET_SUCCESS), q) for q in pool]
         comfy = [sq for sq in scored if COMFORT_BAND[0] <= self.predict(sq[1]) <= COMFORT_BAND[1]]
         candidates = sorted(comfy or scored, key=lambda sq: sq[0])[:TOP_CANDIDATES]

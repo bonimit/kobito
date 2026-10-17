@@ -42,7 +42,7 @@ def make_word(jp, romaji, meaning, source):
 
 
 def word_from_question(question):
-    if question.get("category") != "vocabulary":
+    if question.get("category") not in ("vocabulary", "loanword"):
         return None
     m = _WORD_IN_PROMPT.search(question.get("prompt", ""))
     if not m:

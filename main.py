@@ -19,6 +19,7 @@ async def new_run():
     run = {
         "character_id": character_id, "companion_id": companion_id, "theme_id": theme_id,
         "jlpt_level": jlpt_level, "level_number": 1, "score": 0, "xp": 0, "item_box": {}, "badges": [],
+        "question_history": [],
         "difficulty_mode": difficulty_mode, "tutor": None,
     }
     # First checkpoint straight away, so even a run quit in level 1 can be
@@ -45,6 +46,7 @@ async def main():
     # Game autosaves at each stage clear (and on Save / window close).
     score, xp, jlpt_level, level_number = run["score"], run["xp"], run["jlpt_level"], run["level_number"]
     item_box, badges = run["item_box"], run["badges"]
+    question_history = run["question_history"]   # so new levels favour questions not seen yet
     # In AI Adaptive mode one tutor follows the player through every level
     # (and into the save), so what it has learned about them carries over.
     tutor = None
@@ -64,6 +66,7 @@ async def main():
             resume_state=resume_state,
             difficulty_mode=run["difficulty_mode"],
             tutor=tutor,
+            question_history=question_history,
         ).run()
         resume_state = None
         if outcome != OUTCOME_ADVANCE:
