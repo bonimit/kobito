@@ -1,51 +1,67 @@
 import json
 import random
+import re
 from pathlib import Path
 
 QUESTIONS_PATH = Path(__file__).resolve().parent.parent / "assets" / "data" / "questions.json"
 
 
-class QuestionBank:
-    def __init__(self, path=QUESTIONS_PATH):
-        with open(path, encoding="utf-8") as f:
-            self.questions = json.load(f)
+_WORD_IN_PROMPT = re.compile(r"([぀-ヿ一-鿿々ー]+)\s*\(([a-z][a-z' ]*)\)")
+_cache = {}
 
-    def random_question(self, jlpt=None, exclude=None):
-        """A random question at the given JLPT level. Ids in `exclude`
-        (questions already asked this level) are skipped, so a level of 30
-        quiz blocks never repeats a question; once every question at that
-        level has been used, the exclusion is dropped rather than failing.
-        """
-        pool = self.questions
-        if jlpt is not None:
-            filtered = [q for q in pool if q["jlpt"] == jlpt]
-            pool = filtered or pool  # fall back to the full bank if that level is empty
-        if exclude:
-            unseen = [q for q in pool if q["id"] not in exclude]
-            pool = unseen or pool
-        return random.choice(pool)
+
+def _load(path):
+    """The hand-written questions plus the generated ones (built once)."""
+    if path not in _cache:
+        from kobito import furigana
+        from kobito.question_gen import furigana_readings, generate
+        with open(path, encoding="utf-8") as f:
+            written = json.load(f)
+        taught = {m.group(1) for q in written if q["category"] == "vocabulary"
+                  for m in [_WORD_IN_PROMPT.search(q["prompt"])] if m}
+        for word, reading in furigana_readings().items():
+            furigana.READINGS.setdefault(word, reading)
+        _cache[path] = written + generate(skip_words=taught)
+    return _cache[path]
+
+
+class QuestionBank:
+    """Every question: the hand-written ones in assets/data/questions.json
+    and the ones generated from word and verb lists (kobito/question_gen.py)."""
+
+    def __init__(self, path=QUESTIONS_PATH):
+        self.questions = list(_load(path))
 
     def pick(self, jlpt=None, exclude=(), history=(), recent_categories=(), rng=random):
         """The next question to ask, chosen for variety:
 
-          * never one already asked this level (`exclude`) while others remain;
-          * a different kind of question from the last ones asked
-            (`recent_categories`) -- no three kanji questions in a row;
+          * questions at the given JLPT level, never one already asked this
+            level (`exclude`) while others remain;
           * questions not met earlier in the run first (`history`: ids,
             oldest first); once all have been seen, one of the ones seen
-            longest ago -- so a new level doesn't replay the last one.
-        Random among whatever is left."""
+            longest ago -- so a new level doesn't replay the last one;
+          * a different kind of question from the last ones asked
+            (`recent_categories`) -- no three kanji questions in a row --
+            whenever an unseen question of another kind is left.
+        The kind is picked first (evenly among the kinds that still have
+        unseen questions), then a question of that kind -- so the hundreds of
+        generated vocabulary questions don't crowd out the rest."""
         pool = self.questions
         if jlpt is not None:
             pool = [q for q in pool if q["jlpt"] == jlpt] or pool
         pool = [q for q in pool if q["id"] not in exclude] or pool
-        pool = [q for q in pool if q["category"] not in recent_categories] or pool
+        varied = [q for q in pool if q["category"] not in recent_categories] or pool
         last_seen = {qid: i for i, qid in enumerate(history)}
-        fresh = [q for q in pool if q["id"] not in last_seen]
-        if fresh:
-            return rng.choice(fresh)
-        pool = sorted(pool, key=lambda q: last_seen[q["id"]])
-        return rng.choice(pool[:max(1, len(pool) // 3)])
+        # Unseen and a new kind; else unseen (a new question beats a new
+        # kind); else the questions seen longest ago.
+        for candidates in (varied, pool):
+            fresh = [q for q in candidates if q["id"] not in last_seen]
+            if fresh:
+                kind = rng.choice(sorted({q["category"] for q in fresh}))
+                return rng.choice([q for q in fresh if q["category"] == kind])
+        kind = rng.choice(sorted({q["category"] for q in varied}))
+        oldest = sorted((q for q in varied if q["category"] == kind), key=lambda q: last_seen[q["id"]])
+        return rng.choice(oldest[:max(1, len(oldest) // 3)])
 
 
 def shuffled(question, rng=random):

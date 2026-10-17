@@ -28,7 +28,7 @@ TILE_COUNT = 8           # tiles offered per reading/writing question (answer + 
 MAX_WORD_CHARS = 6
 
 # "犬 (inu)" inside a vocabulary prompt: the word and its romaji.
-_WORD_IN_PROMPT = re.compile(r"([぀-ヿ一-鿿々ー]+)\s*\(([a-z][a-z ]*)\)")
+_WORD_IN_PROMPT = re.compile(r"([぀-ヿ一-鿿々ー]+)\s*\(([a-z][a-z' ]*)\)")
 
 
 def make_word(jp, romaji, meaning, source):

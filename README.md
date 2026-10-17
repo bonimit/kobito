@@ -123,10 +123,27 @@ pause gameplay and show a small black box — anchored right next to the
 block, above it if there's room or below otherwise, rest of the level
 still visible, with a tooltip-style tail that touches the block itself
 (no floating gap) so the box clearly reads as popping up *from* it —
-with a multiple-choice Japanese question drawn from
-`assets/data/questions.json` (**280 questions** — 56 per JLPT level),
-filtered to the level's current JLPT level (see Difficulty below). There
-are seven kinds:
+with a multiple-choice Japanese question at the level's current JLPT
+level (see Difficulty below), from a bank of **1,408 questions**:
+
+| JLPT | N5 | N4 | N3 | N2 | N1 |
+| --- | --- | --- | --- | --- | --- |
+| Questions | 386 | 357 | 304 | 191 | 170 |
+
+280 are hand-written (`assets/data/questions.json`, 56 per level). The
+rest are generated (`kobito/question_gen.py`) from word and verb lists for
+each level (`kobito/word_data.py`): for every word, "What does 天気
+(tenki) mean?", "Which word means 'weather'?" and, for kanji words, "How
+do you read 天気?"; for every verb, its forms for that level (te-form,
+nai-form, potential, passive, …) conjugated by rule
+(`kobito/conjugation.py`). Wrong choices are other words of the same kind
+and level, near-miss readings (a dropped long vowel, a missing ゛, a stray
+っ) and the classic conjugation slips (書きて, 帰ます). The bank is built
+the same way every time, so saves can refer to any question. A stage asks
+30, so you can replay many stages before anything repeats: 10 N5 stages
+in a row (300 questions) without a single repeat, 5 at N1.
+
+There are seven kinds:
 
 - **Vocabulary** — what does 犬 (inu) mean?
 - **Kanji** — how do you read 日本語?

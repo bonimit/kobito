@@ -74,3 +74,43 @@ def has_katakana(text):
 
 def is_hiragana(text):
     return all("぀" <= ch <= "ゟ" for ch in text)
+
+
+_ROMAJI = {kana: romaji for romaji, kana in _SYLLABLES.items()}
+_ROMAJI.update({"ぢ": "ji", "づ": "zu", "を": "o", "ゐ": "i", "ゑ": "e", "ぁ": "a", "ぃ": "i", "ぅ": "u",
+                "ぇ": "e", "ぉ": "o"})
+
+
+def kana_to_romaji(kana):
+    """'ぎゅうにゅう' -> 'gyuunyuu' (Hepburn, long vowels doubled, っ doubles
+    the next consonant, ん before a vowel or y is written n'). Katakana is
+    read as hiragana; returns None if anything can't be converted."""
+    text = "".join(chr(ord(ch) - 0x60) if "ァ" <= ch <= "ヶ" else ch for ch in kana)
+    out, i, double = [], 0, False
+    while i < len(text):
+        ch = text[i]
+        if ch == "っ":
+            double = True
+            i += 1
+            continue
+        if ch == "ん":
+            nxt = text[i + 1:i + 2]
+            out.append("n'" if nxt and _ROMAJI.get(nxt, "x")[0] in "aeiouy" else "n")
+            i += 1
+            continue
+        if ch == "ー" and out:
+            out.append(out[-1][-1])
+            i += 1
+            continue
+        pair = text[i:i + 2]
+        romaji = _ROMAJI.get(pair) if len(pair) == 2 else None
+        size = 2 if romaji else 1
+        romaji = romaji or _ROMAJI.get(ch)
+        if romaji is None:
+            return None
+        if double:
+            romaji = ("t" + romaji) if romaji.startswith("ch") else romaji[0] + romaji
+            double = False
+        out.append(romaji)
+        i += size
+    return "".join(out)

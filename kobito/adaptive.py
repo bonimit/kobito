@@ -64,7 +64,11 @@ THETA_RANGE = (-2.0 - 1.0, 2.0 + 2.5)
 
 # Leitner review: (questions to wait before it comes back) per box.
 REVIEW_GAPS = {1: 4, 2: 9}
-TOP_CANDIDATES = 4   # pick randomly among the best few, so it never feels scripted
+# Every question whose predicted success is within CLOSE_ENOUGH of the best
+# fit is a candidate; the kind is picked at random among them, then the
+# question -- so it never feels scripted, even when hundreds of questions
+# share the same difficulty.
+CLOSE_ENOUGH = 0.05
 
 
 def logistic(x):
@@ -136,10 +140,14 @@ class AdaptiveTutor:
         pool = [q for q in questions if q["id"] not in exclude and q["id"] not in self.reviews] or \
             [q for q in questions if q["id"] not in exclude] or list(questions)
         pool = [q for q in pool if q.get("category") not in avoid_categories] or pool
+        # Questions never answered before first (right answers don't become reviews).
+        pool = [q for q in pool if q["id"] not in self.item_answers] or pool
         scored = [(abs(self.predict(q) - TARGET_SUCCESS), q) for q in pool]
         comfy = [sq for sq in scored if COMFORT_BAND[0] <= self.predict(sq[1]) <= COMFORT_BAND[1]]
-        candidates = sorted(comfy or scored, key=lambda sq: sq[0])[:TOP_CANDIDATES]
-        return self.rng.choice(candidates)[1]
+        ranked = sorted(comfy or scored, key=lambda sq: sq[0])
+        near = [q for d, q in ranked if d <= ranked[0][0] + CLOSE_ENOUGH]
+        kind = self.rng.choice(sorted({q.get("category", "") for q in near}))
+        return self.rng.choice([q for q in near if q.get("category", "") == kind])
 
     def estimated_level(self):
         """The JLPT level whose questions the player answers at about the
