@@ -76,6 +76,7 @@ def build_underground(style, level_number=1, pit_index=0, favorites=()):
     b.rng = random.Random(5000 + level_number * 10 + pit_index)
     b.enemy_body_color, b.enemy_foot_color = spec["enemy"]
     b.flying_palette = spec["flying"]
+    b.ground_species = b.flying_species = None   # this room's own coloured critters
     W = ROOM_WIDTH_TILES
 
     b._add_ground(0, W)

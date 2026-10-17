@@ -30,8 +30,12 @@ class GiftBox(Platform):
     def _draw(self, opened):
         w, h = self.rect.size
         body, dark, ribbon, ribbon_dark = (USED, USED_DARK, USED_DARK, USED_DARK) if opened else (RED, RED_DARK, RIBBON, RIBBON_DARK)
-        self.image.fill(body)
-        pygame.draw.rect(self.image, dark, (0, 0, w, h), width=2)
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(self.image, (30, 18, 24), (0, 0, w, h), border_radius=5)       # dark outline
+        pygame.draw.rect(self.image, dark, (2, 2, w - 4, h - 4), border_radius=4)
+        pygame.draw.rect(self.image, body, (2, 2, w - 6, h - 7), border_radius=4)
+        if not opened:
+            pygame.draw.line(self.image, (255, 150, 160), (5, 4), (w // 2 - 6, 4), 2)    # shine
         pygame.draw.rect(self.image, ribbon, (w // 2 - 3, 0, 6, h))
         pygame.draw.rect(self.image, ribbon, (0, h // 2 - 3, w, 6))
         pygame.draw.rect(self.image, ribbon_dark, (w // 2 - 3, 0, 6, h), width=1)

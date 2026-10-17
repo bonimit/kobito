@@ -100,6 +100,17 @@ reason — a PyInstaller/`cryptography` build issue on some platforms).
 
 ## Question blocks
 
+**How they look.** Quiz blocks are chunky bevelled blocks with a dark
+outline, a soft pulsing glow behind them and a shine that sweeps across every
+few seconds, in a colour picked per world to stand out from its scenery
+(gold in the forest, turquoise in the desert, coral underwater, jade in
+Korea, …). Their faces vary through a level: a classic **?**, a **?**
+medallion with stars, or **問** (*mon*, "question"). Answered blocks turn to
+grey stone with a check mark (`kobito/entities/question_block.py`). The quiz
+card that pops up is nearly solid, with a coloured header band and border per
+question type — **vocabulary** blue, **kanji** vermilion, **grammar** green,
+**verbs** purple — and the choice highlight takes the same colour.
+
 Yellow "?" blocks (drawn slightly larger than a tile, Mario-block style)
 pause gameplay and show a small black box — anchored right next to the
 block, above it if there's room or below otherwise, rest of the level
@@ -300,6 +311,16 @@ name, tagline, personality, placeholder color, and an ability —
 
 ## Power, enemies and stomping
 
+**Enemy designs** (`kobito/enemy_art.py`): every enemy has a bold silhouette,
+a dark outline and a two-frame walk/flap, and faces the way it's going.
+On the ground: a jelly **slime** (several colours), a horned **oni** with
+fangs and a tiger-stripe belt, a wobbling **daruma** doll, and a beaked
+**kappa** with a water dish on its head. In the air: a **bat**, the
+one-eyed paper-lantern ghost **chōchin-obake**, and the umbrella ghost
+**karakasa-obake** hopping on its handle. A level mixes them, and the
+lineup rotates from level to level; the hidden rooms keep their own
+critters (rats, gators, moles, cloud sheep, thunder imps, moon rabbits).
+
 Every mascot has a **power gauge, 10 pips** (shown under the score). Each
 enemy hit costs **1 power**, so ten hits drain a full gauge — hits no
 longer cost a life directly.
@@ -322,6 +343,11 @@ roam the ground and stepping stones; bats patrol up and down over the
 gaps.
 
 ## Items: konbini snacks, favorites and rare finds
+
+Pickups float gently with a coloured halo that says what they are at a
+glance — **sky blue** for konbini snacks, **pink** for your favourites,
+**gold** (bigger, pulsing) for rare finds and treasures. Coins are outlined
+and spin. Gift boxes have a dark outline and a shine.
 
 All items are data in `kobito/items.py` (icons are drawn in code in
 `kobito/item_art.py`). They're picked up on touch, add to your score and

@@ -416,6 +416,9 @@ class Game:
         self.enemies.update(dt, self.platforms)
         for spring in self.world.springs:
             spring.update_squash(dt)
+        for block in self.question_blocks:
+            if abs(block.rect.centerx - self.player.rect.centerx) < SCREEN_WIDTH:
+                block.animate(self.clock_time)
         self.background.update(dt)
         self.coach.update(dt)
         self._update_effects(dt)
@@ -942,16 +945,9 @@ class Game:
             self._draw_pit_hints()
             self._draw_spring_hints()
 
-        # Treasures pulse with a soft halo, so they stand out from the scenery.
-        for pickup in self.collectibles:
-            if pickup.item is not None and pickup.item.group == "treasure":
-                pulse = 0.6 + 0.4 * math.sin(self.clock_time * 4)
-                center = (pickup.rect.centerx - self.camera_x, pickup.rect.centery)
-                halo = pygame.Surface((64, 64), pygame.SRCALPHA)
-                for r in range(30, 6, -4):
-                    pygame.draw.circle(halo, (255, 236, 150, round(70 * pulse * (1 - r / 32))), (32, 32), r)
-                self.screen.blit(halo, (center[0] - 32, center[1] - 32))
+        self._draw_glows()
 
+        t = self.clock_time
         for sprite in self.all_sprites:
             if sprite is self.player and self._player_should_blink_off():
                 continue
@@ -959,10 +955,12 @@ class Game:
             # Most sprites (platforms, enemies) are drawn at their own
             # rect. The player overrides this with draw_rect() because
             # its visual frame size can differ from its fixed collision
-            # hitbox (see Player.draw_rect).
+            # hitbox (see Player.draw_rect). Pickups spin (coins) or bob.
             rect = sprite.draw_rect() if hasattr(sprite, "draw_rect") else sprite.rect
-            draw_pos = (rect.x - self.camera_x, rect.y)
-            self.screen.blit(sprite.image, draw_pos)
+            if isinstance(sprite, Collectible):
+                self.screen.blit(sprite.frame(t), (rect.x - self.camera_x, rect.y + sprite.bob(t)))
+            else:
+                self.screen.blit(sprite.image, (rect.x - self.camera_x, rect.y))
 
         self._draw_effects()
         if self.drowsy and not self.game_over:
@@ -987,6 +985,42 @@ class Game:
             self.touch_controls.draw(self.screen)
 
         pygame.display.flip()
+
+    def _glow_surface(self, color, radius, strength):
+        """A cached soft round glow (concentric circles, brightest inside)."""
+        key = (color, radius, strength)
+        cache = self.__dict__.setdefault("_glow_cache", {})
+        if key not in cache:
+            glow = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+            for r in range(radius, 2, -2):
+                glow_alpha = round(strength * (1 - r / radius) ** 1.3)
+                pygame.draw.circle(glow, (*color, glow_alpha), (radius, radius), r)
+            cache[key] = glow
+        return cache[key]
+
+    def _draw_glows(self):
+        """Soft halos behind the things worth touching -- unanswered "?"
+        blocks and every pickup (coloured by what it is) -- so they stand out
+        from any world's scenery."""
+        t = self.clock_time
+        left, right = self.camera_x - 60, self.camera_x + SCREEN_WIDTH + 60
+        for block in self.question_blocks:
+            if not block.used and left < block.rect.centerx < right:
+                glow = self._glow_surface(block.glow_color, 40, 150)
+                glow.set_alpha(round(255 * block.glow_strength(t)))
+                self.screen.blit(glow, glow.get_rect(center=(block.rect.centerx - self.camera_x, block.rect.centery)))
+        for pickup in self.collectibles:
+            color = pickup.halo_color
+            if color is None or not left < pickup.rect.centerx < right:
+                continue
+            big = pickup.item is not None and pickup.item.group in ("rare", "treasure")
+            glow = self._glow_surface(color, 30 if big else 22, 170 if big else 120)
+            if big:
+                glow.set_alpha(round(255 * (0.6 + 0.4 * math.sin(t * 4))))
+            else:
+                glow.set_alpha(255)
+            center = (pickup.rect.centerx - self.camera_x, pickup.rect.centery + pickup.bob(t))
+            self.screen.blit(glow, glow.get_rect(center=center))
 
     def _draw_pit_hints(self):
         """A secret pit gives itself away, if you look: NYC-manhole steam,

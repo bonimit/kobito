@@ -23,10 +23,19 @@ DETAIL_TRANSLATION_COLOR = (175, 185, 200)
 FURIGANA_KEY = pygame.K_f
 TRANSLATION_KEY = pygame.K_t
 
-BOX_COLOR = (18, 18, 30, 175)  # translucent, not flat opaque -- lets the scene show through
+BOX_COLOR = (16, 18, 32, 238)  # nearly solid, so the question never blends into the scene
 BOX_BORDER = (230, 230, 230)
 TEXT_COLOR = (240, 240, 240)
 CATEGORY_COLOR = (200, 175, 110)
+# Each kind of question has its own accent -- the card's border and header
+# band -- so vocabulary, kanji, grammar and verbs each look different.
+CATEGORY_ACCENTS = {
+    "vocabulary": (90, 170, 255),
+    "kanji": (240, 96, 80),
+    "grammar": (90, 205, 130),
+    "verb_conjugation": (185, 125, 245),
+}
+HEADER_BAND = 24
 CORRECT_COLOR = (140, 220, 140)
 WRONG_COLOR = (235, 120, 110)
 HINT_COLOR = (180, 180, 180)
@@ -63,7 +72,6 @@ STICK_Y_AXIS = 1
 # Ignore confirm presses for a moment after the box opens, so the jump
 # that bumped the block can't also pick an answer by accident.
 CONFIRM_GRACE_SECONDS = 0.3
-CURSOR_COLOR = (255, 210, 110)
 # Once a question has been open this long without an answer, the player is
 # clearly thinking hard: the companion speaks up with a hint (a nudge, never
 # the answer). Claude's hint is requested a few seconds earlier, in the
@@ -72,7 +80,6 @@ CURSOR_COLOR = (255, 210, 110)
 THINKING_PROMPT_SECONDS = 10.0
 NUDGE_PREFETCH_SECONDS = 6.0
 PROMPT_FLASH_SECONDS = 1.6   # the box flashes gold and shows "!" when it speaks up
-CURSOR_BG = (255, 210, 110, 46)
 SKIP_KEYS = (pygame.K_s,)
 SKIP_BUTTON_SIZE = (92, 22)
 
@@ -360,18 +367,25 @@ class QuizScreen:
         box, side = self._position_box(BOX_WIDTH, box_height, bottom_reserve)
         self._question_rect = box
 
+        accent = CATEGORY_ACCENTS.get(self.question.get("category"), CATEGORY_COLOR)
+        shadow = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow, (0, 0, 0, 90), shadow.get_rect(), border_radius=8)
+        self.screen.blit(shadow, (box.x + 4, box.y + 5))
         box_surface = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
-        box_surface.fill(BOX_COLOR)
+        pygame.draw.rect(box_surface, BOX_COLOR, box_surface.get_rect(), border_radius=8)
+        band = pygame.Rect(0, 0, box.width, HEADER_BAND)
+        pygame.draw.rect(box_surface, (*[round(c * 0.38) for c in accent], 255), band,
+                         border_top_left_radius=8, border_top_right_radius=8)
         self.screen.blit(box_surface, box.topleft)
-        pygame.draw.rect(self.screen, BOX_BORDER, box, width=1)
-        self._draw_tail(box, side)
+        pygame.draw.rect(self.screen, accent, box, width=2, border_radius=8)
+        self._draw_tail(box, side, accent)
 
         y = box.y + BOX_PADDING
         x = box.x + BOX_PADDING
 
-        category = self.font_category.render(self._header_text(), True, CATEGORY_COLOR)
-        self.screen.blit(category, (x, y))
-        y += category.get_height() + LINE_GAP
+        category = self.font_category.render(self._header_text(), True, accent)
+        self.screen.blit(category, category.get_rect(midleft=(x, box.y + HEADER_BAND // 2)))
+        y = box.y + HEADER_BAND + 8
 
         for line in prompt_lines:
             y += self._draw_annotated_line(line, self.font_prompt, x, y, TEXT_COLOR) + LINE_GAP
@@ -388,11 +402,11 @@ class QuizScreen:
                 # The highlighted row: a soft gold bar with a pointer.
                 bar = pygame.Rect(box.x + 4, y - 2, box.width - 8, line_h + 4)
                 highlight = pygame.Surface(bar.size, pygame.SRCALPHA)
-                pygame.draw.rect(highlight, CURSOR_BG, highlight.get_rect(), border_radius=6)
-                pygame.draw.rect(highlight, (*CURSOR_COLOR, 200), highlight.get_rect(), width=1, border_radius=6)
+                pygame.draw.rect(highlight, (*accent, 52), highlight.get_rect(), border_radius=6)
+                pygame.draw.rect(highlight, (*accent, 220), highlight.get_rect(), width=1, border_radius=6)
                 self.screen.blit(highlight, bar.topleft)
                 cy = bar.centery
-                pygame.draw.polygon(self.screen, CURSOR_COLOR, [(box.x + 3, cy - 4), (box.x + 8, cy), (box.x + 3, cy + 4)])
+                pygame.draw.polygon(self.screen, accent, [(box.x + 3, cy - 4), (box.x + 8, cy), (box.x + 3, cy + 4)])
             color = TEXT_COLOR
             if selected is not None:
                 if index == self.question["answer"]:
@@ -743,7 +757,7 @@ class QuizScreen:
 
         return box, side
 
-    def _draw_tail(self, box, side):
+    def _draw_tail(self, box, side, accent=BOX_BORDER):
         """A small triangle on the box's anchor-facing edge, pointing
         at the block -- the speech-bubble "tail" that makes the box
         read as popping up *from* the block rather than a separate,
@@ -769,7 +783,7 @@ class QuizScreen:
         local_points = [(px - bounds.x, py - bounds.y) for px, py in points]
 
         tail_surface = pygame.Surface(bounds.size, pygame.SRCALPHA)
-        pygame.draw.polygon(tail_surface, BOX_COLOR, local_points)
+        pygame.draw.polygon(tail_surface, accent, local_points)
         self.screen.blit(tail_surface, bounds.topleft)
 
     def _clamp(self, value, low, high):

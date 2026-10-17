@@ -81,6 +81,7 @@ def build_sky(style, level_number=1, index=0, favorites=()):
     b.rng = random.Random(7000 + level_number * 10 + index)
     b.enemy_body_color, b.enemy_foot_color = spec["enemy"]
     b.flying_palette = spec["flying"]
+    b.ground_species = b.flying_species = None   # this room's own coloured critters
     W = ROOM_WIDTH_TILES
 
     def cloud(col, row, width):

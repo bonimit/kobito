@@ -11,6 +11,7 @@ from kobito.entities.goal import Goal
 from kobito.entities.platform import Platform
 from kobito.entities.question_block import QuestionBlock
 from kobito.entities.sky_spring import SkySpring
+from kobito.enemy_art import FLYING_SPECIES, GROUND_SPECIES, SLIME_COLORS
 from kobito.items import KONBINI_IDS
 from kobito.themes import ENEMY_PALETTES, FLYING_ENEMY_PALETTES, get_theme
 
@@ -115,6 +116,14 @@ class _LevelBuilder:
         self.enemy_speed = min(ENEMY_SPEED_MAX, ENEMY_SPEED_BASE + (level_number - 1) * ENEMY_SPEED_STEP)
         self.enemy_body_color, self.enemy_foot_color = ENEMY_PALETTES.get(theme.id, (None, None))
         self.flying_palette = FLYING_ENEMY_PALETTES.get(theme.id)
+        # The surface mixes several enemy designs (kobito/enemy_art.py),
+        # rotated per level so each one opens with a different lineup. The
+        # hidden rooms set these to None and use their own coloured critters.
+        self.ground_species = GROUND_SPECIES[level_number % len(GROUND_SPECIES):] + \
+            GROUND_SPECIES[:level_number % len(GROUND_SPECIES)]
+        self.flying_species = FLYING_SPECIES[level_number % len(FLYING_SPECIES):] + \
+            FLYING_SPECIES[:level_number % len(FLYING_SPECIES)]
+        self._ground_count = self._flying_count = 0
         self.platforms = pygame.sprite.Group()
         self.question_blocks = pygame.sprite.Group()
         self.gift_boxes = pygame.sprite.Group()
@@ -143,7 +152,8 @@ class _LevelBuilder:
         self.ground_segments_px.append((col * TILE_SIZE, (col + width_in_tiles) * TILE_SIZE))
 
     def _add_question_block(self, col, row):
-        block = QuestionBlock(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE)
+        block = QuestionBlock(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE,
+                              theme_id=self.theme.id, variant=self.blocks_placed)
         self.platforms.add(block)
         self.question_blocks.add(block)
         self.blocks_placed += 1
@@ -154,19 +164,32 @@ class _LevelBuilder:
         self.gift_boxes.add(box)
 
     def _add_enemy(self, spawn_col, row, patrol_start_col, patrol_end_col):
+        species, body, foot = None, self.enemy_body_color, self.enemy_foot_color
+        if self.ground_species:
+            species = self.ground_species[self._ground_count % len(self.ground_species)]
+            body = foot = None
+            if species == "slime":   # slimes come in several jelly colours
+                body = SLIME_COLORS[(self._ground_count // len(self.ground_species)) % len(SLIME_COLORS)]
+        self._ground_count += 1
         enemy = Enemy(
             spawn_col * TILE_SIZE,
             row * TILE_SIZE,
             patrol_min_x=patrol_start_col * TILE_SIZE,
             patrol_max_x=patrol_end_col * TILE_SIZE,
             speed=self.enemy_speed,
-            body_color=self.enemy_body_color,
-            foot_color=self.enemy_foot_color,
+            body_color=body,
+            foot_color=foot,
+            species=species,
         )
         self.enemies.add(enemy)
 
     def _add_flying_enemy(self, col, top_row, bottom_row):
         body_color, wing_color = self.flying_palette or (None, None)
+        species = None
+        if self.flying_species:
+            species = self.flying_species[self._flying_count % len(self.flying_species)]
+            body_color = wing_color = None
+        self._flying_count += 1
         enemy = FlyingEnemy(
             col * TILE_SIZE,
             top_row * TILE_SIZE,
@@ -174,6 +197,7 @@ class _LevelBuilder:
             patrol_max_y=bottom_row * TILE_SIZE,
             body_color=body_color,
             wing_color=wing_color,
+            species=species,
         )
         self.enemies.add(enemy)
 
