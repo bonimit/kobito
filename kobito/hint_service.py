@@ -1,5 +1,6 @@
 """The AI hint companion's brain: asks Claude for a short, encouraging
-nudge after a missed question, without spelling out the answer. Falls
+nudge -- after a missed question, or when the player has been thinking
+about a question for a while -- without spelling out the answer. Falls
 back to a canned, category-based hint (no network needed) whenever no
 API credentials are configured or the request fails for any reason, so
 a hint is always available -- the game must never hang or crash on a
@@ -12,9 +13,16 @@ come back sounding like themselves, not interchangeable narrators.
 
 from kobito.companions import get_companion
 
-MODEL = "claude-opus-5"
-MAX_HINT_TOKENS = 200
+MODEL = "claude-opus-5-5"
+# The hint itself is a sentence or two, but thinking is always on for this
+# model and counts toward max_tokens -- leave room so the text isn't cut.
+MAX_HINT_TOKENS = 1024
+# A hint is a quick, light task: low effort keeps it fast.
+HINT_EFFORT = "low"
 REQUEST_TIMEOUT_SECONDS = 8.0
+# If the model declines a request for policy reasons, let the API retry it
+# on its default fallback model instead of returning nothing.
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 FALLBACK_HINTS = {
     "vocabulary": "Try sounding the word out loud -- does its reading remind you of a word you already know?",
@@ -57,6 +65,68 @@ class HintService:
                 return hint
         return self._fallback_hint(question)
 
+    def complete(self, prompt, max_tokens=MAX_HINT_TOKENS):
+        """One short Claude reply to `prompt`, or None if there's no client,
+        the request fails, or the model declines. Never raises -- callers
+        always have a local line to fall back on."""
+        if self._client is None:
+            return None
+        try:
+            response = self._client.beta.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                output_config={"effort": HINT_EFFORT},
+                betas=[FALLBACK_BETA],
+                fallbacks="default",
+                messages=[{"role": "user", "content": prompt}],
+            )
+        except Exception:
+            # Any failure (no network, invalid/expired key, rate limit,
+            # timeout, ...) -- fall back rather than let a quiz hang or
+            # crash on something outside the player's control.
+            return None
+        if response.stop_reason == "refusal":
+            return None
+        for block in response.content:
+            if block.type == "text" and block.text.strip():
+                return block.text.strip()
+        return None
+
+    def get_nudge(self, question):
+        """A hint for a player who has been looking at a question for a
+        while without answering: points at the useful clue, never at the
+        answer. Returns None when Claude isn't available -- the quiz then
+        shows the question's own authored hint."""
+        if self._client is None:
+            return None
+        correct_choice = question["choices"][question["answer"]]
+        lines = [
+            "A student learning Japanese has been looking at this quiz question for a while",
+            "without answering -- they seem stuck.",
+            "",
+            f"JLPT level: {question['jlpt']}",
+            f"Category: {question['category']}",
+            f"Question: {question['prompt']}",
+            f"Choices: {', '.join(question['choices'])}",
+            f"CORRECT answer (secret -- never reveal it): {correct_choice}",
+            f"Why it's correct: {question.get('explanation', '(none given)')}",
+        ]
+        if question.get("hint"):
+            lines.append(f"Reference hint written by the course author: {question['hint']}")
+        lines += [
+            "",
+            f"You are {self.companion['name']}, {self.companion['personality']}.",
+            "Gently check in and give ONE short hint (at most 2 sentences) that helps",
+            f"them reason it out themselves, pitched at {question['jlpt']} level.",
+            "Rules:",
+            "- NEVER state, translate, or spell out the correct choice, and never rule",
+            "  choices in or out by number.",
+            "- Be factually accurate: build only on the explanation above.",
+            "- Point at the useful clue (a radical, a particle's role, a stem change, a nuance).",
+            "- Speak directly and warmly to the student. No preamble.",
+        ]
+        return self.complete("\n".join(lines))
+
     def _ask_claude(self, question, chosen_index=None):
         # The model is given the ground truth (correct choice, the
         # official explanation, and the author's own hint) rather than
@@ -94,23 +164,7 @@ class HintService:
             "  gently steer them off it without naming the right answer.",
             "- Speak directly and warmly to the student. No preamble.",
         ]
-        prompt = "\n".join(lines)
-        try:
-            response = self._client.messages.create(
-                model=self.model,
-                max_tokens=MAX_HINT_TOKENS,
-                messages=[{"role": "user", "content": prompt}],
-            )
-        except Exception:
-            # Any failure (no network, invalid/expired key, rate limit,
-            # timeout, ...) -- fall back rather than let a quiz hang or
-            # crash on something outside the player's control.
-            return None
-
-        for block in response.content:
-            if block.type == "text" and block.text.strip():
-                return block.text.strip()
-        return None
+        return self.complete("\n".join(lines))
 
     def _fallback_hint(self, question):
         # Every question in the bank ships with a hint written for that

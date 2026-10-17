@@ -99,8 +99,6 @@ VOICES = {
     },
 }
 
-CLAUDE_MAX_TOKENS = 110
-
 
 @dataclass
 class Speech:
@@ -213,14 +211,7 @@ class ItemCoach:
         ])
 
         def work():
-            try:
-                response = client.messages.create(
-                    model=self.hint_service.model, max_tokens=CLAUDE_MAX_TOKENS,
-                    messages=[{"role": "user", "content": prompt}],
-                )
-                text = next((b.text.strip() for b in response.content if b.type == "text" and b.text.strip()), None)
-            except Exception:
-                return
+            text = self.hint_service.complete(prompt)
             if text:
                 with self._lock:
                     self._pending[token] = text

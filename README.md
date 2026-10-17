@@ -237,10 +237,14 @@ left alone, since that's a reading, not a translation.
 
 While a question is open, your companion's dialogue box is **docked at the
 bottom of the screen**, in the same place every time, and the question box
-always stays clear of it. If you sit on a question for about **10 seconds
-without pressing anything**, the companion offers the question's hint (a
-nudge, never the answer). Moving the highlight counts as activity, so the
-hint never interrupts you while you're actively choosing.
+always stays clear of it. If you've been **thinking about a question for
+about 10 seconds** without answering (moving between choices doesn't
+reset this), the companion **speaks up**: its box flashes gold, a "!" pops
+over its portrait, and it offers a hint — a nudge toward the clue, never the
+answer. With an API key, Claude writes that hint for the exact question in
+your companion's voice; it's requested in the background a few seconds
+early so it's ready on time, and the question's own authored hint shows
+instantly whenever Claude isn't available (offline, no key, slow network).
 
 Before a run starts, a companion-select screen shows **all five
 companions at once** in a gallery (`kobito/companions.py`) so you can

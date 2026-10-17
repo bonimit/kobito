@@ -1,5 +1,6 @@
 import asyncio
 import re
+import threading
 
 import pygame
 
@@ -63,9 +64,14 @@ STICK_Y_AXIS = 1
 # that bumped the block can't also pick an answer by accident.
 CONFIRM_GRACE_SECONDS = 0.3
 CURSOR_COLOR = (255, 210, 110)
-# If the player sits on a question this long without touching anything,
-# the companion offers the question's hint (a nudge, not the answer).
-IDLE_HINT_SECONDS = 10.0
+# Once a question has been open this long without an answer, the player is
+# clearly thinking hard: the companion speaks up with a hint (a nudge, never
+# the answer). Claude's hint is requested a few seconds earlier, in the
+# background, so it's usually ready right on time; until it arrives (or with
+# no API key / offline) the question's own authored hint is shown.
+THINKING_PROMPT_SECONDS = 10.0
+NUDGE_PREFETCH_SECONDS = 6.0
+PROMPT_FLASH_SECONDS = 1.6   # the box flashes gold and shows "!" when it speaks up
 CURSOR_BG = (255, 210, 110, 46)
 SKIP_KEYS = (pygame.K_s,)
 SKIP_BUTTON_SIZE = (92, 22)
@@ -162,8 +168,36 @@ class QuizScreen:
         self.cursor = 0           # highlighted choice while answering
         self._stick_y = 0         # last stick direction, so a held stick moves once
         self._age = 0.0           # seconds since the box opened
-        self.idle_seconds = 0.0   # time since the player last pressed/moved anything
-        self.idle_hint_shown = False
+        self.prompted_at = None   # when the companion spoke up (seconds since opening)
+        self._nudge_requested = False
+        self._claude_nudge = None  # filled in by a background thread, if Claude answers
+
+    @property
+    def prompted(self):
+        return self.prompted_at is not None
+
+    def _request_nudge(self):
+        """Asks Claude for a hint on a background thread, so the quiz never
+        waits on the network. No client, or no threads (the browser build),
+        simply means the authored hint is used."""
+        self._nudge_requested = True
+        service = self.hint_service
+        if getattr(service, "_client", None) is None or not hasattr(service, "get_nudge"):
+            return
+
+        def work():
+            text = service.get_nudge(self.question)
+            if text:
+                self._claude_nudge = text
+
+        try:
+            threading.Thread(target=work, daemon=True).start()
+        except Exception:
+            pass
+
+    def _nudge_text(self):
+        return (self._claude_nudge or self.question.get("hint")
+                or "Read it once more, slowly -- the answer is in the details.")
 
     def move_cursor(self, step):
         self.cursor = (self.cursor + step) % len(self.question["choices"])
@@ -174,22 +208,22 @@ class QuizScreen:
         reveal_timer = 0.0
         hint_text = None
 
+        self.clock.tick()  # start timing now, not from when the screen was built
         while True:
             dt = self.clock.tick(FPS) / 1000.0
             self._age += dt
             can_confirm = self._age >= CONFIRM_GRACE_SECONDS
-            self.idle_seconds += dt
-            if phase == PHASE_ANSWERING and self.idle_seconds >= IDLE_HINT_SECONDS:
-                self.idle_hint_shown = True
+            if phase == PHASE_ANSWERING:
+                if self._age >= NUDGE_PREFETCH_SECONDS and not self._nudge_requested:
+                    self._request_nudge()
+                if self._age >= THINKING_PROMPT_SECONDS and self.prompted_at is None:
+                    self.prompted_at = self._age
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
                 game_input.handle_hotplug(event)
-                if event.type in (pygame.KEYDOWN, pygame.JOYBUTTONDOWN, pygame.JOYHATMOTION, pygame.MOUSEBUTTONDOWN,
-                                  pygame.FINGERDOWN) or (event.type == pygame.JOYAXISMOTION and abs(event.value) > 0.5):
-                    self.idle_seconds = 0.0
 
                 if event.type == pygame.KEYDOWN:
                     if phase == PHASE_ANSWERING and event.key in ANSWER_KEYS:
@@ -373,9 +407,9 @@ class QuizScreen:
             y += surface.get_height() + LINE_GAP
 
         if phase == PHASE_ANSWERING:
-            if self.idle_hint_shown:
-                nudge = self.question.get("hint") or "Read it once more, slowly -- the answer is in the details."
-                self._draw_rpg_dialogue(f"Stuck? Here's a hint: {nudge}", expression="talking")
+            if self.prompted:
+                self._draw_rpg_dialogue(f"Hmm, a tricky one? Here's a hint: {self._nudge_text()}",
+                                        expression="talking", flash=self._age - self.prompted_at)
             else:
                 self._draw_rpg_dialogue("Take your time! If you get stuck, I'll give you a hint.", expression="happy")
         elif phase == PHASE_HINT:
@@ -557,7 +591,7 @@ class QuizScreen:
             return "Tap a choice to answer" if IS_WEB else "↑↓ choose · Enter answer"
         return None  # once answered, the companion's dialogue box carries the message instead
 
-    def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False):
+    def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False, flash=None):
         """A full-width textbox docked at the bottom of the screen, the
         companion's portrait on the left -- the classic RPG dialogue box
         (Pokemon/Zelda-style) rather than a small floating bubble, so
@@ -575,6 +609,14 @@ class QuizScreen:
         box_surface = pygame.Surface(box.size, pygame.SRCALPHA)
         box_surface.fill(RPG_BOX_COLOR)
         self.screen.blit(box_surface, box.topleft)
+        speaking_up = flash is not None and flash < PROMPT_FLASH_SECONDS
+        if speaking_up:
+            # The companion just spoke up: the box (which never moves) pulses
+            # gold for a moment so the player's eye goes to it.
+            pulse = 0.5 + 0.5 * abs(((flash * 3) % 2) - 1)
+            edge = pygame.Surface(box.size, pygame.SRCALPHA)
+            pygame.draw.rect(edge, (*RPG_NAME_COLOR, round(255 * pulse)), edge.get_rect(), width=3)
+            self.screen.blit(edge, box.topleft)
 
         portrait_center = (box.x + BOX_PADDING + RPG_PORTRAIT_SIZE // 2, box.centery)
         companion = self.hint_service.companion
@@ -588,6 +630,13 @@ class QuizScreen:
 
         name_label = self.font_category.render(companion["name"], True, RPG_NAME_COLOR)
         self.screen.blit(name_label, (text_x, box.y + BOX_PADDING))
+        if speaking_up:
+            # A little "!" bubble over the portrait.
+            bubble = pygame.Rect(0, 0, 20, 20)
+            bubble.center = (portrait_center[0] + RPG_PORTRAIT_SIZE // 2, box.y + 12)
+            pygame.draw.ellipse(self.screen, RPG_NAME_COLOR, bubble)
+            mark = self.font_category.render("!", True, (30, 22, 10))
+            self.screen.blit(mark, mark.get_rect(center=bubble.center))
 
         lines = self._wrap_text(text or "...", self.font_companion, text_width)
         line_y = box.y + BOX_PADDING + name_label.get_height() + LINE_GAP
