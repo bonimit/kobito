@@ -798,7 +798,6 @@ class Game:
             hint_service=self.hint_service,
             points=points,
             penalty=penalty,
-            avoid_rect=self.player.draw_rect().move(-self.camera_x, 0),
         ).run()
 
         if correct is None:

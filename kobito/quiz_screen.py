@@ -80,18 +80,17 @@ PHASE_ANSWERING = "answering"
 PHASE_REVEAL = "reveal"
 PHASE_HINT = "hint"
 
-# The companion's box sits in the bottom-LEFT corner (not full width), so the
-# player's character -- usually mid-screen -- stays in view while answering
-# and right after. It's narrower than a full-width bar, so it's taller: room
-# for a 5-line hint (a clipped hint is a useless hint).
-RPG_BOX_MARGIN = 16
-RPG_BOX_WIDTH = 410   # ends left of a mid-screen player
-RPG_BOX_HEIGHT = 150
-RPG_MAX_LINES = 5
+# The companion's box is a full-width bar that fits exactly in the strip
+# under the ground line (y 480-540): nothing is played down there, so it
+# never hides the player -- while answering or right after -- and nothing
+# overlaps it. Up to 3 lines, shrinking the font a step for a long hint.
+RPG_BOX = pygame.Rect(8, 480, SCREEN_WIDTH - 16, 58)
+RPG_MAX_LINES = 3
 RPG_BOX_COLOR = (15, 15, 15, 175)  # plain translucent black, no border -- classic JRPG textbox
 RPG_NAME_COLOR = (255, 210, 110)
 RPG_TEXT_COLOR = (245, 245, 245)
-RPG_PORTRAIT_SIZE = 48
+RPG_PORTRAIT_SIZE = 44
+RPG_MARKER_SPACE = 80   # room on the right for the blinking "Enter ▼"
 RPG_CONTINUE_BLINK_MS = 500
 
 
@@ -128,14 +127,9 @@ class QuizScreen:
 
     def __init__(
         self, screen, question, background=None, anchor_rect=None, hint_service=None, points=None, penalty=None,
-        avoid_rect=None,
     ):
         self.screen = screen
         self.question = question
-        # The companion box is chosen once, when the quiz opens, and then stays
-        # put: bottom-left, unless that would cover the player (`avoid_rect`,
-        # e.g. at the very start of a level), in which case bottom-right.
-        self._rpg_rect_fixed = self._companion_box_rect(avoid_rect)
         self.background = background
         self.anchor_rect = anchor_rect or pygame.Rect(SCREEN_WIDTH // 2, 80, 1, 1)
         self.hint_service = hint_service or HintService()
@@ -151,6 +145,7 @@ class QuizScreen:
         self.font_hint = get_font(14)
         self.font_category = get_font(13)
         self.font_companion = get_font(15)
+        self.font_dialogue_small = get_font(13)
         self.font_detail_title = get_font(20)
         self.font_detail_label = get_font(14)
         self.font_detail_body = get_font(15)
@@ -361,7 +356,7 @@ class QuizScreen:
         # an answer has been picked.
         # The companion's box is docked at the bottom for the whole quiz, so
         # the question box always stays clear of it.
-        bottom_reserve = RPG_BOX_HEIGHT + RPG_BOX_MARGIN * 2
+        bottom_reserve = SCREEN_HEIGHT - RPG_BOX.top
         box, side = self._position_box(BOX_WIDTH, box_height, bottom_reserve)
         self._question_rect = box
 
@@ -500,7 +495,14 @@ class QuizScreen:
         label = "R  Close details" if self.show_details else "R  Read more"
         text = self.font_detail_label.render(label, True, DETAIL_LABEL_COLOR)
         tab = pygame.Rect(0, 0, text.get_width() + 20, text.get_height() + 12)
-        tab.topright = (min(self.panel_x, SCREEN_WIDTH) - 10, 10)
+        # Pinned to the question box (just above its top-right corner, or
+        # under it when the box is near the top), so it never lands on the HUD.
+        box = self._question_rect
+        tab.right = min(box.right, min(self.panel_x, SCREEN_WIDTH) - 10)
+        if box.top - tab.height - 4 >= 150:
+            tab.bottom = box.top - 4
+        else:
+            tab.top = box.bottom + 4
 
         tab_surface = pygame.Surface(tab.size, pygame.SRCALPHA)
         tab_surface.fill(DETAIL_TAB_BG)
@@ -602,15 +604,14 @@ class QuizScreen:
         return None  # once answered, the companion's dialogue box carries the message instead
 
     def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False, flash=None):
-        """A full-width textbox docked at the bottom of the screen, the
-        companion's portrait on the left -- the classic RPG dialogue box
-        (Pokemon/Zelda-style) rather than a small floating bubble, so
-        it reads as a character speaking to the player, not a tooltip.
+        """The companion speaking: a full-width bar in the strip under the
+        ground line, portrait on the left and its name in gold leading the
+        text -- the classic RPG dialogue box, kept slim so it never covers
+        the level (or the player) behind the question.
         """
-        box = self._rpg_rect_fixed
+        box = RPG_BOX
         self._rpg_box_rect = box
-        # Plain translucent black, no border -- matches a classic JRPG
-        # textbox rather than a bordered UI panel.
+        # Plain translucent black, no border -- a classic JRPG textbox.
         box_surface = pygame.Surface(box.size, pygame.SRCALPHA)
         box_surface.fill(RPG_BOX_COLOR)
         self.screen.blit(box_surface, box.topleft)
@@ -623,44 +624,61 @@ class QuizScreen:
             pygame.draw.rect(edge, (*RPG_NAME_COLOR, round(255 * pulse)), edge.get_rect(), width=3)
             self.screen.blit(edge, box.topleft)
 
-        portrait_center = (box.x + BOX_PADDING + RPG_PORTRAIT_SIZE // 2, box.centery)
+        portrait_center = (box.x + 8 + RPG_PORTRAIT_SIZE // 2, box.centery)
         companion = self.hint_service.companion
         draw_companion(
             self.screen, companion["id"], portrait_center[0], portrait_center[1], RPG_PORTRAIT_SIZE,
             expression=expression,
         )
-
-        text_x = box.x + BOX_PADDING + RPG_PORTRAIT_SIZE + BOX_PADDING
-        text_width = box.right - BOX_PADDING - text_x
-
-        name_label = self.font_category.render(companion["name"], True, RPG_NAME_COLOR)
-        self.screen.blit(name_label, (text_x, box.y + BOX_PADDING))
         if speaking_up:
             # A little "!" bubble over the portrait.
-            bubble = pygame.Rect(0, 0, 20, 20)
-            bubble.center = (portrait_center[0] + RPG_PORTRAIT_SIZE // 2, box.y + 12)
+            bubble = pygame.Rect(0, 0, 18, 18)
+            bubble.center = (portrait_center[0] + RPG_PORTRAIT_SIZE // 2, box.y + 10)
             pygame.draw.ellipse(self.screen, RPG_NAME_COLOR, bubble)
             mark = self.font_category.render("!", True, (30, 22, 10))
             self.screen.blit(mark, mark.get_rect(center=bubble.center))
 
-        lines = self._wrap_text(text or "...", self.font_companion, text_width)
-        line_y = box.y + BOX_PADDING + name_label.get_height() + LINE_GAP
-        for line in lines[:RPG_MAX_LINES]:
-            surface = self.font_companion.render(line, True, RPG_TEXT_COLOR)
-            self.screen.blit(surface, (text_x, line_y))
-            line_y += surface.get_height() + LINE_GAP
+        text_x = box.x + 8 + RPG_PORTRAIT_SIZE + 12
+        text_width = box.right - RPG_MARKER_SPACE - text_x
+        font, lines, name_label = self._fit_dialogue(companion["name"], text or "...", text_width)
+        line_h = font.get_height() + 1
+        y = box.y + (box.height - line_h * len(lines)) // 2
+        for i, line in enumerate(lines):
+            x = text_x
+            if i == 0:
+                self.screen.blit(name_label, (x, y + (line_h - name_label.get_height()) // 2))
+                x += name_label.get_width()
+            self.screen.blit(font.render(line, True, RPG_TEXT_COLOR), (x, y))
+            y += line_h
 
         if show_continue and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
             marker_text = "Tap ▼" if IS_WEB else "Enter ▼"
             marker = self.font_hint.render(marker_text, True, RPG_TEXT_COLOR)
-            self.screen.blit(marker, marker.get_rect(bottomright=(box.right - 12, box.bottom - 8)))
+            self.screen.blit(marker, marker.get_rect(midright=(box.right - 12, box.centery)))
 
-    @staticmethod
-    def _companion_box_rect(avoid_rect=None):
-        box = pygame.Rect(RPG_BOX_MARGIN, SCREEN_HEIGHT - RPG_BOX_HEIGHT - RPG_BOX_MARGIN, RPG_BOX_WIDTH, RPG_BOX_HEIGHT)
-        if avoid_rect is not None and box.colliderect(avoid_rect):
-            box.right = SCREEN_WIDTH - RPG_BOX_MARGIN
-        return box
+    def _fit_dialogue(self, name, text, width):
+        """Wraps the line -- its first row shortened to make room for the
+        companion's name -- at the largest font that fits in
+        RPG_MAX_LINES; trims with "..." if even the smallest doesn't."""
+        name_label = self.font_category.render(f"{name}  ", True, RPG_NAME_COLOR)
+        for font in (self.font_companion, self.font_dialogue_small):
+            lines, current, limit = [], "", width - name_label.get_width()
+            for word in text.split(" "):
+                candidate = f"{current} {word}".strip()
+                if current and font.size(candidate)[0] > limit:
+                    lines.append(current)
+                    current, limit = word, width
+                else:
+                    current = candidate
+            if current:
+                lines.append(current)
+            if len(lines) <= RPG_MAX_LINES:
+                return font, lines, name_label
+        lines = lines[:RPG_MAX_LINES]
+        while font.size(lines[-1] + "...")[0] > width and len(lines[-1]) > 1:
+            lines[-1] = lines[-1][:-1]
+        lines[-1] = lines[-1].rstrip() + "..."
+        return font, lines, name_label
 
     def _position_box(self, width, height, bottom_reserve=0):
         """Picks whichever side (above/below/left/right of the block)

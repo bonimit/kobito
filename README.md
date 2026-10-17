@@ -239,11 +239,10 @@ left alone, since that's a reading, not a translation.
 
 ## Your AI hint companion
 
-While a question is open, your companion's dialogue box is **docked in the
-bottom-left corner**, in the same place for the whole question (it opens
-bottom-right instead only if your character is standing there, e.g. at the
-start of a level), so your character stays in view while you answer and
-after; the question box
+While a question is open, your companion's dialogue box is a **slim,
+full-width bar docked in the strip under the ground line** — always the same
+place, never covering the level or your character (while you answer or right
+after), and nothing overlaps it; the question box
 always stays clear of it. If you've been **thinking about a question for
 about 10 seconds** without answering (moving between choices doesn't
 reset this), the companion **speaks up**: its box flashes gold, a "!" pops
@@ -273,7 +272,7 @@ are all neutral, so it's the baseline every other companion is judged
 against).
 
 Your companion is present for the whole answer -> reveal -> hint arc in
-a classic JRPG-style textbox docked in the bottom-left corner (a
+a slim JRPG-style textbox docked in the strip under the ground (a
 translucent black bar, portrait and name on the left), switching
 expression to match the moment (`assets/sprites/<companion_id>/`, five
 real frames per companion — idle, thinking, talking, happy,
