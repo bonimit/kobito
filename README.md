@@ -235,6 +235,13 @@ left alone, since that's a reading, not a translation.
 
 ## Your AI hint companion
 
+While a question is open, your companion's dialogue box is **docked at the
+bottom of the screen**, in the same place every time, and the question box
+always stays clear of it. If you sit on a question for about **10 seconds
+without pressing anything**, the companion offers the question's hint (a
+nudge, never the answer). Moving the highlight counts as activity, so the
+hint never interrupts you while you're actively choosing.
+
 Before a run starts, a companion-select screen shows **all five
 companions at once** in a gallery (`kobito/companions.py`) so you can
 compare them side by side — left/right moves the highlight, and the
@@ -462,10 +469,32 @@ non-colliding cousin of Enemy. A world adds creatures by listing
 ## Difficulty and level progression
 
 Before the first level, a difficulty-select screen (`kobito/difficulty_select_screen.py`)
-lets you pick a starting **JLPT level** — N5 (beginner) through N1
-(advanced) — or **AI Random**, which has Kobito pick one for you via a
-Claude call (`kobito/difficulty.py`), falling back to a locally weighted
-random pick (skewed toward beginner levels) if no API key/network.
+offers three ways to get questions:
+
+- **A JLPT level, N5 (beginner) to N1 (advanced)** — questions from that
+  level; between levels it steps up (≥80% right) or down (≤40%).
+- **AI Adaptive** — your companion tunes *every question* to you
+  (`kobito/adaptive.py`): harder while you're on a roll, easier when you're
+  stuck, always kept in a comfortable range. It combines:
+  - an **Elo rating** learner model, as used in adaptive practice systems
+    ([Pelánek 2016](https://www.fi.muni.cz/~xpelanek/publications/umuai-adaptive-practice.pdf)):
+    you and each question have a rating, every answer is a "match", and
+    both ratings move toward what happened — big steps while the tutor is
+    still getting to know you, smaller ones later;
+  - the **85% rule** for optimal learning
+    ([Wilson et al., Nature Communications 2019](https://pmc.ncbi.nlm.nih.gov/articles/PMC6831579)):
+    the next question is the one you're predicted to get right ~85% of the
+    time, only picked from questions inside a 65-95% comfort band — so it's
+    never boring and never crushing. In simulation players settle around 80%
+    real accuracy (above the badge's 70%), and a strong player climbs from
+    N5 to N2 in about 15 questions;
+  - **spaced repetition (Leitner boxes)** — a question you miss comes back
+    after 4 others; get it right and it returns once more 9 questions later;
+    right again and it's learned.
+
+  The HUD shows the level the tutor thinks suits you (e.g. `LEVEL 2 · AI N3`),
+  and its learner model is saved with your game.
+- **Random** — any question from N5 to N1, a surprise every time.
 
 A level is built as a chain of ground segments (`kobito/levels/level1.py`),
 each carrying 2-3 question blocks, two ground patrols and one elevated
@@ -479,7 +508,7 @@ it.
 Every level contains **30 yellow "?" quiz boxes** (`QUESTION_BLOCKS_PER_LEVEL`
 in `kobito/constants.py`) — and never repeats a question within a level,
 since each JLPT level's pool holds more than 30 (`assets/data/questions.json`).
-You don't have to answer them all. Every quiz box has a **Skip** button (or press **S**, a gamepad shoulder button/Start, or tap it): the box is used up, but nothing is lost — no XP, no hint, and it doesn't count as answered or wrong. The badge needs **at least 20 answered**
+You don't have to answer them all. Every quiz box has a **Skip** button (or press **S**, a gamepad shoulder button/Start, or tap it): nothing is lost — no XP, and it doesn't count as answered or wrong — and **the box stays a "?" box**, keeping that question for you. Come back to it later (step away and bump it again) and it asks the same question. The badge needs **at least 20 answered**
 (`MIN_QUESTIONS_ANSWERED`), so you can skip up to 10 boxes — a tricky one,
 or one in a risky spot. Later levels get harder through faster enemies and
 tougher JLPT questions, not longer levels. Levels run about 400 tiles, with

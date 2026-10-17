@@ -172,7 +172,8 @@ class TitleScreen:
         ui.text(self.screen, "SAVED GAME", label, (x, card.y + 20), color=ui.GOLD)
         ui.text(self.screen, self.saved.get("saved_at", ""), label, (card.right - 20, card.y + 20), color=ui.MUTED,
                 anchor="topright", thickness=1)
-        ui.text(self.screen, f"LEVEL {run['level_number']}  ·  {run['jlpt_level']}", big, (x, card.y + 40))
+        mode = {"adaptive": f"AI {run['jlpt_level']}", "random": "RANDOM"}.get(run.get("difficulty_mode"), run["jlpt_level"])
+        ui.text(self.screen, f"LEVEL {run['level_number']}  ·  {mode}", big, (x, card.y + 40))
         ui.text(self.screen, self.theme.name, body, (x, card.y + 82), color=ui.SKY, thickness=1)
 
         stats = [("SCORE", str(run["score"])), ("XP", str(run["xp"])),

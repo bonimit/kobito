@@ -31,6 +31,8 @@ class QuestionBlock(Platform):
         offset = (cell_size - block_size) // 2
         super().__init__(cell_x + offset, cell_y + offset, block_size, block_size, color=ACTIVE_COLOR)
         self.used = False
+        self.pending_question = None   # a skipped question waits here for the player to return
+        self.resting = False           # just skipped: don't reopen until the player steps away
         self._draw_question_mark()
 
     def _draw_question_mark(self):
@@ -41,3 +43,10 @@ class QuestionBlock(Platform):
     def mark_used(self):
         self.used = True
         self.image.fill(USED_COLOR)
+
+    def reopen(self):
+        """Back to a fresh "?" box -- after the player skipped its question,
+        so they can come back and answer it later."""
+        self.used = False
+        self.image.fill(ACTIVE_COLOR)
+        self._draw_question_mark()

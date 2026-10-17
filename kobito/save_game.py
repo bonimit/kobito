@@ -8,7 +8,9 @@ One save slot, stored as a small JSON document:
       "run": {                      # who you are and how far you've got
         "character_id", "companion_id", "theme_id",
         "jlpt_level", "level_number", "score", "xp",
-        "item_box": {item_id: count}, "badges": [badge_id, ...]
+        "item_box": {item_id: count}, "badges": [badge_id, ...],
+        "difficulty_mode": "choose" | "adaptive" | "random",
+        "tutor": {...} or null       # the AI tutor's learner model (adaptive mode)
       },
       "level": {...} or null,       # mid-level spot (see Game.snapshot)
       "settings": {"furigana": bool, "translation": bool}
@@ -141,6 +143,11 @@ def load_run():
     box = run.get("item_box") if isinstance(run.get("item_box"), dict) else {}
     run["item_box"] = {k: int(v) for k, v in box.items() if k in ITEMS and int(v) > 0}
     run["badges"] = [b for b in run.get("badges", []) if isinstance(b, str)]
+    from kobito.difficulty import MODE_CHOOSE, MODES
+    if run.get("difficulty_mode") not in MODES:
+        run["difficulty_mode"] = MODE_CHOOSE
+    if not isinstance(run.get("tutor"), dict):
+        run["tutor"] = None
     level = doc.get("level") if isinstance(doc.get("level"), dict) else None
     return {"run": run, "level": level, "saved_at": doc.get("saved_at", "")}
 

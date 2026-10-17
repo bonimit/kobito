@@ -35,7 +35,8 @@ from kobito.constants import (
     WAKE_INVULNERABILITY_SECONDS,
     required_question_count,
 )
-from kobito.difficulty import JLPT_DESCRIPTIONS, next_jlpt_level
+from kobito.adaptive import AdaptiveTutor
+from kobito.difficulty import JLPT_DESCRIPTIONS, JLPT_LEVELS, MODE_ADAPTIVE, MODE_CHOOSE, MODE_RANDOM, next_jlpt_level
 from kobito.companion_art import draw_companion
 from kobito.entities.collectible import Collectible
 from kobito.entities.enemy import FlyingEnemy
@@ -129,6 +130,8 @@ class Game:
         item_box=None,
         badges=None,
         resume_state=None,
+        difficulty_mode=MODE_CHOOSE,
+        tutor=None,
     ):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -145,6 +148,13 @@ class Game:
 
         self.jlpt_level = jlpt_level
         self.level_number = level_number
+        # How questions are picked: the chosen JLPT level ("choose"), the
+        # AI tutor adapting to every answer ("adaptive", see
+        # kobito/adaptive.py), or any level at random ("random"). The tutor
+        # is shared by every level of the run, like the item box.
+        self.difficulty_mode = difficulty_mode
+        self.tutor = tutor if tutor is not None else (
+            AdaptiveTutor(jlpt_level) if difficulty_mode == MODE_ADAPTIVE else None)
         game_input.get_joysticks()
         # None on desktop (see kobito.input.IS_WEB) -- a phone has no
         # keyboard/joystick, so this on-screen d-pad + jump button is
@@ -323,6 +333,8 @@ class Game:
             "jlpt_level": jlpt_level or self.jlpt_level, "level_number": level_number or self.level_number,
             "score": self.score, "xp": self.xp,
             "item_box": dict(self.item_box), "badges": list(self.badges),
+            "difficulty_mode": self.difficulty_mode,
+            "tutor": self.tutor.to_state() if self.tutor is not None else None,
         }
 
     def snapshot(self):
@@ -619,6 +631,8 @@ class Game:
         self.next_jlpt_level, self.level_accuracy = next_jlpt_level(
             self.jlpt_level, self.correct_count, self.wrong_count
         )
+        if self.tutor is not None:
+            self.next_jlpt_level = self.tutor.estimated_level()
         self.badge_earned = self._badge_earned()
         if self.badge_earned and self.badge.id not in self.badges:
             self.badges.append(self.badge.id)
@@ -730,14 +744,30 @@ class Game:
         # player.touched is whatever solids collision resolution found
         # this frame (see Player.update) -- filter down to the one kind
         # we care about here, and only the ones not already answered.
-        for solid in self.player.touched:
-            if isinstance(solid, QuestionBlock) and not solid.used:
+        touched = self.player.touched
+        for block in self.question_blocks:
+            # A block whose question was just skipped waits until the player
+            # has stepped away before it can be bumped again.
+            if block.resting and block not in touched:
+                block.resting = False
+        for solid in touched:
+            if isinstance(solid, QuestionBlock) and not solid.used and not solid.resting:
                 await self._trigger_question(solid)
                 break  # handle at most one block per frame
 
+    def _next_question(self):
+        bank = self.question_bank
+        if self.tutor is not None:
+            return self.tutor.pick(bank.questions, exclude=self.asked_ids)
+        if self.difficulty_mode == MODE_RANDOM:
+            return bank.random_question(jlpt=self.rng.choice(JLPT_LEVELS), exclude=self.asked_ids)
+        return bank.random_question(jlpt=self.jlpt_level, exclude=self.asked_ids)
+
     async def _trigger_question(self, block):
         block.mark_used()
-        question = self.question_bank.random_question(jlpt=self.jlpt_level, exclude=self.asked_ids)
+        # A box that was skipped earlier asks the same question again.
+        question = block.pending_question or self._next_question()
+        block.pending_question = None
         self.asked_ids.add(question["id"])
         companion = self.hint_service.companion
         base_points = JLPT_QUESTION_POINTS.get(question["jlpt"], CORRECT_ANSWER_SCORE)
@@ -768,10 +798,13 @@ class Game:
         ).run()
 
         if correct is None:
-            # Passed: nothing answered, nothing lost -- the badge only needs
-            # 20 of the level's 30 questions answered.
+            # Passed: nothing answered, nothing lost. The box stays a "?" box
+            # holding the same question, so the player can come back to it.
             self.skipped_count += 1
-            self._add_effect_text("Skipped", (block.rect.centerx, block.rect.top), (210, 210, 225))
+            block.reopen()
+            block.pending_question = question
+            block.resting = True
+            self._add_effect_text("Skipped -- come back later", (block.rect.centerx, block.rect.top), (210, 210, 225))
         elif correct:
             # Quiz blocks are the main XP source: a right answer both
             # scores and adds XP, so studying -- not just coin
@@ -784,6 +817,11 @@ class Game:
             # accuracy, so getting a few wrong has to be survivable.
             self._lose_xp(penalty)
             self.wrong_count += 1
+        if correct is not None and self.tutor is not None:
+            # The tutor learns from every answer; the HUD shows the level it
+            # now thinks suits the player.
+            self.tutor.record(question, correct)
+            self.jlpt_level = self.tutor.estimated_level()
 
         # QuizScreen ran its own loop with its own clock, so the main
         # loop's clock has an artificially large elapsed time queued up
@@ -1106,7 +1144,8 @@ class Game:
 
     def _draw_level_pill(self):
         label = ui.label_font(16)
-        words = f"LEVEL {self.level_number}  ·  {self.jlpt_level}"
+        mode = {MODE_ADAPTIVE: f"AI {self.jlpt_level}", MODE_RANDOM: "RANDOM"}.get(self.difficulty_mode, self.jlpt_level)
+        words = f"LEVEL {self.level_number}  ·  {mode}"
         if self.world.hidden:
             words = f"SECRET  ·  {HIDDEN_STYLES[self.world.style]['name'].upper()}"
         pill = pygame.Rect(0, 0, label.size(words)[0] + 32, 28)
@@ -1332,7 +1371,8 @@ class Game:
         # Four stat tiles: label on top, number below.
         accuracy = f"{round(self.level_accuracy * 100)}%" if self.level_accuracy is not None else "-"
         tiles = [("SCORE", str(self.score)), ("QUIZ", f"{self.correct_count}/{answered}"),
-                 ("ACCURACY", accuracy), ("NEXT", self.next_jlpt_level)]
+                 ("ACCURACY", accuracy),
+                 ("NEXT", "MIX" if self.difficulty_mode == MODE_RANDOM else self.next_jlpt_level)]
         tile_w, gap = 168, 12
         x0 = cx - (len(tiles) * tile_w + (len(tiles) - 1) * gap) // 2
         for i, (name, value) in enumerate(tiles):
@@ -1340,7 +1380,12 @@ class Game:
             ui.text(self.screen, name, ui.label_font(16), (tile.centerx, tile.y + 18), color=ui.GOLD, anchor="center")
             ui.text(self.screen, value, ui.title_font(32), (tile.centerx, tile.y + 46), anchor="center")
 
-        ui.text(self.screen, f"Next up: {JLPT_DESCRIPTIONS[self.next_jlpt_level]}", ui.body_font(16),
+        next_up = {
+            MODE_ADAPTIVE: f"Next up: the AI keeps adapting -- you're around {self.next_jlpt_level} "
+                           f"({JLPT_DESCRIPTIONS[self.next_jlpt_level]})",
+            MODE_RANDOM: "Next up: a random mix of N5-N1",
+        }.get(self.difficulty_mode, f"Next up: {JLPT_DESCRIPTIONS[self.next_jlpt_level]}")
+        ui.text(self.screen, next_up, ui.body_font(16),
                 (cx, 394), color=ui.CREAM, anchor="center", thickness=1)
         extras = (f"STOMPED {self.stomps}     SNACKS {self.snacks_eaten}     FAVORITES {self.favorites_found}"
                   f"     GIFTS {self.gifts_opened}     SECRETS {self.secrets_total_found}/{self.secrets_total}")

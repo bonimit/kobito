@@ -63,6 +63,9 @@ STICK_Y_AXIS = 1
 # that bumped the block can't also pick an answer by accident.
 CONFIRM_GRACE_SECONDS = 0.3
 CURSOR_COLOR = (255, 210, 110)
+# If the player sits on a question this long without touching anything,
+# the companion offers the question's hint (a nudge, not the answer).
+IDLE_HINT_SECONDS = 10.0
 CURSOR_BG = (255, 210, 110, 46)
 SKIP_KEYS = (pygame.K_s,)
 SKIP_BUTTON_SIZE = (92, 22)
@@ -159,6 +162,8 @@ class QuizScreen:
         self.cursor = 0           # highlighted choice while answering
         self._stick_y = 0         # last stick direction, so a held stick moves once
         self._age = 0.0           # seconds since the box opened
+        self.idle_seconds = 0.0   # time since the player last pressed/moved anything
+        self.idle_hint_shown = False
 
     def move_cursor(self, step):
         self.cursor = (self.cursor + step) % len(self.question["choices"])
@@ -173,12 +178,18 @@ class QuizScreen:
             dt = self.clock.tick(FPS) / 1000.0
             self._age += dt
             can_confirm = self._age >= CONFIRM_GRACE_SECONDS
+            self.idle_seconds += dt
+            if phase == PHASE_ANSWERING and self.idle_seconds >= IDLE_HINT_SECONDS:
+                self.idle_hint_shown = True
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
                 game_input.handle_hotplug(event)
+                if event.type in (pygame.KEYDOWN, pygame.JOYBUTTONDOWN, pygame.JOYHATMOTION, pygame.MOUSEBUTTONDOWN,
+                                  pygame.FINGERDOWN) or (event.type == pygame.JOYAXISMOTION and abs(event.value) > 0.5):
+                    self.idle_seconds = 0.0
 
                 if event.type == pygame.KEYDOWN:
                     if phase == PHASE_ANSWERING and event.key in ANSWER_KEYS:
@@ -304,9 +315,11 @@ class QuizScreen:
         # never gets positioned underneath/behind it. The companion is present
         # for the whole reveal -> (thinking ->) hint arc, i.e. any time
         # an answer has been picked.
-        reserving_rpg_box = selected is not None
-        bottom_reserve = (RPG_BOX_HEIGHT + RPG_BOX_MARGIN * 2) if reserving_rpg_box else 0
+        # The companion's box is docked at the bottom for the whole quiz, so
+        # the question box always stays clear of it.
+        bottom_reserve = RPG_BOX_HEIGHT + RPG_BOX_MARGIN * 2
         box, side = self._position_box(BOX_WIDTH, box_height, bottom_reserve)
+        self._question_rect = box
 
         box_surface = pygame.Surface((box.width, box.height), pygame.SRCALPHA)
         box_surface.fill(BOX_COLOR)
@@ -359,7 +372,13 @@ class QuizScreen:
             self.screen.blit(surface, (x, y))
             y += surface.get_height() + LINE_GAP
 
-        if phase == PHASE_HINT:
+        if phase == PHASE_ANSWERING:
+            if self.idle_hint_shown:
+                nudge = self.question.get("hint") or "Read it once more, slowly -- the answer is in the details."
+                self._draw_rpg_dialogue(f"Stuck? Here's a hint: {nudge}", expression="talking")
+            else:
+                self._draw_rpg_dialogue("Take your time! If you get stuck, I'll give you a hint.", expression="happy")
+        elif phase == PHASE_HINT:
             self._draw_rpg_dialogue(hint_text, expression="talking", show_continue=True)
         elif companion_state == "thinking":
             self._draw_rpg_dialogue("...", expression="thinking", show_continue=False)

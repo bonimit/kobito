@@ -1,6 +1,8 @@
 import asyncio
 
 from kobito import save_game
+from kobito.adaptive import AdaptiveTutor
+from kobito.difficulty import MODE_ADAPTIVE
 from kobito.companion_select_screen import CompanionSelectScreen
 from kobito.difficulty_select_screen import DifficultySelectScreen
 from kobito.game import Game, OUTCOME_ADVANCE
@@ -13,10 +15,11 @@ async def new_run():
     character_id = await SelectScreen().run()
     companion_id = await CompanionSelectScreen().run()
     theme_id = await WorldSelectScreen().run()
-    jlpt_level = await DifficultySelectScreen(companion_id).run()
+    difficulty_mode, jlpt_level = await DifficultySelectScreen(companion_id).run()
     run = {
         "character_id": character_id, "companion_id": companion_id, "theme_id": theme_id,
         "jlpt_level": jlpt_level, "level_number": 1, "score": 0, "xp": 0, "item_box": {}, "badges": [],
+        "difficulty_mode": difficulty_mode, "tutor": None,
     }
     # First checkpoint straight away, so even a run quit in level 1 can be
     # continued from its start.
@@ -42,6 +45,11 @@ async def main():
     # Game autosaves at each stage clear (and on Save / window close).
     score, xp, jlpt_level, level_number = run["score"], run["xp"], run["jlpt_level"], run["level_number"]
     item_box, badges = run["item_box"], run["badges"]
+    # In AI Adaptive mode one tutor follows the player through every level
+    # (and into the save), so what it has learned about them carries over.
+    tutor = None
+    if run["difficulty_mode"] == MODE_ADAPTIVE:
+        tutor = AdaptiveTutor.from_state(run["tutor"]) if run.get("tutor") else AdaptiveTutor(jlpt_level)
     while True:
         outcome, score, jlpt_level, xp = await Game(
             run["character_id"],
@@ -54,6 +62,8 @@ async def main():
             item_box=item_box,
             badges=badges,
             resume_state=resume_state,
+            difficulty_mode=run["difficulty_mode"],
+            tutor=tutor,
         ).run()
         resume_state = None
         if outcome != OUTCOME_ADVANCE:
