@@ -80,9 +80,14 @@ PHASE_ANSWERING = "answering"
 PHASE_REVEAL = "reveal"
 PHASE_HINT = "hint"
 
-RPG_BOX_MARGIN = 24
-RPG_BOX_HEIGHT = 116  # tall enough for a 3-line hint; a clipped hint is a useless hint
-RPG_MAX_LINES = 3
+# The companion's box sits in the bottom-LEFT corner (not full width), so the
+# player's character -- usually mid-screen -- stays in view while answering
+# and right after. It's narrower than a full-width bar, so it's taller: room
+# for a 5-line hint (a clipped hint is a useless hint).
+RPG_BOX_MARGIN = 16
+RPG_BOX_WIDTH = 410   # ends left of a mid-screen player
+RPG_BOX_HEIGHT = 150
+RPG_MAX_LINES = 5
 RPG_BOX_COLOR = (15, 15, 15, 175)  # plain translucent black, no border -- classic JRPG textbox
 RPG_NAME_COLOR = (255, 210, 110)
 RPG_TEXT_COLOR = (245, 245, 245)
@@ -122,10 +127,15 @@ class QuizScreen:
     """
 
     def __init__(
-        self, screen, question, background=None, anchor_rect=None, hint_service=None, points=None, penalty=None
+        self, screen, question, background=None, anchor_rect=None, hint_service=None, points=None, penalty=None,
+        avoid_rect=None,
     ):
         self.screen = screen
         self.question = question
+        # The companion box is chosen once, when the quiz opens, and then stays
+        # put: bottom-left, unless that would cover the player (`avoid_rect`,
+        # e.g. at the very start of a level), in which case bottom-right.
+        self._rpg_rect_fixed = self._companion_box_rect(avoid_rect)
         self.background = background
         self.anchor_rect = anchor_rect or pygame.Rect(SCREEN_WIDTH // 2, 80, 1, 1)
         self.hint_service = hint_service or HintService()
@@ -597,12 +607,7 @@ class QuizScreen:
         (Pokemon/Zelda-style) rather than a small floating bubble, so
         it reads as a character speaking to the player, not a tooltip.
         """
-        box = pygame.Rect(
-            RPG_BOX_MARGIN,
-            SCREEN_HEIGHT - RPG_BOX_HEIGHT - RPG_BOX_MARGIN,
-            SCREEN_WIDTH - 2 * RPG_BOX_MARGIN,
-            RPG_BOX_HEIGHT,
-        )
+        box = self._rpg_rect_fixed
         self._rpg_box_rect = box
         # Plain translucent black, no border -- matches a classic JRPG
         # textbox rather than a bordered UI panel.
@@ -649,6 +654,13 @@ class QuizScreen:
             marker_text = "Tap ▼" if IS_WEB else "Enter ▼"
             marker = self.font_hint.render(marker_text, True, RPG_TEXT_COLOR)
             self.screen.blit(marker, marker.get_rect(bottomright=(box.right - 12, box.bottom - 8)))
+
+    @staticmethod
+    def _companion_box_rect(avoid_rect=None):
+        box = pygame.Rect(RPG_BOX_MARGIN, SCREEN_HEIGHT - RPG_BOX_HEIGHT - RPG_BOX_MARGIN, RPG_BOX_WIDTH, RPG_BOX_HEIGHT)
+        if avoid_rect is not None and box.colliderect(avoid_rect):
+            box.right = SCREEN_WIDTH - RPG_BOX_MARGIN
+        return box
 
     def _position_box(self, width, height, bottom_reserve=0):
         """Picks whichever side (above/below/left/right of the block)

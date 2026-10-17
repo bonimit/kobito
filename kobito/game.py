@@ -12,6 +12,7 @@ from kobito.constants import (
     BADGE_PASS_ACCURACY,
     CORRECT_ANSWER_SCORE,
     FPS,
+    IS_WEB,
     GAUGE_DAMAGE,
     INVULNERABILITY_SECONDS,
     JLPT_GAUGE_PENALTY,
@@ -79,10 +80,10 @@ POWER_LOW = (240, 86, 86)
 POWER_EMPTY = (60, 56, 76)
 XP_FILL = (150, 205, 255)
 BOOST_SPEED_SCALE = 1.25
-# Docked at the bottom, in the strip below the ground line (y=480): nothing
-# is played down there, so the box never covers the player. Its sides stop
-# short of the on-screen touch buttons in the web build.
-SPEECH_BOX = pygame.Rect(196, SCREEN_HEIGHT - 66, SCREEN_WIDTH - 196 - 104, 62)
+# Bottom-LEFT corner, in the strip under the ground line, so it never covers
+# the player (who's usually mid-screen) or the play area. In the web build it
+# starts just right of the on-screen left/right buttons.
+SPEECH_BOX = pygame.Rect(196 if IS_WEB else 10, SCREEN_HEIGHT - 60, 420, 56)
 SPEECH_FONT_SIZES = (19, 17, 15)   # largest that fits in two lines wins
 
 FADE_SECONDS = 0.35        # each half of a room change / respawn fade
@@ -783,6 +784,8 @@ class Game:
         # marked used) so the quiz box shows over the actual scene
         # instead of a plain color, and anchor the box to the block's
         # current on-screen position so it appears right next to it.
+        # The quiz's own companion box takes over from any item chatter.
+        self.coach.speech = None
         self._draw()
         background = self.screen.copy()
         anchor_rect = block.rect.move(-self.camera_x, 0)
@@ -795,6 +798,7 @@ class Game:
             hint_service=self.hint_service,
             points=points,
             penalty=penalty,
+            avoid_rect=self.player.draw_rect().move(-self.camera_x, 0),
         ).run()
 
         if correct is None:
@@ -1083,7 +1087,9 @@ class Game:
     #
     # One type scale everywhere (kobito/ui.py): gold pixel LABELS name a
     # thing, big pixel NUMBERS are the thing, rounded BODY text is for
-    # sentences. Each card reads top-down as label -> number -> detail.
+    # sentences. Each corner reads top-down as label -> number -> detail.
+    # No backing cards -- every glyph, bar and pip has a dark outline, which
+    # keeps it readable over any world without covering the scene.
 
     def _draw_hud(self):
         self._draw_player_card()
@@ -1092,7 +1098,7 @@ class Game:
         self._draw_tray()
 
     def _draw_player_card(self):
-        card = ui.panel(self.screen, HUD_LEFT_CARD)
+        card = HUD_LEFT_CARD   # no backing card: outlined text reads on any sky
         x, right = card.x + 14, card.right - 14
         label, big = ui.label_font(16), ui.title_font(32)
 
@@ -1157,7 +1163,7 @@ class Game:
         """Progress toward the badge -- at least N questions answered, 70%
         of them right -- so it's something to aim at mid-level rather than
         a surprise at the castle."""
-        card = ui.panel(self.screen, HUD_RIGHT_CARD)
+        card = HUD_RIGHT_CARD
         x, right = card.x + 14, card.right - 14
         label, big = ui.label_font(16), ui.title_font(32)
         answered = self.correct_count + self.wrong_count
@@ -1195,7 +1201,6 @@ class Game:
         fav_w = 26 * len(favorites) + label.size(f"×{self.favorites_found}")[0] + 8
         width = 12 + fav_w + 16 + 40 + 8 + 36 + 8
         tray = pygame.Rect(HUD_RIGHT_CARD.right - width, HUD_RIGHT_CARD.bottom + 6, width, HUD_TRAY_HEIGHT)
-        ui.panel(self.screen, tray, radius=12)
 
         x = tray.x + 12
         for item_id in favorites:
@@ -1205,7 +1210,6 @@ class Game:
         ui.text(self.screen, f"×{self.favorites_found}", label, (x + 2, tray.centery), anchor="midleft",
                 color=(255, 170, 210))
         x += fav_w - 26 * len(favorites) + 6
-        pygame.draw.line(self.screen, (*ui.PANEL_EDGE[:3],), (x, tray.y + 9), (x, tray.bottom - 9), 1)
 
         self._box_rect = pygame.Rect(x + 8, tray.y + 2, 40, tray.height - 4)
         ui.item_box_icon(self.screen, (self._box_rect.centerx - 2, self._box_rect.centery + 2), 24)

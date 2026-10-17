@@ -164,7 +164,8 @@ completely fresh; a damaged or outdated save is simply ignored.
 
 ### HUD, settings and the item box
 
-The HUD is two cards in the top corners, each read top-down as label →
+The HUD is plain outlined text and icons in the top corners — no backing
+cards, so it covers as little of the world as possible — each read top-down as label →
 big number → detail: the left one is you (score, lives, the 10-pip power
 gauge, XP toward the next 1UP), the right one is the lesson (questions
 answered toward the badge, how many right, your accuracy). Temporary states
@@ -180,8 +181,11 @@ Settings (`kobito/settings_screen.py`) pauses the level: Resume, Save game,
 Item Box, Furigana ON/OFF, Translation ON/OFF, Save & quit. It works with arrow keys +
 Enter, the mouse, touch and a gamepad (d-pad, A, B).
 
-The companion's box stays docked along the bottom, in larger rounded type
-with a name plate; a pickup's vocabulary lesson is its second page.
+The companion's box (item comments and lessons) sits in the **bottom-left
+corner**, in the strip under the ground line, so it never covers your
+character; larger rounded type with a name plate, and a pickup's vocabulary
+lesson is its second page. When a question opens, the quiz's own companion
+box takes over.
 
 Fonts (all bundled under `assets/fonts/`, see the licence files there):
 **DotGothic16** for the pixel HUD labels, numbers and titles, **M PLUS
@@ -235,8 +239,11 @@ left alone, since that's a reading, not a translation.
 
 ## Your AI hint companion
 
-While a question is open, your companion's dialogue box is **docked at the
-bottom of the screen**, in the same place every time, and the question box
+While a question is open, your companion's dialogue box is **docked in the
+bottom-left corner**, in the same place for the whole question (it opens
+bottom-right instead only if your character is standing there, e.g. at the
+start of a level), so your character stays in view while you answer and
+after; the question box
 always stays clear of it. If you've been **thinking about a question for
 about 10 seconds** without answering (moving between choices doesn't
 reset this), the companion **speaks up**: its box flashes gold, a "!" pops
@@ -266,7 +273,7 @@ are all neutral, so it's the baseline every other companion is judged
 against).
 
 Your companion is present for the whole answer -> reveal -> hint arc in
-a classic JRPG-style textbox docked at the bottom of the screen (a
+a classic JRPG-style textbox docked in the bottom-left corner (a
 translucent black bar, portrait and name on the left), switching
 expression to match the moment (`assets/sprites/<companion_id>/`, five
 real frames per companion — idle, thinking, talking, happy,
@@ -420,7 +427,7 @@ Yellow "?" blocks are still the quiz questions.
 
 The companion you chose comments on what you collect — in its own voice
 (Kobito gentle, Ushi motherly, Hana bubbly, Ume-shu elegant, Kinoko
-punny) — in a small box docked at the bottom of the screen (in the strip below the ground, so it never covers the player or blocks play). A reaction with a vocabulary lesson shows as two pages: the companion's line, then the word.
+punny) — in a small box in the bottom-left corner (in the strip below the ground, so it never covers the player or blocks play). A reaction with a vocabulary lesson shows as two pages: the companion's line, then the word.
 It warns you when you get sleepy, cheers when you find a favorite, and
 celebrates rare finds. Each pickup also shows the **Japanese word for the
 item with its reading and an example sentence**, e.g.
