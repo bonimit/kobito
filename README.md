@@ -594,11 +594,12 @@ Press Enter on the stage-clear card and the stage wraps up in three steps
    Pick tiles with ←→ and Enter (or tap them), Backspace undoes, S skips.
    Each right answer is worth **+10 XP**, and the results card gives 1–3
    stars. The AI tutor learns from the test too.
-3. **Lucky draw** — three mystery boxes float over your mascot: walk
-   under one and **jump into it** to see what's inside — points, XP, a
-   snack, a favourite, a rare item, a treasure or even a sunflower (items go
-   to your item box). The other boxes then show what you missed. A
-   3-star test earns **two** boxes.
+3. **Lucky draw** — one big lucky box hangs over your mascot, with the
+   possible prizes flashing through its window one after another (big
+   pixel icons, each with its name underneath). **Jump into it** and the
+   shuffle slows down — tick… tick… tick — and stops on your prize:
+   points, XP, a snack, a favourite, a rare item, a treasure or even a
+   sunflower (items go to your item box).
 
 The checkpoint is saved again afterwards, so the bonus and prizes are kept.
 

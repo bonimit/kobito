@@ -62,8 +62,7 @@ from kobito.questions import QuestionBank, shuffled
 from kobito.quiz_screen import QuizScreen
 from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
 from kobito.sky_background import SkyBackground
-from kobito.stage_end_screens import (LuckyDrawScreen, ResultsScreen, ReviewScreen, TileScreen, roll_prize,
-                                      stars_for)
+from kobito.stage_end_screens import LuckyDrawScreen, ResultsScreen, ReviewScreen, TileScreen, roll_prize
 from kobito.stage_test import build_test, learned_words, word_from_item, word_from_place
 from kobito.underground_background import UndergroundBackground
 from kobito.world import World
@@ -112,7 +111,6 @@ OUTCOME_ADVANCE = "advance"
 # The Stage Test after the castle: XP per right answer, and the XP a
 # multiple-choice question shows (and pays) during the test.
 TEST_BONUS_XP = 10
-LUCKY_BOXES = 3
 
 
 class Game:
@@ -990,18 +988,16 @@ class Game:
                 self.next_jlpt_level = self.tutor.estimated_level()
             await ResultsScreen(self.screen, background, results, bonus).run()
 
-        # Lucky draw: one box to open -- two after a 3-star test.
-        stars = stars_for(sum(1 for _, correct in results if correct), len(results)) if results else 0
-        prizes = [roll_prize(self.rng, self.character["favorites"]) for _ in range(LUCKY_BOXES)]
-        won = await LuckyDrawScreen(self.screen, background, self.character, prizes,
-                                    draws=2 if stars == 3 else 1).run()
-        for prize in won:
-            if prize["kind"] == "coins":
-                self.score += prize["amount"]
-            elif prize["kind"] == "xp":
-                self._add_xp(prize["amount"])
-            else:
-                self.item_box[prize["item"].id] = self.item_box.get(prize["item"].id, 0) + 1
+        # Lucky draw: one box, the prizes flashing through it until the
+        # player jumps into it.
+        prize = roll_prize(self.rng, self.character["favorites"])
+        prize = await LuckyDrawScreen(self.screen, background, self.character, prize, self.rng).run()
+        if prize["kind"] == "coins":
+            self.score += prize["amount"]
+        elif prize["kind"] == "xp":
+            self._add_xp(prize["amount"])
+        else:
+            self.item_box[prize["item"].id] = self.item_box.get(prize["item"].id, 0) + 1
 
         # The checkpoint saved at the castle didn't have the test's XP or the
         # prizes yet.

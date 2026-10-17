@@ -10,6 +10,8 @@ Test (reading / writing), and the test results.
                         or touch, no Japanese keyboard needed.
                         run() -> True / False / None (skipped).
   * ResultsScreen    -- score, stars and bonus XP. run() -> None.
+  * LuckyDrawScreen  -- one big box with the prizes flashing through it;
+                        jump into it to stop the shuffle. run() -> the prize.
 
 Data comes from kobito/stage_test.py.
 """
@@ -579,39 +581,68 @@ def prize_label(prize):
     return f"{item.name}  {item.jp}"
 
 
+def build_reel(rng, favorites, prize, size=12):
+    """The items flashing through the lucky box: a varied mix of possible
+    prizes (each shown once) plus the real one."""
+    reel, seen = [prize], {prize_label(prize)}
+    for _ in range(200):
+        if len(reel) >= size:
+            break
+        other = roll_prize(rng, favorites)
+        if prize_label(other) not in seen:
+            seen.add(prize_label(other))
+            reel.append(other)
+    rng.shuffle(reel)
+    return reel
+
+
 class LuckyDrawScreen(_Screen):
-    """Three mystery boxes over the player's mascot: move and jump into one
-    to win what's inside -- the others then show what they held. `draws`
-    boxes can be opened. run() -> the list of prizes won."""
+    """One big lucky box over the player's mascot, with the possible prizes
+    flashing through its window. Jump into it from below and the shuffle
+    slows down -- tick, tick... tick -- and stops on the prize.
+    run() -> the prize won."""
 
-    GROUND_Y = 430
-    BOX = 54
-    BOX_Y = 246
+    GROUND_Y = 450
+    BOX = pygame.Rect(0, 0, 196, 178)
+    BOX_TOP = 134
     SPEED, JUMP, GRAVITY = 260.0, 620.0, 1800.0
+    ICON = 78                   # 3x the 26 px item art: big and crisp
+    SPIN_STEP = 0.11            # seconds per item while spinning
+    SLOW_STEPS, SLOW_GROWTH = 11, 1.17   # after the hit: 11 more items, each shown a bit longer
 
-    def __init__(self, screen, background, character, prizes, draws=1):
+    def __init__(self, screen, background, character, prize, rng):
         super().__init__(screen, background)
         from kobito.assets import load_character_animations
         self.animations = load_character_animations(character["id"], character["color"])
-        self.prizes = prizes
-        self.draws_left = draws
-        self.opened = []          # box indexes opened by the player
-        self.won = []
+        self.prize = prize
+        self.reel = build_reel(rng, character["favorites"], prize)
+        self.index = 0
+        self.step_time = 0.0
+        self.step_length = self.SPIN_STEP
+        self.slow_left = None       # items still to show after the hit; None = still spinning
+        self.pop = 0.0              # the box's bump, and each new item's little pop
+        self.item_pop = 0.0
         self.reveal_time = 0.0
-        self.boxes = [pygame.Rect(0, 0, self.BOX, self.BOX) for _ in prizes]
-        for i, box in enumerate(self.boxes):
-            box.center = (SCREEN_WIDTH // 2 + (i - 1) * 180, self.BOX_Y + self.BOX // 2)
+        self.box = self.BOX.copy()
+        self.box.midtop = (SCREEN_WIDTH // 2, self.BOX_TOP)
         self.player = pygame.Rect(0, 0, 28, 48)
         self.player.midbottom = (SCREEN_WIDTH // 2, self.GROUND_Y)
         self.vx = self.vy = 0.0
         self.on_ground = True
         self.facing_right = True
-        self.bump = {}            # box index -> seconds of "pop" animation left
         self._jump_was_down = False
 
     @property
+    def hit(self):
+        return self.slow_left is not None
+
+    @property
     def finished(self):
-        return self.draws_left == 0
+        return self.slow_left == 0
+
+    @property
+    def current(self):
+        return self.reel[self.index]
 
     async def run(self):
         while True:
@@ -627,18 +658,40 @@ class LuckyDrawScreen(_Screen):
                          (event.type == pygame.JOYBUTTONDOWN and event.button in game_input.FACE_BUTTONS) or \
                          game_input.touch_tap_pos(event) is not None
                     if go:
-                        return self.won
+                        return self.prize
             self._physics(dt)
+            self._spin(dt)
             self._draw()
             await asyncio.sleep(0)
 
-    def _physics(self, dt):
+    def _open(self):
+        """The player bumped the box: from here the shuffle slows down and
+        lands exactly on the prize."""
+        self.pop = 0.25
+        if self.hit:
+            return
+        self.slow_left = self.SLOW_STEPS
+        # Put the prize where the reel will stop (a slot not on show now).
+        self.reel[(self.index + self.SLOW_STEPS) % len(self.reel)] = self.prize
+
+    def _spin(self, dt):
+        self.pop = max(0.0, self.pop - dt)
+        self.item_pop = max(0.0, self.item_pop - dt)
         if self.finished:
             self.reveal_time += dt
-        for i in list(self.bump):
-            self.bump[i] -= dt
-            if self.bump[i] <= 0:
-                del self.bump[i]
+            return
+        self.step_time += dt
+        while self.step_time >= self.step_length and not self.finished:
+            self.step_time -= self.step_length
+            self.index = (self.index + 1) % len(self.reel)
+            self.item_pop = 0.08
+            if self.hit:
+                self.slow_left -= 1
+                self.step_length *= self.SLOW_GROWTH
+                if self.finished:
+                    self.item_pop = 0.3
+
+    def _physics(self, dt):
         keys = pygame.key.get_pressed()
         direction = 0
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
@@ -650,7 +703,7 @@ class LuckyDrawScreen(_Screen):
                 direction = -1 if axis < 0 else 1
         jump = (keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP] or keys[pygame.K_RETURN]
                 or game_input.jump_held() or game_input.touch_jump_held())
-        if self.finished:
+        if self.hit:
             direction, jump = 0, False
         self.vx = direction * self.SPEED
         if direction:
@@ -662,24 +715,14 @@ class LuckyDrawScreen(_Screen):
         self.player.x = max(60, min(SCREEN_WIDTH - 88, self.player.x + round(self.vx * dt)))
         self.vy += self.GRAVITY * dt
         self.player.y += round(self.vy * dt)
-        if self.vy < 0:
-            for i, box in enumerate(self.boxes):
-                if self.player.colliderect(box):
-                    self.player.top = box.bottom
-                    self.vy = 0
-                    self._open(i)
+        if self.vy < 0 and self.player.colliderect(self.box):
+            self.player.top = self.box.bottom
+            self.vy = 0
+            self._open()
         if self.player.bottom >= self.GROUND_Y:
             self.player.bottom = self.GROUND_Y
             self.vy = 0
             self.on_ground = True
-
-    def _open(self, i):
-        self.bump[i] = 0.25
-        if i in self.opened or self.finished:
-            return
-        self.opened.append(i)
-        self.won.append(self.prizes[i])
-        self.draws_left -= 1
 
     def _frame(self):
         name = "jump" if not self.on_ground else ("run" if self.vx else "idle")
@@ -688,77 +731,75 @@ class LuckyDrawScreen(_Screen):
         frame = animation.current_frame
         return frame if self.facing_right else pygame.transform.flip(frame, True, False)
 
-    def _prize_icon(self, prize, center, alpha=255):
+    def _prize_icon(self, prize, size):
         from kobito.item_art import get_icon
         if prize["item"] is not None:
-            icon = get_icon(prize["item"].id, 40).copy()
+            return get_icon(prize["item"].id, size)
+        icon = pygame.Surface((size, size), pygame.SRCALPHA)
+        c, r = size // 2, size // 2 - 2
+        if prize["kind"] == "coins":
+            pygame.draw.circle(icon, (90, 56, 10), (c, c), r)
+            pygame.draw.circle(icon, (255, 205, 60), (c, c), r - 4)
+            pygame.draw.circle(icon, (255, 236, 150), (c, c), r - 4, width=3)
+            pygame.draw.rect(icon, (200, 150, 30), (c - 4, c - r // 2, 8, r))
         else:
-            icon = pygame.Surface((40, 40), pygame.SRCALPHA)
-            if prize["kind"] == "coins":
-                pygame.draw.circle(icon, (90, 56, 10), (20, 20), 17)
-                pygame.draw.circle(icon, (255, 205, 60), (20, 20), 14)
-                pygame.draw.rect(icon, (200, 150, 30), (18, 12, 4, 16))
-            else:
-                pygame.draw.circle(icon, (40, 80, 120), (20, 20), 18)
-                ui.text(icon, "XP", ui.label_font(16), (20, 20), color=ui.SKY, anchor="center", thickness=1)
-        icon.set_alpha(alpha)
-        self.screen.blit(icon, icon.get_rect(center=center))
-
-    BOX_COLORS = [(214, 52, 70), (60, 140, 230), (90, 190, 110)]
+            pygame.draw.circle(icon, (30, 60, 100), (c, c), r)
+            pygame.draw.circle(icon, (90, 170, 240), (c, c), r - 4)
+            ui.text(icon, "XP", ui.title_font(32), (c, c), anchor="center")
+        return icon
 
     def _draw(self):
         _dim(self.screen, self.background, 215)
         cx = SCREEN_WIDTH // 2
-        ui.text(self.screen, "LUCKY DRAW", ui.title_font(48), (cx, 70), color=ui.GOLD, anchor="center", thickness=3)
-        sub = (f"Jump into a box!  ({self.draws_left} {'try' if self.draws_left == 1 else 'tries'})"
-               if not self.finished else "")
-        ui.text(self.screen, sub, ui.body_font(20), (cx, 118), anchor="center")
-        # A little stage to stand on.
+        ui.text(self.screen, "LUCKY DRAW", ui.title_font(48), (cx, 52), color=ui.GOLD, anchor="center", thickness=3)
+        if not self.hit:
+            sub = "Jump into the box to stop it!"
+        elif not self.finished:
+            sub = "..."
+        else:
+            sub = ""
+        ui.text(self.screen, sub, ui.body_font(20), (cx, 100), anchor="center")
         floor = pygame.Rect(40, self.GROUND_Y, SCREEN_WIDTH - 80, 26)
         pygame.draw.rect(self.screen, (70, 50, 36), floor, border_radius=6)
         pygame.draw.rect(self.screen, (150, 110, 70), (floor.x, floor.y, floor.width, 5), border_radius=3)
 
-        for i, box in enumerate(self.boxes):
-            pop = -8 if i in self.bump else 0
-            r = box.move(0, pop)
-            hue = self.BOX_COLORS[i % len(self.BOX_COLORS)]
-            if i in self.opened:
-                # The player's box: lit up, lid popped, the prize floating out.
-                glow = pygame.Surface((160, 160), pygame.SRCALPHA)
-                for radius, alpha in ((78, 30), (60, 50), (44, 70)):
-                    pygame.draw.circle(glow, (255, 220, 120, alpha), (80, 80), radius)
-                self.screen.blit(glow, glow.get_rect(center=(r.centerx, r.y - 20)))
-                pygame.draw.rect(self.screen, ui.OUTLINE, r.inflate(4, 4), border_radius=8)
-                pygame.draw.rect(self.screen, hue, r, border_radius=7)
-                pygame.draw.rect(self.screen, ui.GOLD, (r.centerx - 4, r.y, 8, r.height))
-                lid = pygame.Rect(r.x - 4, r.y - 16, r.width + 8, 12)
-                pygame.draw.rect(self.screen, ui.OUTLINE, lid.inflate(4, 4), border_radius=5)
-                pygame.draw.rect(self.screen, hue, lid, border_radius=4)
-                pygame.draw.rect(self.screen, ui.GOLD, (lid.centerx - 4, lid.y, 8, lid.height))
-                self._prize_icon(self.prizes[i], (r.centerx, r.y - 50))
-                ui.text(self.screen, prize_label(self.prizes[i]), ui.body_font(18), (r.centerx, r.y - 92),
-                        color=ui.GOLD, anchor="center")
-            elif self.finished:
-                # The ones you didn't pick show what they held, faded.
-                pygame.draw.rect(self.screen, ui.OUTLINE, r.inflate(4, 4), border_radius=8)
-                pygame.draw.rect(self.screen, (80, 76, 92), r, border_radius=7)
-                rise = min(1.0, self.reveal_time)
-                self._prize_icon(self.prizes[i], (r.centerx, r.y - 30 - 10 * rise), 110)
-                ui.text(self.screen, prize_label(self.prizes[i]), get_font(14), (r.centerx, r.y - 70),
-                        color=MUTED, anchor="center", thickness=1)
-            else:
-                pygame.draw.rect(self.screen, ui.OUTLINE, r.inflate(4, 4), border_radius=8)
-                pygame.draw.rect(self.screen, hue, r, border_radius=7)
-                pygame.draw.rect(self.screen, ui.GOLD, (r.centerx - 4, r.y, 8, r.height))
-                pygame.draw.rect(self.screen, ui.GOLD, (r.x, r.centery - 4, r.width, 8))
-                ui.text(self.screen, "?", ui.title_font(32), (r.centerx, r.centery), anchor="center")
+        box = self.box.move(0, -round(40 * self.pop))
+        if self.finished:
+            glow = pygame.Surface((420, 420), pygame.SRCALPHA)
+            pulse = 0.85 + 0.15 * math.sin(self.reveal_time * 6)
+            for radius, alpha in ((200, 26), (160, 40), (124, 60)):
+                pygame.draw.circle(glow, (255, 220, 120, round(alpha * pulse)), (210, 210), radius)
+            self.screen.blit(glow, glow.get_rect(center=box.center))
+        # The box: red with gold ribbon, a dark window showing the reel, and
+        # a name plate under it.
+        pygame.draw.rect(self.screen, ui.OUTLINE, box.inflate(6, 6), border_radius=14)
+        pygame.draw.rect(self.screen, (214, 52, 70), box, border_radius=12)
+        pygame.draw.rect(self.screen, (170, 36, 54), box.inflate(-10, -10), width=4, border_radius=10)
+        for x in (box.x + 14, box.right - 22):
+            pygame.draw.rect(self.screen, ui.GOLD, (x, box.y, 8, box.height))
+        window = pygame.Rect(0, 0, 124, 112)
+        window.midtop = (box.centerx, box.y + 14)
+        edge = ui.GOLD if self.finished and int(self.reveal_time * 4) % 2 == 0 else ui.OUTLINE
+        pygame.draw.rect(self.screen, edge, window.inflate(8, 8), border_radius=10)
+        pygame.draw.rect(self.screen, (250, 244, 226), window, border_radius=8)
+        scale = 1.0 + 1.2 * self.item_pop
+        icon = self._prize_icon(self.current, self.ICON)
+        if scale != 1.0:
+            size = round(self.ICON * scale)
+            icon = pygame.transform.scale(icon, (size, size))
+        self.screen.blit(icon, icon.get_rect(center=window.center))
+        plate = pygame.Rect(0, 0, box.width - 16, 34)
+        plate.midbottom = (box.centerx, box.bottom - 8)
+        pygame.draw.rect(self.screen, (30, 22, 40), plate, border_radius=8)
+        ui.text(self.screen, prize_label(self.current), get_font(15), plate.center,
+                color=ui.GOLD if self.finished else ui.CREAM, anchor="center", thickness=1)
 
         frame = self._frame()
         self.screen.blit(frame, frame.get_rect(midbottom=self.player.midbottom))
 
-        if self.finished and self.reveal_time > 0.6:
-            names = ", ".join(prize_label(p) for p in self.won)
-            ui.text(self.screen, f"You got: {names}!", ui.body_font(22), (cx, 470), color=ui.GOLD, anchor="center")
+        if self.finished and self.reveal_time > 0.4:
+            ui.text(self.screen, f"You got: {prize_label(self.prize)}!", ui.body_font(24), (cx, 498),
+                    color=ui.GOLD, anchor="center")
             if int(pygame.time.get_ticks() / 500) % 2 == 0:
-                ui.text(self.screen, "PRESS ENTER TO CONTINUE", ui.label_font(16), (cx, 506), anchor="center")
+                ui.text(self.screen, "PRESS ENTER TO CONTINUE", ui.label_font(16), (cx, 528), anchor="center")
         pygame.display.flip()
