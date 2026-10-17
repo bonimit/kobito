@@ -45,6 +45,9 @@ from kobito.entities.gift_box import GiftBox
 from kobito.entities.player import Player
 from kobito.entities.question_block import QuestionBlock
 from kobito.entities.sun_shot import MAX_SHOTS, SunShot
+
+SUN_POWER_SECONDS = 20.0   # how long a sunflower's power lasts (a new one refills it)
+SUN_FLICKER_SECONDS = 3.0  # the glow flickers this long before it fades
 from kobito import save_game, ui
 from kobito.hint_service import HintService
 from kobito.item_art import get_icon
@@ -55,7 +58,7 @@ from kobito.levels import sky as sky_levels
 from kobito.levels import underground as underground_levels
 from kobito.levels.sky import build_sky
 from kobito.levels.underground import build_underground
-from kobito.questions import QuestionBank
+from kobito.questions import QuestionBank, shuffled
 from kobito.quiz_screen import QuizScreen
 from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
 from kobito.sky_background import SkyBackground
@@ -218,7 +221,10 @@ class Game:
         self.transition = None   # an in-progress fade, see _start_transition
         # Sun power (from eating a sunflower): the run button throws sunballs.
         self.sun_power = False
+        self.sun_time_left = 0.0
         self.shots = pygame.sprite.Group()
+        self.sun_throws = 0   # the "X THROW" prompt shows until the first throw
+        self.sun_gained_at = -10.0
         self.banner = None       # (title, subtitle, seconds left)
         self.rng = random.Random()
         self.coach = ItemCoach(self.hint_service, character["name"])
@@ -361,7 +367,7 @@ class Game:
             "stomps": self.stomps, "snacks": self.snacks_eaten, "favorites": self.favorites_found,
             "gifts": self.gifts_opened, "asked_ids": sorted(self.asked_ids, key=str),
             "pits_fallen": self.pits_fallen, "secrets_found": sorted(self.secrets_found),
-            "sun_power": self.sun_power,
+            "sun_power": self.sun_power, "sun_time_left": round(self.sun_time_left, 2),
             "underground": {str(i): w.objects_state() for i, w in self.underground_worlds.items()},
             "sky_found": sorted(self.sky_found),
             "sky": {str(i): w.objects_state() for i, w in self.sky_worlds.items()},
@@ -386,6 +392,7 @@ class Game:
             self.asked_ids = set(state.get("asked_ids", []))
             self.pits_fallen = int(state.get("pits_fallen", 0))
             self.sun_power = bool(state.get("sun_power", False))
+            self.sun_time_left = float(state.get("sun_time_left", SUN_POWER_SECONDS)) if self.sun_power else 0.0
             self.secrets_found = {int(i) for i in state.get("secrets_found", [])}
             rooms = state.get("underground", {})
             self._underground_states = {int(k): v for k, v in rooms.items() if isinstance(v, dict)}
@@ -456,9 +463,15 @@ class Game:
         """With sun power, a fresh press of the run button throws a sunball
         (at most MAX_SHOTS at once); sunballs defeat the enemies they hit."""
         player = self.player
+        if self.sun_power:
+            self.sun_time_left -= dt
+            if self.sun_time_left <= 0:
+                self.sun_power = False
+                self._add_effect_text("Sun power faded", (player.rect.centerx, player.rect.top), (255, 200, 120))
         if player.fire_requested and self.sun_power and len(self.shots) < MAX_SHOTS:
             direction = 1 if player.facing_right else -1
             self.shots.add(SunShot(player.rect.centerx + direction * 18, player.rect.centery - 4, direction))
+            self.sun_throws += 1
         self.shots.update(dt, self.platforms)
         for shot in list(self.shots):
             enemy = pygame.sprite.spritecollideany(shot, self.enemies)
@@ -480,6 +493,8 @@ class Game:
     def _gain_sun_power(self, where):
         first_time = not self.sun_power
         self.sun_power = True
+        self.sun_time_left = SUN_POWER_SECONDS
+        self.sun_gained_at = self.clock_time
         self._add_effect_text("SUN POWER!", where, (255, 190, 60))
         return first_time
 
@@ -814,7 +829,9 @@ class Game:
     async def _trigger_question(self, block):
         block.mark_used()
         # A box that was skipped earlier asks the same question again.
-        question = block.pending_question or self._next_question()
+        # Choices are shuffled every time a question is asked, so the right
+        # answer isn't always in the same slot.
+        question = block.pending_question or shuffled(self._next_question(), self.rng)
         block.pending_question = None
         self.asked_ids.add(question["id"])
         companion = self.hint_service.companion
@@ -1011,11 +1028,19 @@ class Game:
             rect = sprite.draw_rect() if hasattr(sprite, "draw_rect") else sprite.rect
             if isinstance(sprite, Collectible):
                 self.screen.blit(sprite.frame(t), (rect.x - self.camera_x, rect.y + sprite.bob(t)))
+            elif sprite is self.player and self.sun_power and not self._sun_flicker_off():
+                # Powered up: the mascot itself glows gold, pulsing.
+                lit = sprite.image.copy()
+                k = 0.5 + 0.5 * math.sin(t * 6)
+                lit.fill((round(70 + 50 * k), round(50 + 30 * k), 0), special_flags=pygame.BLEND_RGB_ADD)
+                self.screen.blit(lit, (rect.x - self.camera_x, rect.y))
             else:
                 self.screen.blit(sprite.image, (rect.x - self.camera_x, rect.y))
         for shot in self.shots:
             rect = shot.draw_rect()
             self.screen.blit(shot.image, (rect.x - self.camera_x, rect.y))
+        if self.sun_power:
+            self._draw_sun_aura()
 
         self._draw_effects()
         if self.drowsy and not self.game_over:
@@ -1053,6 +1078,39 @@ class Game:
             cache[key] = glow
         return cache[key]
 
+    def _sun_flicker_off(self):
+        """True on the 'off' beats of the flicker in sun power's last seconds."""
+        return self.sun_time_left < SUN_FLICKER_SECONDS and int(self.clock_time * 8) % 2 == 0
+
+    def _draw_sun_aura(self):
+        """Little suns circling the powered-up player -- one fewer as each
+        third of the time runs out -- and, until they've thrown one, a keycap
+        prompt over their head saying how."""
+        t = self.clock_time
+        cx, cy = self.player.rect.centerx - self.camera_x, self.player.rect.centery
+        suns = max(1, math.ceil(3 * self.sun_time_left / SUN_POWER_SECONDS))
+        for i in range(suns if not self._sun_flicker_off() else 0):
+            a = t * 3.2 + i * 2 * math.pi / 3
+            x, y = cx + math.cos(a) * 26, cy + math.sin(a) * 14
+            pygame.draw.circle(self.screen, (120, 60, 0), (x, y), 5)
+            pygame.draw.circle(self.screen, (255, 210, 60), (x, y), 4)
+        # (after the "SUN POWER!" pop-up has floated away, so they don't overlap)
+        if self.sun_throws == 0 and t - self.sun_gained_at > 1.4:
+            key = "B" if IS_WEB else "X"
+            label = ui.label_font(16)
+            bob = round(2 * math.sin(t * 4))
+            words = label.render("THROW", True, ui.CREAM)
+            cap = pygame.Rect(0, 0, 24, 24)
+            total = cap.width + 6 + words.get_width()
+            cap.midleft = (cx - total // 2, self.player.rect.top - 30 + bob)
+            pygame.draw.rect(self.screen, ui.OUTLINE, cap.inflate(4, 4), border_radius=6)
+            pygame.draw.rect(self.screen, (255, 210, 90), cap, border_radius=5)
+            pygame.draw.rect(self.screen, (200, 140, 40), (cap.x, cap.bottom - 5, cap.width, 5),
+                             border_bottom_left_radius=5, border_bottom_right_radius=5)
+            ui.text(self.screen, key, label, (cap.centerx, cap.centery - 1), color=ui.OUTLINE, outline=None,
+                    anchor="center")
+            ui.text(self.screen, "THROW", label, (cap.right + 6, cap.centery), anchor="midleft")
+
     def _draw_glows(self):
         """Soft halos behind the things worth touching -- unanswered "?"
         blocks and every pickup (coloured by what it is) -- so they stand out
@@ -1064,9 +1122,9 @@ class Game:
                 glow = self._glow_surface(block.glow_color, 40, 150)
                 glow.set_alpha(round(255 * block.glow_strength(t)))
                 self.screen.blit(glow, glow.get_rect(center=(block.rect.centerx - self.camera_x, block.rect.centery)))
-        if self.sun_power:   # a warm glow around the player while powered up
-            glow = self._glow_surface((255, 190, 70), 46, 120)
-            glow.set_alpha(round(255 * (0.7 + 0.3 * math.sin(t * 5))))
+        if self.sun_power and not self._sun_flicker_off():   # a bright halo while powered up
+            glow = self._glow_surface((255, 200, 60), 60, 230)
+            glow.set_alpha(round(255 * (0.75 + 0.25 * math.sin(t * 5))))
             self.screen.blit(glow, glow.get_rect(center=(self.player.rect.centerx - self.camera_x,
                                                        self.player.rect.centery)))
         for pickup in self.collectibles:

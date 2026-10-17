@@ -83,11 +83,18 @@ def jump_held():
 
 
 def run_held():
-    return any(
-        joystick.get_numbuttons() > button and joystick.get_button(button)
-        for joystick in get_joysticks()
+    return bool(run_buttons_down())
+
+
+def run_buttons_down():
+    """Which run/throw gamepad buttons are down, e.g. {(0, 1)} -- so each
+    button can be its own fresh press (hold B to run, tap X to throw)."""
+    return {
+        (i, button)
+        for i, joystick in enumerate(get_joysticks())
         for button in RUN_BUTTONS
-    )
+        if joystick.get_numbuttons() > button and joystick.get_button(button)
+    }
 
 
 class MenuNav:

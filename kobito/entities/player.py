@@ -21,6 +21,7 @@ WALL_SLIDE_SPEED = 90.0
 WALL_JUMP_PUSH = 1.3       # jump off a wall: kick away at this x RUN_SPEED
 WALL_KICK_SECONDS = 0.18   # steering is ignored briefly so the kick carries
 RUN_KEYS = (pygame.K_LSHIFT, pygame.K_RSHIFT, pygame.K_x, pygame.K_j)
+FIRE_ONLY_KEYS = (pygame.K_f,)   # throw without running
 
 
 class Player(pygame.sprite.Sprite):
@@ -61,6 +62,7 @@ class Player(pygame.sprite.Sprite):
         self.fire_requested = False
         self._jump_was_held = False
         self._run_was_held = False
+        self._fire_sources = set()
 
         # Game sets these every frame: below 1.0 when the player is
         # drowsy (low power), above 1.0 during a golden-can speed boost.
@@ -97,7 +99,13 @@ class Player(pygame.sprite.Sprite):
         )
         run_held = any(keys[k] for k in RUN_KEYS) or game_input.run_held() or game_input.touch_run_held()
         jump_pressed = jump_held and not self._jump_was_held
-        self.fire_requested = run_held and not self._run_was_held
+        # Throwing fires on a fresh press of ANY run/throw input -- so you can
+        # hold Shift to run and still tap X (or F) to throw.
+        sources = {k for k in RUN_KEYS + FIRE_ONLY_KEYS if keys[k]} | game_input.run_buttons_down()
+        if game_input.touch_run_held():
+            sources.add("touch")
+        self.fire_requested = bool(sources - self._fire_sources)
+        self._fire_sources = sources
         self._jump_was_held, self._run_was_held = jump_held, run_held
         self.running = run_held
 

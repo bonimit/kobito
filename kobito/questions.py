@@ -24,3 +24,15 @@ class QuestionBank:
             unseen = [q for q in pool if q["id"] not in exclude]
             pool = unseen or pool
         return random.choice(pool)
+
+
+def shuffled(question, rng=random):
+    """A copy of `question` with its choices in a random order (and
+    `answer` pointing at the right one's new position) -- so the correct
+    choice isn't always in the same slot. The bank itself is untouched."""
+    order = list(range(len(question["choices"])))
+    rng.shuffle(order)
+    copy = dict(question)
+    copy["choices"] = [question["choices"][i] for i in order]
+    copy["answer"] = order.index(question["answer"])
+    return copy

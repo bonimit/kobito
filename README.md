@@ -23,7 +23,7 @@ category-based canned hint instead of an AI-generated one.
 
 - **Left/Right arrows or A/D** — choose mascot/companion/world/difficulty (select screens) / run (in-level)
 - **Space / W / Up** — jump; **Enter/Space** — confirm a selection
-- **Shift / X / J** — hold to **run**; with sun power, press to **throw a sunball**
+- **Shift / X / J** — hold to **run**; with sun power, press (or **F**) to **throw a sunball**
 - **Jump again in mid-air** — flap upward (twice per jump); **hold jump while falling** — glide
 - **Jump at a wall and hold toward it** — climb it; **jump while on the wall** — wall jump
 - **Up/Down + Enter (or Space)** — move the highlight through a quiz's
@@ -329,10 +329,13 @@ Like a classic platformer hero, your mascot can do more than walk and jump
   per wall, then you slide down slowly). Press jump while on the wall to
   **wall-jump** off it. This also lets you climb back out of a pit.
 - **Sun power — ひまわり (himawari, sunflower).** Eat a sunflower (three per
-  level on the stepping stones, and sometimes in gift boxes) and the run
-  button **throws bouncing sunballs** (up to 2 on screen) that defeat any
-  enemy they hit — like Mario's fire flower. While powered up you glow warm;
-  getting hit costs you the sun power
+  level on the stepping stones, and sometimes in gift boxes) and for **20
+  seconds** the run button — or **F** — **throws bouncing sunballs** (up to 2
+  on screen) that defeat any enemy they hit, like Mario's fire flower. A
+  "X THROW" prompt shows over your head until your first throw. While powered
+  up your mascot glows gold with little suns circling it — one fewer as each
+  third of the time runs out, flickering in the last 3 seconds; another
+  sunflower refills it. Getting hit costs you the sun power
   instead of a power pip. Sun power is kept in your save.
 
 ## Power, enemies and stomping
@@ -570,6 +573,10 @@ it.
 Every level contains **30 yellow "?" quiz boxes** (`QUESTION_BLOCKS_PER_LEVEL`
 in `kobito/constants.py`) — and never repeats a question within a level,
 since each JLPT level's pool holds more than 30 (`assets/data/questions.json`).
+**Answer order is shuffled** every time a question is asked, so the right
+answer can be in any of the four slots (a skipped box keeps its order when
+you come back to it).
+
 You don't have to answer them all. Every quiz box has a **Skip** button (or press **S**, a gamepad shoulder button/Start, or tap it): nothing is lost — no XP, and it doesn't count as answered or wrong — and **the box stays a "?" box**, keeping that question for you. Come back to it later (step away and bump it again) and it asks the same question. The badge needs **at least 20 answered**
 (`MIN_QUESTIONS_ANSWERED`), so you can skip up to 10 boxes — a tricky one,
 or one in a risky spot. Later levels get harder through faster enemies and
