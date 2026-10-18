@@ -791,7 +791,13 @@ class LuckyDrawScreen(_Screen):
         plate = pygame.Rect(0, 0, box.width - 16, 34)
         plate.midbottom = (box.centerx, box.bottom - 8)
         pygame.draw.rect(self.screen, (30, 22, 40), plate, border_radius=8)
-        ui.text(self.screen, prize_label(self.current), get_font(15), plate.center,
+        label = prize_label(self.current)
+        size = 15
+        while size > 11 and get_font(size).size(label)[0] > plate.width - 14:
+            size -= 1        # long names ("Genki Can  エナジードリンク") shrink to fit the plate
+        if get_font(size).size(label)[0] > plate.width - 14 and self.current["item"] is not None:
+            label = self.current["item"].name
+        ui.text(self.screen, label, get_font(size), plate.center,
                 color=ui.GOLD if self.finished else ui.CREAM, anchor="center", thickness=1)
 
         frame = self._frame()
