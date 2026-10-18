@@ -9,6 +9,13 @@ An 8-bit style Japanese-learning platformer built with Pygame.
 headless with a scripted player and writes `docs/cover.mp4` and
 `docs/cover.gif`.*
 
+**30-second ad:** [16:9 for YouTube / web](docs/ad_16x9.mp4) ·
+[9:16 for TikTok, Reels, Shorts](docs/ad_9x16.mp4). It opens on a hook
+("Can a video game teach you Japanese?"), then runs three chapters: how
+to play, what you learn and your AI companion. It's cut from the real game
+with a chiptune soundtrack synthesised in code; re-make it with
+`python tools/make_ad.py` (needs ffmpeg and numpy).
+
 ## Setup
 
 ```
