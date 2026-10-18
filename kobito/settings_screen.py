@@ -39,7 +39,7 @@ UP_KEYS = (pygame.K_UP, pygame.K_w)
 DOWN_KEYS = (pygame.K_DOWN, pygame.K_s)
 LEFT_KEYS = (pygame.K_LEFT, pygame.K_a)
 RIGHT_KEYS = (pygame.K_RIGHT, pygame.K_d)
-START_BUTTONS = (6, 7)   # Back / Start
+START_BUTTONS = (game_input.BACK, game_input.START)
 STICK_Y_AXIS = 1
 
 MENU_PANEL = pygame.Rect(0, 0, 460, 444)
@@ -138,7 +138,7 @@ class SettingsScreen:
             if self.toast:
                 message, color, left = self.toast
                 self.toast = (message, color, left - dt) if left > dt else None
-            for event in pygame.event.get():
+            for event in game_input.events():
                 self._handle(event)
             self._draw()
             await asyncio.sleep(0)

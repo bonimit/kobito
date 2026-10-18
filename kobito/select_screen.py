@@ -59,7 +59,7 @@ class SelectScreen:
         while True:
             dt = self.clock.tick(FPS) / 1000.0
             self.time += dt
-            for event in pygame.event.get():
+            for event in game_input.events():
                 self._handle(event)
             if self.confirming is not None:
                 self.confirming += dt
@@ -105,9 +105,6 @@ class SelectScreen:
             self._select(self.index + (1 if action == "right" else -1))
         elif action == "confirm":
             self._confirm_pick()
-        elif action == "cancel":
-            pygame.quit()
-            raise SystemExit
 
         pos = game_input.touch_tap_pos(event)
         if pos is not None:

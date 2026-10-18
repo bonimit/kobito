@@ -189,7 +189,7 @@ class ReviewScreen(_Screen):
         while True:
             dt = self.clock.tick(FPS) / 1000.0
             self.age += dt
-            for event in pygame.event.get():
+            for event in game_input.events():
                 result = self._handle(event)
                 if result:
                     return result
@@ -338,7 +338,7 @@ class TileScreen(_Screen):
                 self.result_time += dt
                 if self.result and self.result_time > 1.1:
                     return True
-            for event in pygame.event.get():
+            for event in game_input.events():
                 outcome = self._handle(event)
                 if outcome is not None:
                     return outcome
@@ -505,7 +505,7 @@ class ResultsScreen(_Screen):
         while True:
             self.clock.tick(FPS)
             self.age += 1 / FPS
-            for event in pygame.event.get():
+            for event in game_input.events():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
@@ -648,7 +648,7 @@ class LuckyDrawScreen(_Screen):
         while True:
             dt = self.clock.tick(FPS) / 1000.0
             self.age += dt
-            for event in pygame.event.get():
+            for event in game_input.events():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit

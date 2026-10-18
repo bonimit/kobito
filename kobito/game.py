@@ -71,7 +71,7 @@ OVERLAY = (8, 6, 16, 175)
 BLINK_INTERVAL_SECONDS = 0.1
 CONTINUE_KEYS = (pygame.K_RETURN, pygame.K_SPACE)
 SETTINGS_KEYS = (pygame.K_ESCAPE, pygame.K_p)
-SETTINGS_BUTTONS = (6, 7)  # gamepad Back / Start
+SETTINGS_BUTTONS = (game_input.BACK, game_input.START)
 
 # HUD layout (see _draw_hud). Two cards in the top corners -- the left one
 # is "you" (score, lives, power, XP), the right one is "the lesson" (quiz
@@ -308,7 +308,7 @@ class Game:
         return self.outcome, self.score, self.next_jlpt_level, self.xp
 
     def _handle_events(self):
-        for event in pygame.event.get():
+        for event in game_input.events():
             if event.type == pygame.QUIT:
                 if not (self.game_over or self.level_complete):
                     self.save_progress()

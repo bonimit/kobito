@@ -62,7 +62,7 @@ class WorldSelectScreen:
             await asyncio.sleep(0)  # yields to the browser event loop; a no-op on desktop
 
     def _handle_events(self):
-        for event in pygame.event.get():
+        for event in game_input.events():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 raise SystemExit
@@ -86,9 +86,6 @@ class WorldSelectScreen:
                 self.index = (self.index + 1) % len(WORLD_ORDER)
             elif action == "confirm":
                 return WORLD_ORDER[self.index]
-            elif action == "cancel":
-                pygame.quit()
-                raise SystemExit
 
             if self.menu_touch:
                 touch_action = self.menu_touch.handle_event(event)

@@ -64,7 +64,7 @@ class TitleScreen:
         while True:
             dt = self.clock.tick(FPS) / 1000.0
             self.time += dt
-            for event in pygame.event.get():
+            for event in game_input.events():
                 result = self._handle(event)
                 if result:
                     return result

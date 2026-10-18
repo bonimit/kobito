@@ -70,7 +70,7 @@ class DifficultySelectScreen:
         self.index = (self.index + step) % len(OPTIONS)
 
     def _handle_events(self):
-        for event in pygame.event.get():
+        for event in game_input.events():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 raise SystemExit
@@ -94,9 +94,6 @@ class DifficultySelectScreen:
                 self._move(1)
             elif action == "confirm":
                 return OPTIONS[self.index]
-            elif action == "cancel":
-                pygame.quit()
-                raise SystemExit
 
             if self.menu_touch:
                 touch_action = self.menu_touch.handle_event(event)

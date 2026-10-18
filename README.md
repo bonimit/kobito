@@ -51,14 +51,23 @@ A gamepad works everywhere alongside the keyboard — plug one in before or
 during play, it's picked up automatically (hot-plug supported):
 
 - **D-pad / left stick** — move / navigate menus
-- **A** (button 0) — jump; confirm a selection; continue after Kobito's hint or a level
-- **B** (button 1) — back (in Settings)
+- **A** — jump; confirm a selection; continue after Kobito's hint or a level
+- **B** — back (in Settings), undo a tile (Stage Test), skip the review
 - **Start / Back** — open Settings
 - **D-pad / stick up-down + A** — choose and answer in a quiz
-- **B / X** (buttons 1-2) — hold to run; with sun power, press to throw a sunball
+- **B / X** — hold to run; with sun power, press to throw a sunball
 - **LB / RB / Start** — skip the question
 
-Button numbers follow the common Xbox-style layout most gamepads report.
+Buttons are read by **name, not number** (`kobito/input.py`): each pad's own
+numbering is translated to the Xbox layout above, so A is always the bottom
+face button. Recognised layouts:
+
+| Controller | Notes |
+| --- | --- |
+| **Logitech F310** (also F510 / F710), switch on **X** | XInput — the default. Works on Windows and Linux. |
+| **Logitech F310** (also F510 / F710), switch on **D** | DirectInput ("Logitech Dual Action") — detected by name or USB id and remapped (its buttons come as X=0, A=1, B=2, … Start=9). Use this mode on macOS, which doesn't support XInput pads natively. Keep the **MODE** light off, or the d-pad and left stick swap. |
+| Xbox / XInput pads | Native layout. |
+| Any pad in the **web build** | The browser's standard layout; its d-pad (buttons 12–15) is turned into d-pad movement. |
 
 On the web build (see below), on-screen touch buttons appear automatically
 instead — a left/right/jump trio during gameplay, and prev/next/OK

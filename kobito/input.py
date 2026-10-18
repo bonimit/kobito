@@ -1,13 +1,23 @@
 """Joystick/gamepad support, layered on top of (never replacing)
 keyboard input everywhere in the game.
 
-Uses raw pygame.joystick button/axis indices rather than SDL's
-GameController abstraction, so button numbers follow the common
-convention most USB/Xbox-style/generic pads share under SDL's default
-mapping: 0/1/2/3 = the four face buttons (A/B/X/Y on an Xbox-style
-pad), the left stick is axes 0 (x) and 1 (y), and the d-pad is a hat.
-Layouts can vary by controller, but this covers the common case without
-needing a full SDL_GameController mapping database.
+Uses raw pygame.joystick buttons/axes rather than SDL's GameController
+API, and translates each controller's own button numbering into one
+logical layout -- the XInput / Xbox one: A=0, B=1, X=2, Y=3, LB=4, RB=5,
+Back=6, Start=7, left stick = axes 0 (x) and 1 (y), d-pad = hat 0. Every
+check in the game uses those numbers; read events through events() (not
+pygame.event.get()) and they arrive already translated.
+
+Layouts recognised (see layout_for):
+  * "xinput"   -- Xbox-style pads, and the Logitech F310 / F510 / F710
+                  with the switch on the back set to X (the default).
+  * "logitech_d" -- the same Logitech pads with the switch on D
+                  (DirectInput; they report as "Logitech Dual Action" /
+                  "RumblePad 2"): X=0, A=1, B=2, Y=3, LB=4, RB=5, LT=6,
+                  RT=7, Back=8, Start=9.
+  * "standard" -- the browser's Gamepad API (the web build): A=0 ... RB=5,
+                  LT=6, RT=7, Back=8, Start=9, and the d-pad as buttons
+                  12-15 instead of a hat, turned into hat events here.
 """
 
 import pygame
@@ -17,15 +27,59 @@ from kobito.constants import IS_WEB
 AXIS_DEADZONE = 0.5
 LEFT_STICK_X_AXIS = 0
 
+# Logical buttons (XInput numbering).
+A, B, X, Y, LB, RB, BACK, START = range(8)
+UNMAPPED = 99      # a button the game doesn't use (triggers, stick clicks, ...)
+
 # Face buttons, in the A/B/X/Y position most controllers agree on.
-FACE_BUTTONS = (0, 1, 2, 3)
-CONFIRM_BUTTONS = (0,)  # A
-CANCEL_BUTTONS = (1,)  # B
-JUMP_BUTTONS = (0,)  # A
-RUN_BUTTONS = (1, 2)  # B / X: hold to run; press to throw a sunball with sun power
-SKIP_BUTTONS = (4, 5, 7)  # shoulder buttons / Start: skip a quiz question (face buttons are the answers)
+FACE_BUTTONS = (A, B, X, Y)
+CONFIRM_BUTTONS = (A,)
+CANCEL_BUTTONS = (B,)
+JUMP_BUTTONS = (A,)
+RUN_BUTTONS = (B, X)  # hold to run; press to throw a sunball with sun power
+SKIP_BUTTONS = (LB, RB, START)  # skip a quiz question (face buttons are the answers)
+
+# Raw button index -> logical button, per layout.
+LAYOUTS = {
+    "xinput": {0: A, 1: B, 2: X, 3: Y, 4: LB, 5: RB, 6: BACK, 7: START},
+    "logitech_d": {0: X, 1: A, 2: B, 3: Y, 4: LB, 5: RB, 8: BACK, 9: START},
+    "standard": {0: A, 1: B, 2: X, 3: Y, 4: LB, 5: RB, 8: BACK, 9: START},
+}
+# The standard mapping's d-pad buttons, as hat directions.
+STANDARD_DPAD = {12: (0, 1), 13: (0, -1), 14: (-1, 0), 15: (1, 0)}
+# Logitech product ids of pads in D (DirectInput) mode: F310, F510, F710.
+LOGITECH_VENDOR = "046d"
+LOGITECH_D_PRODUCTS = {"c216", "c218", "c219"}
 
 _joysticks = None
+_layouts = {}       # joystick instance id -> layout name
+_dpad = {}          # joystick instance id -> d-pad buttons held (standard layout)
+
+
+def layout_for(joystick):
+    """Which button layout a joystick uses -- see the module docstring."""
+    if IS_WEB:
+        return "standard"
+    name = joystick.get_name().lower()
+    guid = joystick.get_guid() if hasattr(joystick, "get_guid") else ""
+    return _layout_from(name, guid)
+
+
+def _layout_from(name, guid):
+    # SDL GUIDs carry the USB vendor and product ids little-endian:
+    # 03000000 6d04 0000 16c2 0000 ... -> vendor 046d, product c216.
+    vendor = product = ""
+    if len(guid) >= 20:
+        vendor = guid[10:12] + guid[8:10]
+        product = guid[18:20] + guid[16:18]
+    if "dual action" in name or "rumblepad" in name or (
+            vendor == LOGITECH_VENDOR and product in LOGITECH_D_PRODUCTS):
+        return "logitech_d"
+    return "xinput"
+
+
+def _register(joystick):
+    _layouts[joystick.get_instance_id()] = layout_for(joystick)
 
 
 def get_joysticks():
@@ -41,6 +95,7 @@ def get_joysticks():
         for i in range(pygame.joystick.get_count()):
             joystick = pygame.joystick.Joystick(i)
             joystick.init()
+            _register(joystick)
             _joysticks.append(joystick)
     return _joysticks
 
@@ -53,7 +108,58 @@ def handle_hotplug(event):
     if event.type == pygame.JOYDEVICEADDED:
         joystick = pygame.joystick.Joystick(event.device_index)
         joystick.init()
-        get_joysticks().append(joystick)
+        if joystick.get_instance_id() not in _layouts:
+            _register(joystick)
+            get_joysticks().append(joystick)
+
+
+def events():
+    """pygame.event.get(), with joystick buttons translated to the logical
+    layout (and the web d-pad's buttons turned into hat motion)."""
+    out = []
+    for event in pygame.event.get():
+        out.extend(translate(event))
+    return out
+
+
+def translate(event):
+    """One raw event -> the events the game should see (a list)."""
+    if event.type not in (pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP):
+        return [event]
+    joy = getattr(event, "instance_id", getattr(event, "joy", 0))
+    layout = _layouts.get(joy, "standard" if IS_WEB else "xinput")
+    if layout == "standard" and event.button in STANDARD_DPAD:
+        held = _dpad.setdefault(joy, set())
+        (held.add if event.type == pygame.JOYBUTTONDOWN else held.discard)(event.button)
+        return [pygame.event.Event(pygame.JOYHATMOTION, joy=joy, instance_id=joy, hat=0,
+                                   value=_dpad_value(held))]
+    button = LAYOUTS[layout].get(event.button, UNMAPPED)
+    return [pygame.event.Event(event.type, joy=joy, instance_id=joy, button=button)]
+
+
+def _dpad_value(held):
+    x = sum(STANDARD_DPAD[b][0] for b in held)
+    y = sum(STANDARD_DPAD[b][1] for b in held)
+    return (max(-1, min(1, x)), max(-1, min(1, y)))
+
+
+def button_down(joystick, logical):
+    """Is this logical button (A, B, ...) held on this joystick?"""
+    layout = _layouts.get(joystick.get_instance_id(), "xinput")
+    return any(joystick.get_button(raw) for raw, button in LAYOUTS[layout].items()
+               if button == logical and raw < joystick.get_numbuttons())
+
+
+def _hat_x(joystick):
+    layout = _layouts.get(joystick.get_instance_id(), "xinput")
+    if layout == "standard":
+        n = joystick.get_numbuttons()
+        left = n > 14 and joystick.get_button(14)
+        right = n > 15 and joystick.get_button(15)
+        return (1 if right else 0) - (1 if left else 0)
+    if joystick.get_numhats() > 0:
+        return joystick.get_hat(0)[0]
+    return 0
 
 
 def move_axis():
@@ -63,10 +169,9 @@ def move_axis():
     with keyboard input, not replace it -- see Player.handle_input.
     """
     for joystick in get_joysticks():
-        if joystick.get_numhats() > 0:
-            hat_x, _ = joystick.get_hat(0)
-            if hat_x != 0:
-                return float(hat_x)
+        hat_x = _hat_x(joystick)
+        if hat_x != 0:
+            return float(hat_x)
         if joystick.get_numaxes() > LEFT_STICK_X_AXIS:
             value = joystick.get_axis(LEFT_STICK_X_AXIS)
             if abs(value) >= AXIS_DEADZONE:
@@ -75,11 +180,7 @@ def move_axis():
 
 
 def jump_held():
-    return any(
-        joystick.get_numbuttons() > button and joystick.get_button(button)
-        for joystick in get_joysticks()
-        for button in JUMP_BUTTONS
-    )
+    return any(button_down(joystick, button) for joystick in get_joysticks() for button in JUMP_BUTTONS)
 
 
 def run_held():
@@ -93,7 +194,7 @@ def run_buttons_down():
         (i, button)
         for i, joystick in enumerate(get_joysticks())
         for button in RUN_BUTTONS
-        if joystick.get_numbuttons() > button and joystick.get_button(button)
+        if button_down(joystick, button)
     }
 
 

@@ -237,7 +237,7 @@ class QuizScreen:
                 if self._age >= THINKING_PROMPT_SECONDS and self.prompted_at is None:
                     self.prompted_at = self._age
 
-            for event in pygame.event.get():
+            for event in game_input.events():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
