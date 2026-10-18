@@ -3,6 +3,7 @@ import asyncio
 import pygame
 
 from kobito import input as game_input
+from kobito import setup_ui
 from kobito.companion_art import draw_companion
 from kobito.companions import get_companion
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SKY_BLUE
@@ -117,7 +118,8 @@ class DifficultySelectScreen:
                        expression=expression)
 
         title = self.font_title.render("Choose your difficulty", True, TEXT_COLOR)
-        self.screen.blit(title, title.get_rect(centerx=SCREEN_WIDTH // 2, y=30))
+        self.screen.blit(title, title.get_rect(centerx=SCREEN_WIDTH // 2, y=46))
+        setup_ui.draw_steps(self.screen, 3)
 
         if option == MODE_ADAPTIVE:
             label, color = "AI Adaptive", AI_COLOR

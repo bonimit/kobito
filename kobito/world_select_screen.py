@@ -3,6 +3,7 @@ import asyncio
 import pygame
 
 from kobito import input as game_input
+from kobito import setup_ui
 from kobito.background import Background
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
@@ -104,7 +105,8 @@ class WorldSelectScreen:
         theme = THEMES[world_id]
         self.previews[world_id].draw(self.screen, camera_x=0)
 
-        self._draw_shadowed_text(theme.name, self.font_title, centerx=SCREEN_WIDTH // 2, y=30)
+        setup_ui.draw_steps(self.screen, 2)
+        self._draw_shadowed_text(theme.name, self.font_title, centerx=SCREEN_WIDTH // 2, y=46)
 
         position = f"{self.index + 1} / {len(WORLD_ORDER)}"
         self._draw_shadowed_text(position, self.font_hint, centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 90)

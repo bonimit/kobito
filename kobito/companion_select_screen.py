@@ -1,50 +1,42 @@
 import asyncio
+import math
 
 import pygame
 
 from kobito import input as game_input
+from kobito import setup_ui, ui
 from kobito.companion_art import draw_companion
 from kobito.companions import COMPANIONS
-from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SKY_BLUE
-from kobito.fonts import get_font
+from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 
-TEXT_COLOR = (30, 30, 30)
-TAGLINE_COLOR = (90, 70, 40)
-HINT_COLOR = (70, 70, 70)
-ABILITY_LABEL_COLOR = (30, 100, 60)
-ABILITY_TEXT_COLOR = (50, 60, 50)
-DIM_NAME_COLOR = (110, 110, 118)
-
-CARD_BG = (255, 255, 255, 130)
-CARD_BORDER = (255, 255, 255, 200)
-SELECTED_BADGE_COLOR = (255, 240, 200, 210)
-SELECTED_BORDER_COLOR = (255, 190, 60)
-
-GALLERY_Y = 180
-SELECTED_SIZE = 118
-UNSELECTED_SIZE = 76
-IDLE_BLINK_PERIOD = 2.6  # seconds between a quick blink into "happy" and back
+TYPE_SPEED = 42.0        # greeting characters per second
+HAPPY_PERIOD = 2.6       # a quick happy face every so often once it's done talking
+CONFIRM_SECONDS = 0.45
+# What every companion does in the game, whichever you pick.
+DUTIES = (
+    ("!", "Explains it when you answer wrong"),
+    ("?", "Nudges you if you're stuck for ~10 seconds"),
+    ("*", "Teaches the word for each item you collect"),
+)
 
 
 class CompanionSelectScreen:
-    """Lets the player pick which AI hint companion accompanies them --
-    Kobito or one of its friends (Ushi, Hana, Ume-shu, Kinoko), each
-    with its own art, personality, and a small gameplay ability (see
-    kobito/companions.py). Same self-contained loop shape as
-    SelectScreen (mascot) and WorldSelectScreen.
+    """Step 2 of a new game: pick the AI companion that gives hints.
 
-    Unlike the mascot select screen, all five companions are shown at
-    once in a gallery row so the player can compare them side by side;
-    left/right moves a highlight between them rather than swapping one
-    portrait for another. The highlighted companion's name, tagline,
-    and ability are shown in a detail card below the gallery.
+    The highlighted companion floats on a lit stage and greets you in
+    its own voice (typed out in a speech bubble). The card beside it
+    shows its name, personality and ability (kobito/companions.py -- a
+    real gameplay difference, not just a skin), what any companion does
+    for you during play, and whether hints are live from Claude or the
+    built-in ones (no API key / web build). All five sit in a roster
+    strip; controls are the same as the mascot screen.
 
     The chosen companion_id flows into Game -> HintService, so its
     Claude-generated hints come back in that companion's voice and its
-    ability (see Game._trigger_question) applies for the whole run, and
-    into every screen after this one that shows the companion's
-    portrait (DifficultySelectScreen's AI Random pick, QuizScreen's
-    dialogue box).
+    ability applies for the whole run, and into every screen after this
+    one that shows the companion's portrait.
+
+    run() returns the chosen companion's id.
     """
 
     def __init__(self):
@@ -52,160 +44,196 @@ class CompanionSelectScreen:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito - Choose your companion")
         self.clock = pygame.time.Clock()
-
         self.index = 0
-        self.font_title = get_font(36)
-        self.font_name = get_font(26)
-        self.font_gallery_name = get_font(15)
-        self.font_tagline = get_font(18)
-        self.font_ability_label = get_font(15)
-        self.font_ability_text = get_font(17)
-        self.font_hint = get_font(20)
+        self.time = 0.0
+        self.typed = 0.0          # characters of the greeting shown so far
+        self.confirming = None
+        self.backdrop = setup_ui.backdrop()
         game_input.get_joysticks()
         self.joy_nav = game_input.MenuNav()
-        self.menu_touch = game_input.get_menu_touch_controls(self.screen)
+        self._arrows = {}
+        self._cards = []
+        self._confirm = setup_ui.CONFIRM
+        self.live_ai = self._live_ai()
 
-        # A soft blink into "happy" every couple seconds on the
-        # selected portrait -- enough to make the gallery feel alive
-        # without a full idle animation loop like the mascots have.
-        self._blink_timer = 0.0
+    @staticmethod
+    def _live_ai():
+        """True when Claude can write the hints (an API key is set up)."""
+        from kobito.hint_service import HintService
+        return HintService()._client is not None
 
     async def run(self):
         """Blocks until the player confirms a companion, then returns its id."""
         while True:
             dt = self.clock.tick(FPS) / 1000.0
-            chosen_id = self._handle_events()
-            if chosen_id is not None:
-                return chosen_id
-
-            self._blink_timer = (self._blink_timer + dt) % IDLE_BLINK_PERIOD
+            self.time += dt
+            for event in pygame.event.get():
+                self._handle(event)
+            if self.confirming is not None:
+                self.confirming += dt
+                if self.confirming >= CONFIRM_SECONDS:
+                    return COMPANIONS[self.index]["id"]
+            self.backdrop.update(dt)
+            self.typed += TYPE_SPEED * dt
             self._draw()
             await asyncio.sleep(0)  # yields to the browser event loop; a no-op on desktop
 
-    def _handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+    # -- Input -------------------------------------------------------------------
+
+    def _select(self, index):
+        index %= len(COMPANIONS)
+        if index != self.index:
+            self.index = index
+            self.typed = 0.0
+
+    def _confirm_pick(self):
+        if self.confirming is None:
+            self.confirming = 0.0
+
+    def _handle(self, event):
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            raise SystemExit
+        game_input.handle_hotplug(event)
+        if self.confirming is not None:
+            return
+        if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_UP, pygame.K_w):
+                self._select(self.index - 1)
+            elif event.key in (pygame.K_RIGHT, pygame.K_d, pygame.K_DOWN, pygame.K_s):
+                self._select(self.index + 1)
+            elif event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER):
+                self._confirm_pick()
+            elif event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 raise SystemExit
-            game_input.handle_hotplug(event)
 
-            if event.type == pygame.KEYDOWN:
-                if event.key in (pygame.K_LEFT, pygame.K_a):
-                    self.index = (self.index - 1) % len(COMPANIONS)
-                elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                    self.index = (self.index + 1) % len(COMPANIONS)
-                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                    return COMPANIONS[self.index]["id"]
-                elif event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    raise SystemExit
+        action = self.joy_nav.handle_event(event)
+        if action in ("left", "right"):
+            self._select(self.index + (1 if action == "right" else -1))
+        elif action == "confirm":
+            self._confirm_pick()
+        elif action == "cancel":
+            pygame.quit()
+            raise SystemExit
 
-            action = self.joy_nav.handle_event(event)
-            if action == "left":
-                self.index = (self.index - 1) % len(COMPANIONS)
-            elif action == "right":
-                self.index = (self.index + 1) % len(COMPANIONS)
-            elif action == "confirm":
-                return COMPANIONS[self.index]["id"]
-            elif action == "cancel":
-                pygame.quit()
-                raise SystemExit
+        pos = game_input.touch_tap_pos(event)
+        if pos is not None:
+            for direction, rect in self._arrows.items():
+                if rect.collidepoint(pos):
+                    self._select(self.index + direction)
+                    return
+            for i, rect in enumerate(self._cards):
+                if rect.collidepoint(pos):
+                    if i == self.index:
+                        self._confirm_pick()
+                    else:
+                        self._select(i)
+                    return
+            if self._confirm.collidepoint(pos):
+                self._confirm_pick()
 
-            if self.menu_touch:
-                touch_action = self.menu_touch.handle_event(event)
-                if touch_action == "left":
-                    self.index = (self.index - 1) % len(COMPANIONS)
-                elif touch_action == "right":
-                    self.index = (self.index + 1) % len(COMPANIONS)
-                elif touch_action == "confirm":
-                    return COMPANIONS[self.index]["id"]
-        return None
+    # -- Drawing -----------------------------------------------------------------
 
     def _draw(self):
-        self.screen.fill(SKY_BLUE)
-
-        title = self.font_title.render("Choose your companion", True, TEXT_COLOR)
-        self.screen.blit(title, title.get_rect(centerx=SCREEN_WIDTH // 2, y=20))
-
-        self._draw_gallery()
-        self._draw_detail_card(COMPANIONS[self.index])
-
-        position = f"{self.index + 1} / {len(COMPANIONS)}"
-        position_label = self.font_hint.render(position, True, HINT_COLOR)
-        self.screen.blit(position_label, position_label.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 60))
-
-        hint = self.font_hint.render("<- / -> to compare    Enter to confirm    Esc to quit", True, HINT_COLOR)
-        self.screen.blit(hint, hint.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 32))
-
-        if self.menu_touch:
-            self.menu_touch.draw(self.screen)
-
+        screen = self.screen
+        self.backdrop.draw(screen)
+        setup_ui.draw_steps(screen, 1)
+        setup_ui.draw_title(screen, "CHOOSE YOUR AI COMPANION", "ヒントを くれる なかまを えらぼう")
+        companion = COMPANIONS[self.index]
+        self._draw_stage(companion)
+        self._draw_card(companion)
+        self._cards = setup_ui.roster(screen, len(COMPANIONS), self.index, 96, self._draw_roster_item, self.time)
+        flash = max(0.0, 1 - self.confirming / CONFIRM_SECONDS) if self.confirming is not None else 0.0
+        self._confirm = setup_ui.confirm_button(screen, "CHOOSE", self.time, flash)
+        setup_ui.hints(screen, [(setup_ui.ARROWS, "browse"), ("Enter", "choose"), ("Esc", "quit")])
         pygame.display.flip()
 
-    def _draw_gallery(self):
-        """All five companions in one row, so the player can gauge and
-        compare them at a glance rather than clicking through one at a
-        time. The selected one is drawn larger, lifted, and ringed.
-        """
-        slot_width = SCREEN_WIDTH / len(COMPANIONS)
-        for i, companion in enumerate(COMPANIONS):
-            center_x = round(slot_width * (i + 0.5))
-            selected = i == self.index
+    def _expression(self, companion):
+        if self.confirming is not None:
+            return "happy"
+        if self.typed < len(companion["greeting"]):
+            return "talking"
+        return "happy" if (self.time % HAPPY_PERIOD) < 0.35 else "idle"
 
-            if selected:
-                size = SELECTED_SIZE
-                center_y = GALLERY_Y - 12  # lifted, so it visibly stands out from the row
-                expression = "happy" if self._blink_timer < 0.3 else "idle"
+    def _draw_stage(self, companion):
+        screen, stage = self.screen, setup_ui.STAGE
+        ui.panel(screen, stage, bg=setup_ui.STAGE_BG, radius=16)
+        floor = setup_ui.spotlight(screen, stage, companion["color"], self.time)
+        bob = round(6 * math.sin(self.time * 2.2))
+        size = 132 + (round(18 * math.sin(self.confirming * 9)) if self.confirming is not None else 0)
+        shadow = pygame.Rect(0, 0, 86 - bob * 2, 14)
+        shadow.center = (stage.centerx, floor - 2)
+        pygame.draw.ellipse(screen, (10, 6, 18), shadow)
+        draw_companion(screen, companion["id"], stage.centerx, floor - 82 + bob, size,
+                       expression=self._expression(companion))
+        self._draw_bubble(companion, stage)
+        self._arrows = {
+            -1: setup_ui.arrow_button(screen, (stage.x + 34, stage.centery + 20), -1),
+            1: setup_ui.arrow_button(screen, (stage.right - 34, stage.centery + 20), 1),
+        }
+        ui.text(screen, f"{self.index + 1} / {len(COMPANIONS)}", ui.label_font(16), (stage.centerx, stage.bottom - 18),
+                color=ui.MUTED, anchor="center", thickness=1)
 
-                badge_radius = size * 0.62
-                badge = pygame.Surface((round(badge_radius * 2), round(badge_radius * 2)), pygame.SRCALPHA)
-                pygame.draw.circle(badge, SELECTED_BADGE_COLOR, (badge_radius, badge_radius), badge_radius)
-                self.screen.blit(badge, (center_x - badge_radius, center_y - badge_radius))
-                pygame.draw.circle(self.screen, SELECTED_BORDER_COLOR, (center_x, center_y), badge_radius, width=3)
+    def _draw_bubble(self, companion, stage):
+        """The greeting, typed out, in a speech bubble at the top of the stage."""
+        font = ui.body_font(16)
+        bubble = pygame.Rect(stage.x + 16, stage.y + 14, stage.width - 32, 74)
+        shown = companion["greeting"][:int(self.typed)]
+        pygame.draw.rect(self.screen, ui.OUTLINE, bubble.inflate(4, 4), border_radius=14)
+        pygame.draw.rect(self.screen, (252, 246, 232), bubble, border_radius=12)
+        tail = [(stage.centerx - 10, bubble.bottom - 1), (stage.centerx + 10, bubble.bottom - 1),
+                (stage.centerx, bubble.bottom + 12)]
+        pygame.draw.polygon(self.screen, (252, 246, 232), tail)
+        pygame.draw.lines(self.screen, ui.OUTLINE, False, [tail[0], tail[2], tail[1]], 2)
+        y = bubble.y + 10
+        for line in setup_ui.wrap(shown, font, bubble.width - 28)[:3]:
+            self.screen.blit(font.render(line, True, (40, 30, 46)), (bubble.x + 14, y))
+            y += 21
+
+    def _draw_card(self, companion):
+        screen, card = self.screen, setup_ui.CARD
+        ui.panel(screen, card, bg=setup_ui.CARD_BG, radius=16)
+        x = card.x + 24
+        ui.text(screen, companion["name"].upper(), ui.title_font(36), (x, card.y + 14), thickness=3)
+        ui.text(screen, companion["jp"], ui.body_font(20), (x, card.y + 58), color=ui.GOLD, thickness=1)
+        self._draw_ai_chip(card)
+        ui.text(screen, companion["tagline"], ui.body_font(17), (x, card.y + 88), color=ui.SKY, thickness=1)
+
+        ability = ui.panel(screen, (x, card.y + 116, card.width - 48, 76), bg=(44, 34, 66, 235),
+                           edge=(255, 196, 90, 170), radius=10)
+        ui.text(screen, "ABILITY", ui.label_font(16), (ability.x + 12, ability.y + 8), color=ui.GOLD)
+        ui.text(screen, companion["ability_name"], ui.body_font(17), (ability.x + 86, ability.y + 6), thickness=1)
+        lines = setup_ui.wrap(companion["ability_description"], ui.body_font(15), ability.width - 24)
+        for i, line in enumerate(lines[:2]):
+            ui.text(screen, line, ui.body_font(15), (ability.x + 12, ability.y + 30 + i * 18), color=ui.CREAM,
+                    thickness=1)
+
+        ui.text(screen, "EVERY COMPANION", ui.label_font(16), (x, card.y + 202), color=ui.GOLD)
+        for i, (mark, words) in enumerate(DUTIES):
+            y = card.y + 230 + i * 23
+            pygame.draw.circle(screen, (60, 50, 88), (x + 10, y), 10)
+            if mark == "*":
+                setup_ui.star(screen, (x + 10, y), 7, ui.GOLD)
             else:
-                size = UNSELECTED_SIZE
-                center_y = GALLERY_Y
-                expression = "idle"
+                ui.text(screen, mark, ui.label_font(16), (x + 10, y), color=ui.GOLD, anchor="center", thickness=1)
+            ui.text(screen, words, ui.body_font(15), (x + 28, y), anchor="midleft", thickness=1)
 
-            draw_companion(self.screen, companion["id"], center_x, center_y, size, expression=expression)
-
-            name_color = TEXT_COLOR if selected else DIM_NAME_COLOR
-            name_font = self.font_name if selected else self.font_gallery_name
-            name_label = name_font.render(companion["name"], True, name_color)
-            self.screen.blit(name_label, name_label.get_rect(centerx=center_x, y=GALLERY_Y + 70))
-
-    def _draw_detail_card(self, companion):
-        """Tagline and ability for the highlighted companion -- this is
-        the "what does picking this one actually do" answer, shown as
-        soon as it's highlighted rather than requiring a separate step.
-        """
-        card = pygame.Rect(0, 0, 560, 130)
-        card.centerx = SCREEN_WIDTH // 2
-        card.y = 330
-
-        card_surface = pygame.Surface(card.size, pygame.SRCALPHA)
-        card_surface.fill(CARD_BG)
-        self.screen.blit(card_surface, card.topleft)
-        pygame.draw.rect(self.screen, CARD_BORDER, card, width=2, border_radius=10)
-
-        y = card.y + 14
-        tagline = self.font_tagline.render(companion["tagline"], True, TAGLINE_COLOR)
-        self.screen.blit(tagline, tagline.get_rect(centerx=card.centerx, y=y))
-        y += tagline.get_height() + 12
-
-        ability_label = self.font_ability_label.render("ABILITY", True, ABILITY_LABEL_COLOR)
-        self.screen.blit(ability_label, ability_label.get_rect(centerx=card.centerx, y=y))
-        y += ability_label.get_height() + 4
-
-        ability_line = f"{companion['ability_name']} — {companion['ability_description']}"
-        ability_text = self.font_ability_text.render(ability_line, True, ABILITY_TEXT_COLOR)
-        if ability_text.get_width() > card.width - 30:
-            # Fall back to two lines (name, then description) if the
-            # combined line would run past the card's edges.
-            name_text = self.font_ability_text.render(companion["ability_name"], True, ABILITY_TEXT_COLOR)
-            self.screen.blit(name_text, name_text.get_rect(centerx=card.centerx, y=y))
-            y += name_text.get_height() + 2
-            desc_text = self.font_ability_text.render(companion["ability_description"], True, ABILITY_TEXT_COLOR)
-            self.screen.blit(desc_text, desc_text.get_rect(centerx=card.centerx, y=y))
+    def _draw_ai_chip(self, card):
+        if self.live_ai:
+            words, color = "LIVE AI HINTS · CLAUDE", ui.GREEN
         else:
-            self.screen.blit(ability_text, ability_text.get_rect(centerx=card.centerx, y=y))
+            words, color = "BUILT-IN HINTS", ui.MUTED
+        font = ui.label_font(16)
+        chip = pygame.Rect(0, 0, font.size(words)[0] + 34, 26)
+        chip.topright = (card.right - 18, card.y + 20)
+        pygame.draw.rect(self.screen, (30, 24, 48), chip, border_radius=13)
+        pygame.draw.rect(self.screen, color, chip, width=1, border_radius=13)
+        pulse = 0.6 + 0.4 * math.sin(self.time * 4) if self.live_ai else 1.0
+        dot = tuple(round(c * pulse) for c in color)
+        pygame.draw.circle(self.screen, dot, (chip.x + 14, chip.centery), 5)
+        ui.text(self.screen, words, font, (chip.x + 24, chip.centery), color=color, anchor="midleft", thickness=1)
+
+    def _draw_roster_item(self, i, rect, selected):
+        draw_companion(self.screen, COMPANIONS[i]["id"], rect.centerx, rect.centery + 2, 56 if selected else 48,
+                       expression="happy" if selected else "idle")

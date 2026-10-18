@@ -313,10 +313,31 @@ your companion's voice; it's requested in the background a few seconds
 early so it's ready on time, and the question's own authored hint shows
 instantly whenever Claude isn't available (offline, no key, slow network).
 
-Before a run starts, a companion-select screen shows **all five
-companions at once** in a gallery (`kobito/companions.py`) so you can
-compare them side by side — left/right moves the highlight, and the
-highlighted one's tagline and ability show in a card below the row:
+### Setting up a new game
+
+A new game takes four steps, shown in a step bar at the top of each
+screen — **HERO › COMPANION › WORLD › LEVEL** — over a slowly scrolling
+night-time Tokyo (`kobito/setup_ui.py`):
+
+- **Choose your hero** (`kobito/select_screen.py`) — the highlighted
+  mascot stands big on a lit stage (hopping now and then), next to a card
+  with its name in Japanese (カピバラ, きつね, …), a line about it and its
+  two **favourite snacks** with their Japanese names — the items that earn
+  bonus points when you find them in a level.
+- **Choose your AI companion** (`kobito/companion_select_screen.py`) —
+  the companion floats on the stage and greets you in its own voice in a
+  speech bubble. Its card shows its name, personality and **ability**,
+  what every companion does for you (explains wrong answers, nudges you
+  when you're stuck ~10 s, teaches the word for each item you collect) and
+  whether hints are **LIVE AI HINTS · CLAUDE** (an API key is set up) or
+  **BUILT-IN HINTS**.
+
+Both have a roster strip of every choice along the bottom: browse with
+←/→ (or A/D, d-pad, stick, or the ◀ ▶ buttons), click or tap a card to
+look at it, then click it again, press Enter / Space / A, or hit
+**CHOOSE**.
+
+The five companions (`kobito/companions.py`):
 
 | Companion | Style | Ability |
 | --- | --- | --- |

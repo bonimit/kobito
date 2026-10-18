@@ -8,13 +8,16 @@
 # Each companion also carries a small, concrete gameplay ability
 # (applied in Game._trigger_question and QuizScreen) so "pick a
 # companion" is a real choice, not just a skin -- shown on the
-# companion-select screen as `ability_name` / `ability_description`.
+# companion-select screen as `ability_name` / `ability_description`,
+# along with `jp` (its name in Japanese) and a `greeting` in its voice.
 # Kobito is the baseline with no modifier; every multiplier/bonus below
 # is relative to that.
 COMPANIONS = [
     {
         "id": "kobito",
         "name": "Kobito",
+        "jp": "こびと",
+        "greeting": "Hi, I'm Kobito! Take your time -- I'll be right here whenever you get stuck.",
         "tagline": "A gentle forest spirit",
         "personality": "a small, warm, gentle forest-spirit companion who encourages softly",
         "color": (139, 195, 116),
@@ -28,6 +31,8 @@ COMPANIONS = [
     {
         "id": "ushi",
         "name": "Ushi",
+        "jp": "うし",
+        "greeting": "Moo~ No rush, dear. Every mistake is just a lesson wearing a disguise.",
         "tagline": "A calm, motherly cow spirit",
         "personality": "a calm, patient, motherly cow spirit who reassures like an old friend",
         "color": (230, 220, 230),
@@ -41,6 +46,8 @@ COMPANIONS = [
     {
         "id": "hana",
         "name": "Hana",
+        "jp": "はな",
+        "greeting": "Yay, let's go!! I'm going to cheer for every single right answer!",
         "tagline": "A bright, cheerful flower spirit",
         "personality": "a bright, bubbly, endlessly cheerful flower spirit, full of energy",
         "color": (235, 90, 150),
@@ -54,6 +61,8 @@ COMPANIONS = [
     {
         "id": "umeshu",
         "name": "Ume-shu",
+        "jp": "うめしゅ",
+        "greeting": "Shall we begin? I will always show you the why behind each answer.",
         "tagline": "An elegant, quietly wise plum spirit",
         "personality": "an elegant, soft-spoken, quietly wise plum-blossom spirit",
         "color": (200, 150, 200),
@@ -67,6 +76,8 @@ COMPANIONS = [
     {
         "id": "kinoko",
         "name": "Kinoko",
+        "jp": "きのこ",
+        "greeting": "Hey hey! Ready for a fun-gi time? ...Fun-gi? Get it? Mushroom joke!",
         "tagline": "A playful, quirky mushroom spirit",
         "personality": "a playful, quirky, slightly mischievous mushroom spirit who loves puns",
         "color": (206, 74, 66),
