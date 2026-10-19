@@ -42,6 +42,14 @@ class Background:
         self.theme = theme
         self.sky_surface = _build_sky_surface(theme.sky_top, theme.sky_bottom)
 
+        self.far = [
+            (layer, self._place_floaties(level_width, rng, layer))
+            for layer in theme.far_layers
+        ]
+        self.mid = [
+            (layer, self._place_floaties(level_width, rng, layer))
+            for layer in theme.mid_layers
+        ]
         self.bumps = [
             (layer, self._place_bumps(level_width, rng, layer.spacing, layer.radius))
             for layer in theme.bump_layers
@@ -79,7 +87,10 @@ class Background:
         count = layer.count(level_width)
         items = []
         for i in range(count):
-            x = rng.randint(0, level_width) if count > 1 else level_width // 2
+            if layer.screen_x:
+                x = rng.randint(*layer.screen_x) + SCREEN_WIDTH // 2   # see _wrapped_x
+            else:
+                x = rng.randint(0, level_width) if count > 1 else level_width // 2
             y = rng.randint(*layer.y_range)
             size = rng.randint(*layer.size_range)
             color = layer.colors[i % len(layer.colors)]
@@ -181,6 +192,13 @@ class Background:
         previous_clip = screen.get_clip()
         screen.set_clip(pygame.Rect(0, 0, screen_width, self.ground_y))
 
+        # Far landmarks first, so the hills sit in front of them.
+        for layer, items in self.far:
+            for x, y, size, color in items:
+                draw_x = self._wrapped_x(x, camera_x, layer.parallax, screen_width)
+                if -size * 3 < draw_x < screen_width + size * 3:
+                    layer.draw_fn(screen, draw_x, y, size, color)
+
         for layer, bumps in self.bumps:
             base_y = self.ground_y - layer.base_offset
             visible = []
@@ -202,6 +220,12 @@ class Background:
                         (draw_x, base_y - radius * 0.12),
                         radius * 0.90,
                     )
+
+        for layer, items in self.mid:
+            for x, y, size, color in items:
+                draw_x = self._wrapped_x(x, camera_x, layer.parallax, screen_width)
+                if -size * 3 < draw_x < screen_width + size * 3:
+                    layer.draw_fn(screen, draw_x, y, size, color)
 
         screen.set_clip(previous_clip)
 

@@ -17,6 +17,7 @@ HINT_COLOR = (235, 235, 235)
 WORLD_ORDER = [
     "forest", "desert", "arabian_night", "underwater", "sky",
     "tokyo", "nagano", "okinawa", "hokkaido", "kyoto",
+    "okinawa_drive", "aomori", "shizuoka", "hokkaido_farm",
     "island", "fairy_tale", "london", "new_york", "korea",
 ]
 

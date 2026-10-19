@@ -1121,3 +1121,360 @@ def draw_snow_monkey(screen, x, ground_y, size, color=(176, 158, 148), face_colo
     pygame.draw.circle(screen, face_color, (x, head_y + size * 0.04), max(1, size * 0.19))
     for side in (-1, 1):
         pygame.draw.circle(screen, (50, 44, 42), (x + side * size * 0.08, head_y - size * 0.01), max(1, size * 0.035))
+
+
+# --- Countryside Japan: Okinawa drive, Aomori, Shizuoka, Hokkaido farms ---
+# Far shapes (drawn behind the hills, see Theme.far_layers) take
+# (screen, x, y, size, color) like the floaty ones; the rest follow the
+# ground-prop / creature signatures above.
+
+def draw_sea_band(screen, x, y, size, color):
+    """The open sea from the horizon (y) down, with glints. Spans the whole
+    screen whatever x is -- the sea doesn't scroll."""
+    width = screen.get_width()
+    pygame.draw.rect(screen, color, (0, y, width, screen.get_height() - y))
+    deep = tuple(max(0, c - 34) for c in color)
+    pygame.draw.rect(screen, deep, (0, y, width, 6))
+    light = tuple(min(255, c + 60) for c in color)
+    for k in range(0, width, 37):
+        gx = (k * 7 + int(x) // 3) % width
+        gy = y + 14 + (k * 13) % 70
+        pygame.draw.line(screen, light, (gx, gy), (gx + 10 + k % 9, gy), 2)
+
+
+def draw_far_island(screen, x, y, size, color):
+    """A low green island sitting on the horizon (y)."""
+    rect = pygame.Rect(0, 0, size * 4, size * 1.4)
+    rect.midbottom = (x, y + size * 0.3)
+    pygame.draw.ellipse(screen, color, rect)
+    light = tuple(min(255, c + 24) for c in color)
+    pygame.draw.ellipse(screen, light, rect.inflate(-size * 1.6, -size * 0.6).move(-size * 0.3, -size * 0.12))
+
+
+def draw_sea_bridge(screen, x, y, size, color):
+    """A long, low ocean bridge (like Kouri Ohashi) whose deck runs at y,
+    on piers standing in the sea."""
+    half = size * 3
+    deck_dark = tuple(max(0, c - 50) for c in color)
+    points = []
+    for k in range(-12, 13):
+        px = x + half * k / 12
+        points.append((px, y - 6 * (1 - (k / 12) ** 2)))
+    for px, py in points[::2]:
+        pygame.draw.rect(screen, deck_dark, (px - 2, py, 4, 18))
+    pygame.draw.lines(screen, color, False, points, 5)
+    pygame.draw.lines(screen, deck_dark, False, [(px, py + 3) for px, py in points], 1)
+
+
+def draw_fuji(screen, x, y, size, color, snow_color=(250, 252, 255)):
+    """A big volcano: peak at (x, y), slopes widening down to the ground.
+    The snow cap's edge is jagged, like the gullies on Mt Fuji."""
+    base = y + size * 2.4
+    half = size * 2.3
+    flat = size * 0.16
+    body = [(x - flat, y), (x + flat, y), (x + half, base), (x - half, base)]
+    pygame.draw.polygon(screen, color, body)
+    shade = tuple(max(0, c - 18) for c in color)
+    pygame.draw.polygon(screen, shade, [(x + flat, y), (x + half, base), (x + half * 0.35, base)])
+    if snow_color:
+        depth = size * 0.75
+        slope = (half - flat) / (base - y)
+        cap = [(x - flat, y), (x + flat, y)]
+        right = x + flat + slope * depth
+        left = x - flat - slope * depth
+        teeth = 7
+        edge = []
+        for k in range(teeth + 1):
+            ex = right - (right - left) * k / teeth
+            ey = y + depth + (size * 0.18 if k % 2 else -size * 0.05)
+            edge.append((ex, ey))
+        pygame.draw.polygon(screen, snow_color, cap + [(right, y + depth)] + edge + [(left, y + depth)])
+
+
+def _striped_hill(screen, x, y, size, bands, outline):
+    """A wide hill dome (top at y) covered in curved stripes -- rows of
+    flowers or tea seen from afar."""
+    w, h = int(size * 5), int(size * 2.2)
+    surf = pygame.Surface((w, h), pygame.SRCALPHA)
+    for i in range(0, h, 7):
+        color = bands[(i // 7) % len(bands)]
+        pygame.draw.ellipse(surf, color, (-w * 0.1, i, w * 1.2, h * 2 - i * 0.6))
+    mask = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.ellipse(mask, (255, 255, 255, 255), (0, 0, w, h * 2))
+    surf.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+    pygame.draw.arc(surf, outline, (0, 0, w, h * 2), 0.15, math.pi - 0.15, 2)
+    screen.blit(surf, (x - w // 2, y))
+
+
+def draw_flower_hill(screen, x, y, size, color):
+    """Rainbow rows of flowers over a hill, like Biei and Furano's fields."""
+    bands = [color, (232, 86, 110), (252, 210, 90), (250, 250, 246), (246, 150, 190), (120, 176, 96)]
+    _striped_hill(screen, x, y, size, bands, tuple(max(0, c - 40) for c in color))
+
+
+def draw_tea_hill(screen, x, y, size, color):
+    """A hillside of tea rows: green stripes over a curve."""
+    dark = tuple(max(0, c - 34) for c in color)
+    light = tuple(min(255, c + 22) for c in color)
+    _striped_hill(screen, x, y, size, [color, light, color, dark], dark)
+
+
+def draw_viaduct(screen, x, y, size, color):
+    """An elevated railway line crossing the whole view at height y."""
+    width = screen.get_width()
+    pygame.draw.rect(screen, color, (0, y, width, 5))
+    dark = tuple(max(0, c - 40) for c in color)
+    for px in range(int(x) % 60 - 60, width, 60):
+        pygame.draw.rect(screen, dark, (px, y + 5, 6, 54))   # down to just above the ground line
+
+
+def draw_ryukyu_house(screen, x, ground_y, size, color, roof_color=(206, 84, 62)):
+    """An Okinawan house: low white walls and a red-tiled hip roof with
+    white mortar lines -- and a little shisa guarding the ridge."""
+    w = size * 1.5
+    wall = pygame.Rect(0, 0, w, size * 0.55)
+    wall.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, wall)
+    pygame.draw.rect(screen, (120, 96, 80), (wall.x + w * 0.38, wall.bottom - size * 0.36, w * 0.24, size * 0.36))
+    roof_top = wall.y - size * 0.42
+    roof = [(wall.x - 8, wall.y + 2), (wall.x + w * 0.2, roof_top), (wall.right - w * 0.2, roof_top),
+            (wall.right + 8, wall.y + 2)]
+    pygame.draw.polygon(screen, roof_color, roof)
+    mortar = (250, 244, 236)
+    for k in range(1, 4):
+        ly = roof_top + (wall.y - roof_top) * k / 4
+        inset = w * 0.2 * (1 - k / 4)
+        pygame.draw.line(screen, mortar, (wall.x - 6 + inset, ly), (wall.right + 6 - inset, ly), 1)
+    pygame.draw.line(screen, mortar, (wall.x + w * 0.2, roof_top), (wall.right - w * 0.2, roof_top), 3)
+    sx, sy = x, roof_top - 3
+    pygame.draw.rect(screen, (196, 120, 70), (sx - 4, sy - 6, 8, 7))
+    pygame.draw.circle(screen, (196, 120, 70), (sx + 3, sy - 7), 4)
+
+
+def draw_sugarcane(screen, x, ground_y, size, color):
+    """A clump of sugarcane: tall jointed stalks with long leaves."""
+    stalk = tuple(max(0, c - 30) for c in color)
+    for k, dx in enumerate((-6, 0, 6)):
+        h = size * (0.85 + 0.15 * (k % 2))
+        top = ground_y - h
+        pygame.draw.line(screen, stalk, (x + dx, ground_y), (x + dx, top), 3)
+        for j in range(1, 4):
+            jy = ground_y - h * j / 4
+            pygame.draw.line(screen, (210, 220, 150), (x + dx - 2, jy), (x + dx + 2, jy), 1)
+        side = 1 if k % 2 else -1
+        pygame.draw.line(screen, color, (x + dx, top + 4), (x + dx + side * 14, top - 6), 2)
+        pygame.draw.line(screen, color, (x + dx, top + 12), (x + dx - side * 15, top + 2), 2)
+
+
+def draw_guardrail(screen, x, ground_y, size, color):
+    """A stretch of roadside guardrail."""
+    for k in range(3):
+        px = x - size + k * size
+        pygame.draw.rect(screen, (150, 150, 160), (px - 2, ground_y - 18, 4, 18))
+    pygame.draw.rect(screen, color, (x - size - 4, ground_y - 20, size * 2 + 8, 6), border_radius=2)
+
+
+def draw_apple_tree(screen, x, ground_y, size, color, apple_color=(220, 40, 46)):
+    """A pruned orchard apple tree: short trunk, wide round canopy, apples."""
+    trunk = (110, 78, 52)
+    pygame.draw.line(screen, trunk, (x, ground_y), (x, ground_y - size * 0.45), 6)
+    pygame.draw.line(screen, trunk, (x, ground_y - size * 0.35), (x - size * 0.25, ground_y - size * 0.55), 4)
+    pygame.draw.line(screen, trunk, (x, ground_y - size * 0.38), (x + size * 0.25, ground_y - size * 0.58), 4)
+    cy = ground_y - size * 0.72
+    dark = tuple(max(0, c - 26) for c in color)
+    for dx, dy, r in ((-0.32, 0.05, 0.36), (0.32, 0.05, 0.36), (0, -0.12, 0.42)):
+        pygame.draw.circle(screen, dark, (x + dx * size, cy + dy * size + 3), r * size)
+    for dx, dy, r in ((-0.32, 0.05, 0.33), (0.32, 0.05, 0.33), (0, -0.12, 0.39)):
+        pygame.draw.circle(screen, color, (x + dx * size, cy + dy * size), r * size)
+    for k in range(9):
+        ax = x + ((k * 37) % 100 - 50) / 100 * size * 0.9
+        ay = cy + ((k * 53) % 70 - 35) / 100 * size * 0.8
+        pygame.draw.circle(screen, apple_color, (ax, ay), max(2, size // 14))
+        pygame.draw.circle(screen, (255, 160, 150), (ax - 1, ay - 1), 1)
+
+
+def draw_apple_crate(screen, x, ground_y, size, color):
+    """Stacked wooden harvest crates, the top one full of apples."""
+    for k, (dx, level) in enumerate(((-size * 0.55, 0), (size * 0.55, 0), (0, 1))):
+        box = pygame.Rect(0, 0, size, size * 0.62)
+        box.midbottom = (x + dx, ground_y - level * size * 0.62)
+        pygame.draw.rect(screen, color, box)
+        dark = tuple(max(0, c - 40) for c in color)
+        pygame.draw.rect(screen, dark, box, 2)
+        pygame.draw.line(screen, dark, (box.x, box.centery), (box.right, box.centery), 2)
+        if level == 1:
+            for j in range(4):
+                pygame.draw.circle(screen, (214, 36, 44), (box.x + 6 + j * (box.width - 12) / 3, box.y), 4)
+
+
+def draw_scarecrow(screen, x, ground_y, size, color):
+    """A kakashi: a straw-hatted scarecrow on a pole, arms out."""
+    pole = (120, 86, 56)
+    pygame.draw.line(screen, pole, (x, ground_y), (x, ground_y - size), 3)
+    arm_y = ground_y - size * 0.68
+    pygame.draw.line(screen, pole, (x - size * 0.4, arm_y), (x + size * 0.4, arm_y), 3)
+    body = pygame.Rect(0, 0, size * 0.42, size * 0.38)
+    body.midtop = (x, arm_y - 3)
+    pygame.draw.rect(screen, color, body)
+    pygame.draw.circle(screen, (244, 232, 210), (x, ground_y - size * 0.82), size * 0.12)
+    hat = pygame.Rect(0, 0, size * 0.5, size * 0.12)
+    hat.center = (x, ground_y - size * 0.9)
+    pygame.draw.ellipse(screen, (226, 190, 110), hat)
+    pygame.draw.circle(screen, (226, 190, 110), (x, ground_y - size * 0.93), size * 0.09)
+
+
+def draw_tea_bush(screen, x, ground_y, size, color):
+    """One row-end of a tea field: a long, round-topped clipped hedge."""
+    rect = pygame.Rect(0, 0, size * 2.2, size * 0.75)
+    rect.midbottom = (x, ground_y + 2)
+    dark = tuple(max(0, c - 30) for c in color)
+    pygame.draw.ellipse(screen, dark, rect.move(0, 2))
+    pygame.draw.ellipse(screen, color, rect)
+    light = tuple(min(255, c + 34) for c in color)
+    pygame.draw.ellipse(screen, light, rect.inflate(-size * 0.5, -size * 0.45).move(0, -size * 0.12))
+    pygame.draw.rect(screen, dark, (rect.x, ground_y - size * 0.18, rect.width, size * 0.2))
+
+
+def draw_frost_fan(screen, x, ground_y, size, color):
+    """A tea field's frost fan (防霜ファン): a tall pole with a tilted fan
+    on top that stirs warm air over the bushes on cold nights."""
+    pygame.draw.line(screen, (140, 146, 150), (x, ground_y), (x, ground_y - size), 3)
+    hub = (x + 4, ground_y - size)
+    pygame.draw.circle(screen, color, hub, 4)
+    pygame.draw.polygon(screen, color, [(hub[0], hub[1] - 2), (hub[0] + size * 0.3, hub[1] - size * 0.12),
+                                        (hub[0] + size * 0.32, hub[1] - size * 0.02)])
+    pygame.draw.polygon(screen, color, [(hub[0], hub[1] + 2), (hub[0] - size * 0.28, hub[1] + size * 0.1),
+                                        (hub[0] - size * 0.3, hub[1] + 0.0)])
+
+
+def draw_red_barn(screen, x, ground_y, size, color, trim_color=(250, 248, 240)):
+    """A Hokkaido red barn with a gambrel roof and white trim."""
+    w = size * 1.3
+    wall = pygame.Rect(0, 0, w, size * 0.62)
+    wall.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, wall)
+    roof = [(wall.x - 4, wall.y), (wall.x + w * 0.12, wall.y - size * 0.3), (x, wall.y - size * 0.46),
+            (wall.right - w * 0.12, wall.y - size * 0.3), (wall.right + 4, wall.y)]
+    pygame.draw.polygon(screen, (70, 72, 84), roof)
+    pygame.draw.lines(screen, trim_color, False, roof, 2)
+    door = pygame.Rect(0, 0, w * 0.36, size * 0.42)
+    door.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, trim_color, door, 2)
+    pygame.draw.line(screen, trim_color, door.topleft, door.bottomright, 2)
+    pygame.draw.line(screen, trim_color, door.topright, door.bottomleft, 2)
+    loft = pygame.Rect(0, 0, w * 0.16, size * 0.14)
+    loft.center = (x, wall.y - size * 0.18)
+    pygame.draw.rect(screen, trim_color, loft)
+
+
+def draw_silo(screen, x, ground_y, size, color):
+    """A tall farm silo with a domed cap."""
+    body = pygame.Rect(0, 0, size * 0.32, size)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body)
+    dark = tuple(max(0, c - 30) for c in color)
+    for k in range(1, 6):
+        pygame.draw.line(screen, dark, (body.x, body.y + body.height * k / 6), (body.right, body.y + body.height * k / 6))
+    pygame.draw.circle(screen, (110, 116, 130), (x, body.y), body.width // 2, draw_top_left=True,
+                       draw_top_right=True)
+
+
+def draw_ranch_fence(screen, x, ground_y, size, color):
+    """A run of white ranch fence."""
+    for k in range(4):
+        px = x - size * 1.5 + k * size
+        pygame.draw.rect(screen, color, (px - 2, ground_y - size * 0.55, 5, size * 0.55))
+    for h in (0.42, 0.2):
+        pygame.draw.rect(screen, color, (x - size * 1.5 - 2, ground_y - size * h - 2, size * 3 + 5, 4))
+
+
+def draw_hay_bale(screen, x, ground_y, size, color):
+    """A round bale wrapped for winter, seen end-on."""
+    r = size // 2
+    pygame.draw.circle(screen, tuple(max(0, c - 30) for c in color), (x + 3, ground_y - r + 2), r)
+    pygame.draw.circle(screen, color, (x, ground_y - r), r)
+    shade = tuple(max(0, c - 22) for c in color)
+    pygame.draw.circle(screen, shade, (x, ground_y - r), r * 0.62, 2)
+    pygame.draw.circle(screen, shade, (x, ground_y - r), r * 0.28, 2)
+
+
+def draw_birch(screen, x, ground_y, size, color):
+    """A white birch (shirakaba): pale trunk with dark marks, airy leaves."""
+    top = ground_y - size
+    pygame.draw.line(screen, (240, 238, 228), (x, ground_y), (x, top + size * 0.25), 5)
+    for k in range(4):
+        my = ground_y - size * (0.15 + 0.17 * k)
+        pygame.draw.line(screen, (60, 56, 52), (x - 2, my), (x + 1, my), 2)
+    for dx, dy, r in ((-0.15, 0.2, 0.2), (0.15, 0.25, 0.18), (0, 0.08, 0.22)):
+        pygame.draw.circle(screen, color, (x + dx * size, top + dy * size), r * size)
+
+
+def draw_car(screen, x, ground_y, size, color, facing=1):
+    """A little rental car out for a coast drive."""
+    w, h = size * 2.2, size * 0.7
+    body = pygame.Rect(0, 0, w, h)
+    body.midbottom = (x, ground_y - size * 0.22)
+    pygame.draw.rect(screen, color, body, border_radius=4)
+    cabin = [(x - w * 0.3 * facing, body.y), (x - w * 0.18 * facing, body.y - size * 0.55),
+             (x + w * 0.16 * facing, body.y - size * 0.55), (x + w * 0.32 * facing, body.y)]
+    pygame.draw.polygon(screen, color, cabin)
+    glass = (190, 226, 246)
+    pygame.draw.polygon(screen, glass, [(x - w * 0.24 * facing, body.y - 1), (x - w * 0.15 * facing, body.y - size * 0.45),
+                                        (x + w * 0.12 * facing, body.y - size * 0.45),
+                                        (x + w * 0.25 * facing, body.y - 1)])
+    pygame.draw.line(screen, color, (x, body.y), (x, body.y - size * 0.5), 2)
+    pygame.draw.circle(screen, (255, 240, 170), (x + w * 0.46 * facing, body.y + h * 0.35), 2)
+    for wx in (x - w * 0.3, x + w * 0.3):
+        pygame.draw.circle(screen, (40, 40, 46), (wx, ground_y - size * 0.24), size * 0.24)
+        pygame.draw.circle(screen, (170, 170, 180), (wx, ground_y - size * 0.24), size * 0.1)
+
+
+def draw_cow(screen, x, ground_y, size, color=(250, 250, 248), facing=1):
+    """A Holstein dairy cow, black patches on white, grazing along."""
+    patch = (40, 38, 44)
+    body = pygame.Rect(0, 0, size * 1.6, size * 0.8)
+    body.midbottom = (x, ground_y - size * 0.45)
+    for lx in (body.x + size * 0.2, body.x + size * 0.45, body.right - size * 0.45, body.right - size * 0.2):
+        pygame.draw.line(screen, color, (lx, body.bottom - 2), (lx, ground_y), 4)
+        pygame.draw.line(screen, patch, (lx, ground_y - 3), (lx, ground_y), 4)
+    pygame.draw.ellipse(screen, color, body)
+    pygame.draw.ellipse(screen, patch, (body.x + size * 0.25, body.y + 2, size * 0.45, size * 0.38))
+    pygame.draw.ellipse(screen, patch, (body.x + size * 0.85, body.y + size * 0.3, size * 0.4, size * 0.34))
+    pygame.draw.ellipse(screen, (246, 186, 196), (body.centerx - size * 0.1, body.bottom - 5, size * 0.3, 8))
+    hx = body.right - 4 if facing > 0 else body.x + 4
+    head = pygame.Rect(0, 0, size * 0.5, size * 0.46)
+    head.center = (hx + facing * size * 0.18, body.y + size * 0.3)
+    pygame.draw.ellipse(screen, color, head)
+    pygame.draw.ellipse(screen, patch, (head.x + 2, head.y, head.width * 0.5, head.height * 0.5))
+    muzzle = pygame.Rect(0, 0, size * 0.3, size * 0.2)
+    muzzle.midbottom = (head.centerx + facing * size * 0.08, head.bottom + 2)
+    pygame.draw.ellipse(screen, (246, 186, 196), muzzle)
+    pygame.draw.line(screen, (230, 220, 200), (head.centerx - facing * 4, head.y + 1),
+                     (head.centerx - facing * 8, head.y - 4), 2)
+    tail_x = body.x + 2 if facing > 0 else body.right - 2
+    pygame.draw.line(screen, patch, (tail_x, body.y + 6), (tail_x - facing * 5, body.centery + 8), 2)
+
+
+def draw_shinkansen(screen, x, y, size, color=(250, 250, 252), facing=1):
+    """A bullet train on its viaduct: long white cars, a blue stripe and
+    the famous long nose."""
+    cars = 4
+    car_w = size * 5
+    length = car_w * cars
+    rear = x - facing * length / 2
+    top, bottom = y - size, y
+    stripe = (40, 90, 190)
+    for k in range(cars):
+        cx0 = rear + facing * k * car_w
+        cx1 = cx0 + facing * (car_w - 2)
+        left, right = min(cx0, cx1), max(cx0, cx1)
+        if k == cars - 1:
+            nose = right if facing > 0 else left
+            tail = left if facing > 0 else right
+            pygame.draw.polygon(screen, color, [(tail, top), (nose - facing * car_w * 0.45, top),
+                                                (nose, bottom - size * 0.2), (nose, bottom), (tail, bottom)])
+        else:
+            pygame.draw.rect(screen, color, (left, top, right - left, size))
+        pygame.draw.line(screen, stripe, (left, bottom - size * 0.3), (right - (car_w * 0.2 if k == cars - 1 and facing > 0 else 0), bottom - size * 0.3), 2)
+        for wx in range(int(left) + 4, int(right) - 6, 7):
+            pygame.draw.rect(screen, (90, 110, 140), (wx, top + size * 0.25, 4, size * 0.25))

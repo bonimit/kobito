@@ -632,16 +632,26 @@ while the box is still showing — gameplay never waits on the network.
 ## Worlds
 
 Before a level starts, a world-select screen (mirroring the mascot
-select screen) lets you pick from 10 themed worlds — 5 fantasy and 5
-built on real Japanese places:
+select screen) lets you pick from 19 themed worlds — 5 fantasy, 9 built
+on real places in Japan, and 5 more from around the world (Tropical
+Island, Fairy Tale, London, New York, Korea):
 
 | Fantasy | Real places |
 | --- | --- |
 | Whispering Forest — torii, sakura, stone lanterns, drifting petals | **Neon Tokyo** — lit skyline, Tokyo Tower, crows, night planes |
 | Sunfall Desert — pyramids, cacti, camels, scorpions | **Nagano Snowfield** — snowy alps, falling snow, snow monkeys |
 | Arabian Night — minarets, pagodas, bats under a hazy moon | **Okinawa Shore** — turquoise sea, palms, hibiscus, shisa, crabs |
-| Coral Deep — reef, fish, jellyfish, turtles, a whale | **Hokkaido Lavender** — Furano rows, red-crowned cranes, Ezo foxes |
+| Coral Deep — reef, fish, jellyfish, turtles, a whale | **Hokkaido Lavender** — Furano rows, rainbow flower hills (Biei / Shikisai-no-oka), red-crowned cranes, Ezo foxes |
 | Cloud Kingdom — cloud hills, floating islands, balloons | **Kyoto Autumn** — bamboo grove, momiji maples, machiya, Inari foxes |
+
+More of the Japanese countryside:
+
+| World | What's there |
+| --- | --- |
+| **Okinawa Island Drive** | the coast road itself (asphalt, a pale kerb), the turquoise sea with a long ocean bridge like Kouri Ohashi and green islands on the horizon, red-tiled Ryukyu houses with a shisa on the ridge, sugarcane, palms, guardrails — and rental cars cruising up and down the road |
+| **Aomori Apple Orchard** | rows of apple trees heavy with red apples, harvest crates, kakashi scarecrows, Mt Iwaki ("Tsugaru Fuji") with its first snow, falling autumn leaves and red dragonflies (aka-tombo) |
+| **Shizuoka Tea Fields** | Mt Fuji filling the sky, hills striped with tea rows, clipped tea hedges, frost fans (防霜ファン) on tall poles — and the Shinkansen gliding along its viaduct |
+| **Hokkaido Dairy Farm** | red gambrel barns and silos, white ranch fences, wrapped hay bales, white birches (shirakaba), the snowy Daisetsuzan peaks — and Holstein cows wandering the pasture |
 
 Each world has its own sky gradient, ground/platform colors and layered
 scenery, but the same gameplay layout underneath (platforms, question
@@ -651,8 +661,10 @@ A world is just data in `kobito/themes.py` (colors + which decorations
 to draw, from the shape library in `kobito/scenery_shapes.py`) — adding
 an 11th world doesn't require touching the rendering code, only a new
 `Theme(...)` entry. The backdrop is layered for depth (back to front):
-rolling silhouette layers, the sky layer (clouds/stars/snow/petals/...),
-then ground props. Each layer scrolls at its own rate relative to the
+far landmarks (Mt Fuji, the sea and its bridge — `far_layers`, some pinned
+to a spot on screen with `screen_x` so they're always in view), rolling
+silhouette layers, striped hills in front of them (`mid_layers`), the sky
+layer (clouds/stars/snow/petals/...), then ground props. Each layer scrolls at its own rate relative to the
 camera (parallax); silhouette layers are clipped to the horizon so they
 never hang into a ground gap, and ground props are only ever placed on
 solid ground segments. Solid tiles get a lit top cap, a shaded underside
@@ -662,7 +674,8 @@ and tile seams. All of it is rendered generically by
 Each world also has living creatures that actually move over time (not
 just scroll with the camera) — birds, butterflies and dragonflies;
 camels, scorpions and lizards; fish, jellyfish, turtles and a whale;
-snow monkeys, cranes and foxes; planes over Tokyo. Flying/swimming
+snow monkeys, cranes and foxes; planes over Tokyo; cars on Okinawa's coast
+road, the Shinkansen past Mt Fuji and cows on a Hokkaido farm. Flying/swimming
 creatures wander the level with a gentle bob and wrap around when they
 exit; ground creatures patrol back and forth like a decorative,
 non-colliding cousin of Enemy. A world adds creatures by listing
@@ -818,12 +831,14 @@ Every stage has its own tune, and everything you do makes a sound
 (`kobito/audio.py`). All of it is **generated from code** by
 `tools/make_audio.py` — square/pulse/triangle oscillators, a plucked
 "koto", a music-box bell and noise drums — so there are no samples or
-licences involved; the files are in `assets/audio/` (26 music loops, 31
+licences involved; the files are in `assets/audio/` (30 music loops, 31
 sound effects, about 3 MB of .ogg).
 
 - **Music** — one looping chiptune per world, each in a fitting scale:
   Japanese *yo* for the forest and Nagano, *miyako-bushi* (in) for Kyoto
-  on a koto, the Ryukyu scale for Okinawa, hijaz for the desert and
+  on a koto, the Ryukyu scale for Okinawa (and a faster one for the island
+  drive), a koto folk tune for the Aomori harvest, a calm flute over
+  Shizuoka's tea, a swinging country tune for the dairy farm, hijaz for the desert and
   Arabian night, city-pop chords for Tokyo, a swing blues for New York, a
   waltz for the fairy tale and Korea, … Each secret stage (subway, sewer,
   mine, rainbow, thunder, moon) has its own track, as do the title, the

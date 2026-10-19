@@ -27,6 +27,10 @@ THEME_COLORS = {
     "london": (255, 196, 30),
     "new_york": (40, 200, 255),
     "korea": (60, 196, 140),
+    "okinawa_drive": (255, 96, 140),
+    "aomori": (255, 196, 40),
+    "shizuoka": (255, 120, 60),
+    "hokkaido_farm": (255, 150, 30),
 }
 DEFAULT_COLOR = (255, 186, 30)
 USED_FACE = (96, 88, 100)

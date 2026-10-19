@@ -43,6 +43,10 @@ class FloatyLayer:
     y_range: tuple
     size_range: tuple
     parallax: float
+    # For a landmark that should always be in view (Mt Fuji, a far range):
+    # where along the screen it stands at the level's start, instead of a
+    # random spot along the whole level.
+    screen_x: tuple = None
 
 
 @dataclass
@@ -110,6 +114,11 @@ class Theme:
     shade_color: tuple = None
     bump_layers: list = field(default_factory=list)
     floaty_layers: list = field(default_factory=list)
+    # Distant landmarks drawn *behind* the bump layers (Mt Fuji, the sea and
+    # its bridge) and ones drawn just *in front of* them (flower- or
+    # tea-striped hills): FloatyLayers, clipped to the horizon.
+    far_layers: list = field(default_factory=list)
+    mid_layers: list = field(default_factory=list)
     ground_props: list = field(default_factory=list)
     flying_creatures: list = field(default_factory=list)
     ground_creatures: list = field(default_factory=list)
@@ -432,6 +441,11 @@ OKINAWA = Theme(
 HOKKAIDO = Theme(
     id="hokkaido",
     name="Hokkaido Lavender",
+    mid_layers=[
+        # Biei / Furano's rainbow rows of flowers over the nearer hills.
+        FloatyLayer(shapes.draw_flower_hill, [(150, 118, 206), (166, 132, 216)], lambda w: w // 600, (392, 410),
+                    (60, 84), 0.3),
+    ],
     sky_top=(88, 166, 224),
     sky_bottom=(218, 238, 250),
     ground_color=(138, 114, 86),
@@ -693,12 +707,186 @@ KOREA = Theme(
     ],
 )
 
+OKINAWA_DRIVE = Theme(
+    id="okinawa_drive",
+    name="Okinawa Island Drive",
+    sky_top=(40, 150, 226),
+    sky_bottom=(206, 238, 250),
+    # The ground is the coast road itself: asphalt with a pale kerb.
+    ground_color=(92, 96, 106),
+    platform_color=(92, 96, 106),
+    cap_color=(232, 228, 214),
+    shade_color=(66, 68, 78),
+    far_layers=[
+        FloatyLayer(shapes.draw_far_island, [(70, 150, 100), (86, 162, 108)], lambda w: w // 900, (380, 380),
+                    (26, 40), 0.06),
+        FloatyLayer(shapes.draw_sea_band, [(40, 190, 206)], lambda w: 1, (372, 372), (2000, 2000), 0.0),
+        FloatyLayer(shapes.draw_sea_bridge, [(236, 238, 240)], lambda w: w // 2600 + 1, (392, 392), (110, 130),
+                    0.12),
+    ],
+    bump_layers=[
+        # Just a low green bank between the road and the sea.
+        BumpLayer((96, 176, 110), spacing=(150, 220), radius=(36, 56), parallax=0.5, base_offset=8,
+                  highlight=(120, 196, 124)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 246, 200)], lambda w: 1, (60, 60), (76, 76), 0.05),
+        FloatyLayer(shapes.draw_sun, [(255, 236, 150)], lambda w: 1, (60, 60), (32, 32), 0.05),
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 300, (26, 120), (20, 34), 0.2),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_palm_tree, [(66, 150, 86), (82, 166, 96)], (52, 76), (150, 240), 35),
+        GroundProp(shapes.draw_ryukyu_house, [(246, 242, 232), (240, 232, 214)], (44, 56), (420, 600), 60),
+        GroundProp(shapes.draw_sugarcane, [(120, 186, 90), (104, 170, 80)], (40, 54), (70, 120), 20),
+        GroundProp(shapes.draw_guardrail, [(246, 246, 250)], (20, 24), (260, 380), 40),
+        GroundProp(shapes.draw_hibiscus, [(238, 82, 96), (250, 140, 90)], (16, 22), (130, 210), 22),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_bird, [(252, 252, 252)], lambda w: 5, (40, 150), (11, 16), (30, 55), 0.32),
+        FlyingCreature(shapes.draw_butterfly, [(255, 210, 90), (120, 200, 250)], lambda w: 3, (170, 270), (7, 10),
+                       (16, 30), 0.5, bob_amplitude=10, bob_period=1.4),
+    ],
+    ground_creatures=[
+        # Rental cars cruising the coast road.
+        GroundCreature(shapes.draw_car, [(240, 90, 90), (250, 250, 250), (90, 170, 230), (250, 210, 80)],
+                       lambda w: w // 900, (14, 17), (70, 110), (260, 460)),
+    ],
+)
+
+AOMORI = Theme(
+    id="aomori",
+    name="Aomori Apple Orchard",
+    sky_top=(110, 168, 222),
+    sky_bottom=(250, 232, 196),
+    ground_color=(126, 96, 68),
+    platform_color=(126, 96, 68),
+    cap_color=(132, 176, 84),
+    shade_color=(92, 70, 50),
+    far_layers=[
+        # Mt Iwaki, "Tsugaru Fuji", with its first autumn snow.
+        FloatyLayer(lambda s, x, y, size, c: shapes.draw_fuji(s, x, y, size, c, (240, 244, 250)),
+                    [(110, 126, 160)], lambda w: 1, (250, 250), (64, 64), 0.03, screen_x=(640, 700)),
+    ],
+    bump_layers=[
+        BumpLayer((168, 166, 92), spacing=(200, 280), radius=(80, 120), parallax=0.12, base_offset=50,
+                  highlight=(190, 184, 108)),
+        BumpLayer((122, 160, 82), spacing=(150, 220), radius=(46, 72), parallax=0.28, base_offset=22,
+                  highlight=(146, 180, 96)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 240, 200)], lambda w: 1, (70, 70), (64, 64), 0.04),
+        FloatyLayer(shapes.draw_sun, [(255, 226, 140)], lambda w: 1, (70, 70), (28, 28), 0.04),
+        FloatyLayer(shapes.draw_cloud, [(255, 252, 246)], lambda w: w // 340, (26, 110), (20, 32), 0.2),
+        FloatyLayer(shapes.draw_maple_leaf, [(226, 112, 62), (240, 170, 70)], lambda w: w // 160, (120, 400),
+                    (5, 8), 0.55),
+    ],
+    ground_props=[
+        # Orchard rows: apple trees close together, crates between them.
+        GroundProp(shapes.draw_apple_tree, [(84, 146, 70), (96, 158, 76)], (56, 72), (70, 120), 30),
+        GroundProp(shapes.draw_apple_crate, [(196, 146, 92)], (22, 26), (300, 460), 40),
+        GroundProp(shapes.draw_scarecrow, [(70, 110, 180), (180, 80, 70)], (44, 52), (600, 900), 60),
+        GroundProp(shapes.draw_grass_tuft, [(140, 170, 80)], (10, 14), (50, 90), 15),
+    ],
+    flying_creatures=[
+        # Red dragonflies (aka-tombo) -- the sign of autumn in Japan.
+        FlyingCreature(shapes.draw_dragonfly, [(222, 70, 50), (236, 96, 60)], lambda w: 6, (220, 380), (8, 11),
+                       (20, 40), 0.55, bob_amplitude=8, bob_period=1.6),
+        FlyingCreature(shapes.draw_bird, [(70, 62, 58)], lambda w: 4, (40, 130), (10, 14), (30, 52), 0.3),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_fox, [(170, 130, 90)], lambda w: 2, (15, 20), (12, 20), (70, 130)),
+    ],
+)
+
+SHIZUOKA = Theme(
+    id="shizuoka",
+    name="Shizuoka Tea Fields",
+    sky_top=(96, 160, 224),
+    sky_bottom=(222, 240, 250),
+    ground_color=(118, 92, 66),
+    platform_color=(118, 92, 66),
+    cap_color=(88, 160, 76),
+    shade_color=(86, 66, 48),
+    far_layers=[
+        # Mt Fuji fills the sky over the tea hills.
+        FloatyLayer(shapes.draw_fuji, [(84, 108, 168)], lambda w: 1, (150, 150), (100, 100), 0.03,
+                    screen_x=(640, 680)),
+    ],
+    mid_layers=[
+        FloatyLayer(shapes.draw_tea_hill, [(74, 150, 74), (86, 160, 80)], lambda w: w // 420, (372, 400),
+                    (56, 84), 0.2),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 360, (30, 110), (20, 32), 0.18),
+        # The Tokaido Shinkansen's viaduct runs across the fields.
+        FloatyLayer(shapes.draw_viaduct, [(196, 198, 204)], lambda w: 1, (418, 418), (2000, 2000), 0.3),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_tea_bush, [(64, 140, 66), (74, 150, 72)], (26, 32), (58, 76), 30),
+        GroundProp(shapes.draw_frost_fan, [(230, 232, 236)], (70, 84), (260, 380), 40),
+        GroundProp(shapes.draw_stone_lantern, [(150, 146, 140)], (28, 36), (700, 1000), 50),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_shinkansen, [(250, 250, 252)], lambda w: w // 1500, (416, 416), (8, 8),
+                       (260, 320), 0.3, bob_amplitude=0, bob_period=5.0),
+        FlyingCreature(shapes.draw_bird, [(70, 64, 60)], lambda w: 4, (40, 130), (10, 14), (30, 52), 0.3),
+        FlyingCreature(shapes.draw_butterfly, [(255, 236, 120), (255, 255, 255)], lambda w: 3, (300, 400), (6, 9),
+                       (16, 28), 0.5, bob_amplitude=8, bob_period=1.4),
+    ],
+)
+
+HOKKAIDO_FARM = Theme(
+    id="hokkaido_farm",
+    name="Hokkaido Dairy Farm",
+    sky_top=(70, 150, 230),
+    sky_bottom=(214, 236, 252),
+    ground_color=(120, 98, 70),
+    platform_color=(120, 98, 70),
+    cap_color=(112, 178, 80),
+    shade_color=(88, 72, 52),
+    far_layers=[
+        # The Daisetsuzan peaks, snow all year on top.
+        FloatyLayer(lambda s, x, y, size, c: shapes.draw_fuji(s, x, y, size, c), [(126, 146, 186), (140, 158, 196)],
+                    lambda w: 3, (250, 280), (50, 64), 0.04, screen_x=(200, 900)),
+    ],
+    bump_layers=[
+        BumpLayer((120, 184, 96), spacing=(240, 320), radius=(110, 160), parallax=0.12, base_offset=70,
+                  highlight=(142, 200, 108)),
+        BumpLayer((104, 170, 84), spacing=(170, 240), radius=(60, 92), parallax=0.26, base_offset=26,
+                  highlight=(126, 190, 96)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 250, 220)], lambda w: 1, (64, 64), (66, 66), 0.04),
+        FloatyLayer(shapes.draw_sun, [(255, 244, 170)], lambda w: 1, (64, 64), (30, 30), 0.04),
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 260, (24, 120), (22, 38), 0.2),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_red_barn, [(186, 52, 46)], (60, 72), (700, 1000), 70),
+        GroundProp(shapes.draw_silo, [(214, 216, 222)], (70, 86), (900, 1300), 80),
+        GroundProp(shapes.draw_ranch_fence, [(250, 250, 246)], (26, 30), (150, 230), 40),
+        GroundProp(shapes.draw_hay_bale, [(244, 244, 236), (232, 208, 140)], (22, 28), (220, 340), 30),
+        GroundProp(shapes.draw_birch, [(132, 188, 96), (150, 200, 104)], (60, 80), (260, 400), 35),
+        GroundProp(shapes.draw_flower, [(255, 255, 255), (255, 226, 120)], (10, 12), (120, 200), 20),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_crane, [(250, 250, 250)], lambda w: 2, (60, 150), (15, 20), (28, 46), 0.26,
+                       bob_amplitude=5, bob_period=3.0),
+        FlyingCreature(shapes.draw_bird, [(78, 70, 64)], lambda w: 4, (40, 120), (10, 14), (32, 55), 0.34),
+    ],
+    ground_creatures=[
+        # Holsteins wandering the pasture.
+        GroundCreature(shapes.draw_cow, [(250, 250, 248)], lambda w: w // 800, (22, 28), (8, 14), (80, 160)),
+    ],
+)
+
+
 THEMES = {
     theme.id: theme
     for theme in (
         FOREST, DESERT, ARABIAN_NIGHT, UNDERWATER, SKY,
         TOKYO, NAGANO, OKINAWA, HOKKAIDO, KYOTO,
         ISLAND, FAIRY_TALE, LONDON, NEW_YORK, KOREA,
+        OKINAWA_DRIVE, AOMORI, SHIZUOKA, HOKKAIDO_FARM,
     )
 }
 
@@ -730,6 +918,10 @@ ENEMY_PALETTES = {
     "london": ((110, 110, 118), (74, 74, 82)),
     "new_york": ((120, 108, 100), (80, 70, 64)),
     "korea": ((200, 66, 60), (150, 42, 40)),
+    "okinawa_drive": ((230, 120, 70), (176, 84, 48)),
+    "aomori": ((180, 60, 60), (126, 40, 40)),
+    "shizuoka": ((120, 120, 70), (82, 84, 46)),
+    "hokkaido_farm": ((140, 104, 76), (98, 70, 50)),
 }
 
 # (body_color, wing_color) for FlyingEnemy, per world -- same idea, kept
