@@ -377,10 +377,257 @@ def _rat(s, frame, colors):
         pygame.draw.ellipse(s, (240, 170, 180), (fx, h - 8 - lift[i], 6, 4))
 
 
+def _legs(s, xs, frame, color=INK, length=6):
+    """Little stepping legs along the bottom edge."""
+    w, h = s.get_size()
+    for i, x in enumerate(xs):
+        up = 2 if (i + frame) % 2 else 0
+        pygame.draw.line(s, color, (x, h - 6 - length), (x, h - 5 - up), 3)
+
+
+def _quadruped(s, frame, body, head_rect, body_rect, belly=None):
+    """A four-legged animal side-on: legs, a body, a head at the front."""
+    _legs(s, (body_rect.x + 4, body_rect.x + 9, body_rect.right - 9, body_rect.right - 4), frame)
+    _outlined_ellipse(s, body, body_rect)
+    if belly:
+        pygame.draw.ellipse(s, belly, (body_rect.x + 5, body_rect.centery, body_rect.width - 10, body_rect.height // 2))
+    _outlined_ellipse(s, body, head_rect)
+
+
+def _boar(s, frame, colors):
+    w, h = s.get_size()
+    body = colors.get("body") or (120, 86, 60)
+    _quadruped(s, frame, body, pygame.Rect(w - 15, 11, 13, 13), pygame.Rect(3, 9, w - 12, h - 19))
+    for x in range(8, w - 14, 4):                                          # bristly back
+        pygame.draw.line(s, INK, (x, 10), (x + 1, 6), 2)
+    pygame.draw.ellipse(s, (230, 170, 150), (w - 6, 17, 5, 6))             # snout
+    pygame.draw.line(s, WHITE, (w - 6, 22), (w - 3, 18), 2)                 # tusk
+    _eye(s, (w - 9, 15), r=2, angry=True)
+
+
+def _mummy(s, frame, colors):
+    w, h = s.get_size()
+    wrap = colors.get("body") or (232, 222, 196)
+    sway = 1 if frame else -1
+    _legs(s, (w // 2 - 4, w // 2 + 4), frame, wrap, 7)
+    body = pygame.Rect(w // 2 - 9 + sway, 4, 18, h - 12)
+    pygame.draw.rect(s, INK, body.inflate(4, 4), border_radius=8)
+    pygame.draw.rect(s, wrap, body, border_radius=7)
+    for y in range(body.y + 4, body.bottom - 2, 4):                         # bandages
+        pygame.draw.line(s, _mix(wrap, INK, 0.3), (body.x + 1, y), (body.right - 2, y + 2), 1)
+    pygame.draw.line(s, INK, (body.right, body.y + 13), (w - 1, body.y + 11 - sway), 4)   # arm reaching out
+    pygame.draw.line(s, wrap, (body.right, body.y + 13), (w - 2, body.y + 11 - sway), 2)
+    pygame.draw.rect(s, INK, (body.x + 3, body.y + 6, body.width - 6, 6))
+    for ex in (body.centerx - 3, body.centerx + 4):
+        pygame.draw.circle(s, (250, 90, 60), (ex, body.y + 9), 2)
+
+
+def _robot(s, frame, colors):
+    w, h = s.get_size()
+    metal = colors.get("body") or (170, 180, 200)
+    _legs(s, (w // 2 - 6, w // 2 + 5), frame, (90, 96, 110), 6)
+    body = pygame.Rect(w // 2 - 11, 11, 22, 15)
+    pygame.draw.rect(s, INK, body.inflate(4, 4), border_radius=3)
+    pygame.draw.rect(s, metal, body, border_radius=3)
+    pygame.draw.rect(s, (60, 220, 240) if frame else (240, 80, 200), (body.x + 4, body.y + 8, body.width - 8, 3))
+    head = pygame.Rect(w // 2 - 8, 1, 16, 11)
+    pygame.draw.rect(s, INK, head.inflate(4, 4), border_radius=3)
+    pygame.draw.rect(s, metal, head, border_radius=3)
+    pygame.draw.rect(s, INK, (head.x + 2, head.y + 3, head.width - 4, 5))
+    pygame.draw.rect(s, (255, 70, 120), (head.x + 4 + frame * 4, head.y + 4, 5, 3))   # scanning visor
+    pygame.draw.line(s, INK, (head.centerx, head.y), (head.centerx, 0), 2)
+
+
+def _monkey(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (176, 158, 148)
+    face = (236, 126, 120)
+    _legs(s, (11, w - 13), frame, INK, 5)
+    _outlined_ellipse(s, fur, (7, 16, w - 14, h - 22))
+    head = pygame.Rect(w // 2 - 12, 1, 24, 20)
+    _outlined_ellipse(s, fur, head)
+    mask = pygame.Rect(head.x + 4, head.y + 4, head.width - 8, head.height - 7)   # the red face
+    pygame.draw.ellipse(s, face, mask)
+    for ex in (mask.centerx - 4, mask.centerx + 4):
+        _eye(s, (ex, mask.y + 5), r=3, angry=True)
+    pygame.draw.circle(s, INK, (mask.centerx - 1, mask.bottom - 4), 1)
+    pygame.draw.circle(s, INK, (mask.centerx + 1, mask.bottom - 4), 1)
+    pygame.draw.line(s, INK, (mask.centerx - 3, mask.bottom - 2), (mask.centerx + 3, mask.bottom - 2), 1)
+
+
+def _fox(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (226, 128, 52)
+    pygame.draw.polygon(s, INK, [(1, 12), (11, 17), (4, 24)])               # brush tail
+    pygame.draw.polygon(s, fur, [(2, 13), (10, 17), (5, 22)])
+    pygame.draw.circle(s, WHITE, (3, 14), 2)
+    _quadruped(s, frame, fur, pygame.Rect(w - 16, 8, 13, 12), pygame.Rect(7, 12, w - 18, h - 21), belly=(250, 240, 226))
+    for ex in (w - 13, w - 7):                                             # pointy ears
+        pygame.draw.polygon(s, INK, [(ex - 3, 10), (ex + 3, 10), (ex, 2)])
+        pygame.draw.polygon(s, fur, [(ex - 1, 9), (ex + 1, 9), (ex, 5)])
+    pygame.draw.polygon(s, (250, 240, 226), [(w - 7, 15), (w - 1, 16), (w - 7, 19)])   # white muzzle
+    pygame.draw.circle(s, INK, (w - 2, 16), 1)
+    _eye(s, (w - 10, 13), r=2, angry=True)
+
+
+def _bear(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (44, 40, 44)
+    _quadruped(s, frame, fur, pygame.Rect(w - 17, 7, 15, 14), pygame.Rect(2, 10, w - 12, h - 17))
+    for ex in (w - 14, w - 5):
+        pygame.draw.circle(s, INK, (ex, 8), 4)
+        pygame.draw.circle(s, fur, (ex, 8), 3)
+    pygame.draw.arc(s, (240, 236, 220), (8, 16, 18, 10), 3.5, 5.9, 3)      # the white crescent (tsukinowa)
+    pygame.draw.ellipse(s, (170, 140, 110), (w - 8, 14, 7, 6))
+    pygame.draw.circle(s, INK, (w - 3, 15), 1)
+    _eye(s, (w - 11, 12), r=2, angry=True)
+
+
+def _frog(s, frame, colors):
+    w, h = s.get_size()
+    skin = colors.get("body") or (96, 184, 80)
+    hop = 4 if frame else 0
+    leg = pygame.Rect(3, h - 14 - hop // 2, 14, 9)
+    _outlined_ellipse(s, _mix(skin, INK, 0.2), leg)
+    body = pygame.Rect(6, 10 - hop, w - 12, h - 18)
+    _outlined_ellipse(s, skin, body)
+    pygame.draw.ellipse(s, (236, 240, 190), (body.x + 6, body.centery, body.width - 12, body.height // 2))
+    for ex in (body.centerx - 5, body.centerx + 6):                        # bulging eyes on top
+        pygame.draw.circle(s, INK, (ex, body.y + 1), 5)
+        pygame.draw.circle(s, skin, (ex, body.y + 1), 4)
+        _eye(s, (ex, body.y + 1), r=2, angry=True)
+    pygame.draw.arc(s, INK, (body.centerx - 6, body.centery - 3, 14, 6), 3.4, 6.0, 2)
+
+
+def _wolf(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (110, 112, 130)
+    pygame.draw.polygon(s, INK, [(1, 10), (9, 16), (3, 20)])
+    pygame.draw.polygon(s, fur, [(2, 11), (8, 16), (4, 18)])
+    _quadruped(s, frame, fur, pygame.Rect(w - 17, 7, 14, 13), pygame.Rect(5, 11, w - 16, h - 20),
+               belly=_mix(fur, WHITE, 0.5))
+    for ex in (w - 14, w - 7):
+        pygame.draw.polygon(s, INK, [(ex - 3, 9), (ex + 3, 9), (ex, 1)])
+    pygame.draw.polygon(s, _mix(fur, WHITE, 0.4), [(w - 7, 13), (w, 15), (w - 7, 19)])   # long snout
+    pygame.draw.polygon(s, WHITE, [(w - 5, 18), (w - 3, 18), (w - 4, 21)])  # fang
+    _eye(s, (w - 10, 12), r=2, angry=True)
+
+
+def _soldier(s, frame, colors):
+    w, h = s.get_size()
+    coat = colors.get("body") or (200, 40, 46)
+    _legs(s, (w // 2 - 4, w // 2 + 4), frame, INK, 7)
+    body = pygame.Rect(w // 2 - 8, 14, 16, 13)
+    pygame.draw.rect(s, INK, body.inflate(4, 4), border_radius=3)
+    pygame.draw.rect(s, coat, body, border_radius=3)
+    pygame.draw.line(s, (250, 210, 70), (body.centerx, body.y), (body.centerx, body.bottom), 2)   # gold buttons
+    pygame.draw.circle(s, INK, (w // 2, 13), 6)
+    pygame.draw.circle(s, (246, 214, 186), (w // 2, 13), 5)
+    hat = pygame.Rect(w // 2 - 6, 0, 12, 10)                                # tall bearskin hat
+    pygame.draw.rect(s, INK, hat.inflate(2, 2), border_radius=5)
+    pygame.draw.rect(s, (30, 26, 34), hat, border_radius=5)
+    pygame.draw.circle(s, INK, (w // 2 + 2, 13), 1)
+    pygame.draw.line(s, (150, 150, 160), (body.right + 2, body.y - 6), (body.right + 2, h - 6), 2)   # rifle
+
+
+def _raccoon(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (130, 128, 136)
+    for k in range(3):                                                     # ringed tail
+        pygame.draw.circle(s, INK if k % 2 else fur, (5 + k * 3, 14 + k * 2), 4)
+    _quadruped(s, frame, fur, pygame.Rect(w - 16, 8, 14, 13), pygame.Rect(7, 12, w - 18, h - 20))
+    pygame.draw.ellipse(s, (40, 38, 44), (w - 15, 11, 13, 5))              # bandit mask
+    pygame.draw.circle(s, WHITE, (w - 4, 17), 3)
+    pygame.draw.circle(s, INK, (w - 2, 17), 1)
+    for ex in (w - 13, w - 6):
+        pygame.draw.circle(s, INK, (ex, 8), 3)
+    _eye(s, (w - 9, 13), r=2, angry=True)
+
+
+def _tiger(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (240, 150, 50)
+    pygame.draw.line(s, INK, (6, 14), (1, 6 + frame * 2), 4)
+    pygame.draw.line(s, fur, (6, 14), (1, 6 + frame * 2), 2)
+    _quadruped(s, frame, fur, pygame.Rect(w - 17, 7, 15, 14), pygame.Rect(4, 11, w - 14, h - 19), belly=(250, 240, 220))
+    for x in range(9, w - 16, 5):                                          # stripes
+        pygame.draw.line(s, INK, (x, 12), (x + 2, 18), 2)
+    for ex in (w - 15, w - 5):
+        pygame.draw.circle(s, INK, (ex, 8), 3)
+        pygame.draw.circle(s, fur, (ex, 8), 2)
+    pygame.draw.line(s, INK, (w - 11, 9), (w - 9, 12), 2)
+    pygame.draw.ellipse(s, (250, 240, 220), (w - 9, 15, 7, 5))
+    _eye(s, (w - 8, 13), r=2, angry=True)
+
+
+def _gator(s, frame, colors):
+    w, h = s.get_size()
+    skin = colors.get("body") or (84, 146, 72)
+    _legs(s, (8, 14, w - 16, w - 10), frame, INK, 4)
+    body = pygame.Rect(3, 13, w - 10, 11)
+    _outlined_ellipse(s, skin, body)
+    for x in range(7, w - 12, 4):
+        pygame.draw.line(s, _mix(skin, INK, 0.5), (x, body.y + 1), (x + 2, body.y - 1), 2)   # scales
+    jaw = 3 if frame else 0                                                # snapping jaws
+    pygame.draw.polygon(s, INK, [(w - 14, 12), (w - 1, 13 - jaw), (w - 1, 16), (w - 14, 16)])
+    pygame.draw.polygon(s, skin, [(w - 13, 13), (w - 2, 14 - jaw), (w - 2, 15), (w - 13, 15)])
+    pygame.draw.polygon(s, skin, [(w - 13, 17), (w - 2, 17), (w - 2, 19 + jaw), (w - 13, 20)])
+    for x in (w - 9, w - 5):
+        pygame.draw.polygon(s, WHITE, [(x, 16), (x + 2, 16), (x + 1, 18)])
+    _eye(s, (w - 12, 11), r=2, angry=True)
+
+
+def _mole(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (96, 76, 70)
+    _outlined_ellipse(s, fur, (4, 10, w - 10, h - 15))
+    pygame.draw.ellipse(s, (240, 150, 160), (w - 9, 18, 8, 6))             # pink nose
+    for k in range(3):                                                     # big digging claws
+        pygame.draw.line(s, (240, 200, 190), (w - 12 + k * 2, h - 7), (w - 9 + k * 2, h - 3 - frame * 2), 2)
+    pygame.draw.rect(s, INK, (w - 22, 12, 12, 4), border_radius=2)          # tiny miner's goggles strap
+    pygame.draw.circle(s, (250, 220, 90), (w - 16, 11), 3)                  # helmet lamp
+    pygame.draw.line(s, INK, (w - 18, 18), (w - 15, 18), 2)                 # squinting eye
+
+
+def _sheep(s, frame, colors):
+    w, h = s.get_size()
+    wool = colors.get("body") or (250, 250, 255)
+    _legs(s, (10, 15, w - 15, w - 10), frame, INK, 5)
+    for cx, cy in ((10, 14), (17, 10), (24, 13), (13, 20), (22, 20)):
+        pygame.draw.circle(s, INK, (cx, cy), 7)
+    for cx, cy in ((10, 14), (17, 10), (24, 13), (13, 20), (22, 20)):
+        pygame.draw.circle(s, wool, (cx, cy), 6)
+    head = pygame.Rect(w - 12, 10, 10, 12)
+    _outlined_ellipse(s, (60, 54, 64), head)
+    pygame.draw.circle(s, wool, (head.centerx - 1, head.y), 4)
+    _eye(s, (head.centerx + 1, head.y + 5), r=2, angry=True)
+
+
+def _rabbit(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (246, 246, 252)
+    hop = 3 if frame else 0
+    for ex, lean in ((w // 2 + 1, -1), (w // 2 + 8, 1)):                   # long ears
+        ear = pygame.Rect(ex - 3 + lean, 1, 7, 15 - hop)
+        pygame.draw.ellipse(s, INK, ear.inflate(2, 2))
+        pygame.draw.ellipse(s, fur, ear)
+        pygame.draw.ellipse(s, (250, 176, 196), ear.inflate(-4, -6))
+    body = pygame.Rect(5, 13 - hop, w - 10, h - 19)
+    _outlined_ellipse(s, fur, body)
+    pygame.draw.circle(s, INK, (body.x + 1, body.centery), 5)
+    pygame.draw.circle(s, fur, (body.x + 1, body.centery), 4)              # cotton tail
+    pygame.draw.circle(s, (240, 140, 170), (body.right - 3, body.centery + 1), 2)
+    _eye(s, (body.right - 9, body.centery - 2), r=2, angry=True)
+    pygame.draw.ellipse(s, INK, (body.centerx - 6, h - 8, 9, 5))
+
+
 GROUND_DRAWERS = {"slime": _slime, "oni": _oni, "daruma": _daruma, "kappa": _kappa, "critter": _critter,
                   "crab": _crab, "squid": _squid, "snake": _snake, "scorpion": _scorpion, "tanuki": _tanuki,
                   "mushroom": _mushroom, "snowman": _snowman, "beetle": _beetle, "caterpillar": _caterpillar,
-                  "snail": _snail, "bull": _bull, "rat": _rat}
+                  "snail": _snail, "bull": _bull, "rat": _rat, "boar": _boar, "mummy": _mummy,
+                  "robot": _robot, "monkey": _monkey, "fox": _fox, "bear": _bear, "frog": _frog, "wolf": _wolf,
+                  "soldier": _soldier, "raccoon": _raccoon, "tiger": _tiger, "gator": _gator, "mole": _mole,
+                  "sheep": _sheep, "rabbit": _rabbit}
 
 
 def render_ground(species, frame, colors=None):
@@ -597,9 +844,60 @@ def _thundercloud(s, frame, colors):
         _eye(s, (ex, 13), r=3, angry=True)
 
 
+def _genie(s, frame, colors):
+    w, h = s.get_size()
+    skin = colors.get("body") or (90, 140, 240)
+    sway = 2 if frame else -2
+    tail = [(w // 2 - 6, 18), (w // 2 + 6, 18), (w // 2 + sway, h - 4), (w // 2 - 6 + sway, h - 1)]
+    pygame.draw.polygon(s, INK, tail)
+    pygame.draw.polygon(s, _mix(skin, WHITE, 0.3), [(x, y - 1) for x, y in tail])   # smoky tail
+    _outlined_ellipse(s, skin, (w // 2 - 9, 9, 18, 13))
+    pygame.draw.circle(s, INK, (w // 2, 8), 7)
+    pygame.draw.circle(s, skin, (w // 2, 8), 6)
+    pygame.draw.rect(s, (250, 210, 70), (w // 2 - 6, 1, 12, 4), border_radius=2)   # turban band
+    pygame.draw.circle(s, (230, 60, 80), (w // 2, 3), 2)
+    for ex in (w // 2 - 2, w // 2 + 3):
+        pygame.draw.circle(s, INK, (ex, 8), 1)
+    for side in (-1, 1):                                                    # crossed arms
+        pygame.draw.line(s, INK, (w // 2 + side * 8, 14), (w // 2 - side * 2, 17), 3)
+
+
+def _shark(s, frame, colors):
+    w, h = s.get_size()
+    body = colors.get("body") or (120, 140, 170)
+    cy = h // 2 + 3
+    flick = 3 if frame else -3
+    pygame.draw.polygon(s, INK, [(2, cy - 7 + flick), (9, cy), (2, cy + 6 + flick)])   # tail
+    pygame.draw.polygon(s, body, [(3, cy - 5 + flick), (8, cy), (3, cy + 4 + flick)])
+    pygame.draw.polygon(s, INK, [(w // 2 - 4, cy - 5), (w // 2 + 2, cy - 14), (w // 2 + 6, cy - 5)])   # dorsal fin
+    pygame.draw.polygon(s, body, [(w // 2 - 2, cy - 5), (w // 2 + 2, cy - 12), (w // 2 + 4, cy - 5)])
+    _outlined_ellipse(s, body, (7, cy - 6, w - 9, 12))
+    pygame.draw.ellipse(s, (236, 240, 246), (12, cy, w - 18, 5))
+    pygame.draw.line(s, INK, (w - 9, cy + 3), (w - 3, cy + 2), 2)          # grin
+    for x in (w - 8, w - 5):
+        pygame.draw.polygon(s, WHITE, [(x, cy + 3), (x + 2, cy + 3), (x + 1, cy + 5)])
+    _eye(s, (w - 8, cy - 2), r=2, angry=True)
+
+
+def _drone(s, frame, colors):
+    w, h = s.get_size()
+    shell = colors.get("body") or (60, 64, 80)
+    for x in (6, w - 7):                                                    # spinning rotors
+        span = 6 if frame else 3
+        pygame.draw.line(s, INK, (x - span, 6), (x + span, 6), 2)
+        pygame.draw.line(s, INK, (x, 7), (x, 12), 2)
+    pygame.draw.line(s, INK, (6, 12), (w - 7, 12), 3)
+    body = pygame.Rect(w // 2 - 9, 10, 18, 12)
+    pygame.draw.rect(s, INK, body.inflate(4, 4), border_radius=5)
+    pygame.draw.rect(s, shell, body, border_radius=5)
+    _eye(s, (w // 2, body.centery), r=4, look=2)
+    pygame.draw.circle(s, (255, 60, 90) if frame else (70, 230, 255), (w // 2 + 7, body.y + 2), 2)
+
+
 FLYING_DRAWERS = {"bat": _bat, "chochin": _chochin, "karakasa": _karakasa, "flying_fish": _flying_fish,
                   "pufferfish": _pufferfish, "jellyfish": _jellyfish, "seagull": _seagull, "crow": _crow,
-                  "bee": _bee, "ghost": _ghost, "thundercloud": _thundercloud}
+                  "bee": _bee, "ghost": _ghost, "thundercloud": _thundercloud, "genie": _genie, "shark": _shark,
+                  "drone": _drone}
 
 
 def render_flying(species, frame, colors=None):

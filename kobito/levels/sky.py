@@ -40,24 +40,28 @@ STYLES = {
         "name": "Rainbow Bridge", "jp": "虹", "reading": "niji", "meaning": "rainbow",
         "example": "虹がきれいです。", "example_en": "The rainbow is beautiful.",
         "cloud": (252, 252, 255), "cloud_shade": (222, 214, 242),
-        "enemy": ((255, 255, 255), (190, 186, 210)),                              # cloud sheep
-        "flying": ((250, 150, 176), (255, 222, 120)),                             # pink birds
+        "enemy": ((255, 255, 255), (190, 186, 210)),
+        "flying": ((250, 150, 176), (255, 222, 120)),
+        "species": ((("sheep", {"body": (255, 255, 255)}),),                    # cloud sheep, pink birds
+                    (("seagull", {"body": (250, 150, 176), "wing": (255, 222, 120)}),)),
         "treasure": "wataame", "hint": "rainbow",
     },
     "thunder": {
         "name": "Thunder Clouds", "jp": "雷", "reading": "kaminari", "meaning": "thunder",
         "example": "雷が鳴っています。", "example_en": "Thunder is rumbling.",
         "cloud": (178, 184, 206), "cloud_shade": (120, 124, 150),
-        "enemy": ((250, 206, 70), (210, 60, 50)),                                 # little thunder imps
-        "flying": ((86, 90, 118), (250, 230, 90)),                                # storm puffs
+        "enemy": ((250, 206, 70), (210, 60, 50)),
+        "flying": ((86, 90, 118), (250, 230, 90)),
+        "species": ((("oni", {"body": (250, 206, 70)}),), ("thundercloud",)),     # thunder imps, storm clouds
         "treasure": "kaminari_okoshi", "hint": "spark",
     },
     "moon": {
         "name": "Moonlit Clouds", "jp": "月", "reading": "tsuki", "meaning": "moon",
         "example": "月が明るいです。", "example_en": "The moon is bright.",
         "cloud": (212, 204, 246), "cloud_shade": (150, 138, 204),
-        "enemy": ((246, 246, 252), (240, 170, 190)),                              # moon rabbits
-        "flying": ((74, 62, 116), (44, 34, 84)),                                  # night bats
+        "enemy": ((246, 246, 252), (240, 170, 190)),
+        "flying": ((74, 62, 116), (44, 34, 84)),
+        "species": (("rabbit",), (("bat", {"body": (74, 62, 116), "wing": (44, 34, 84)}),)),   # moon rabbits, night bats
         "treasure": "tsukimi_dango", "hint": "star",
     },
 }
@@ -81,7 +85,8 @@ def build_sky(style, level_number=1, index=0, favorites=()):
     b.rng = random.Random(7000 + level_number * 10 + index)
     b.enemy_body_color, b.enemy_foot_color = spec["enemy"]
     b.flying_palette = spec["flying"]
-    b.ground_species = b.flying_species = None   # this room's own coloured critters
+    # This room's own creatures: cloud sheep, thunder imps, moon rabbits, ...
+    b.ground_species, b.flying_species = list(spec["species"][0]), list(spec["species"][1])
     W = ROOM_WIDTH_TILES
 
     def cloud(col, row, width):

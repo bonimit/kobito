@@ -949,27 +949,31 @@ def get_theme(theme_id):
 # for a local variant -- a blue dokkaebi in Korea, grey pigeons in London.
 # The lineup is rotated per level so each level opens differently.
 
+RAIJIN = ("oni", {"body": (250, 206, 70)})                                  # thunder imp
+PIGEON = ("crow", {"body": (130, 132, 146), "wing": (170, 172, 186)})
+
 WORLD_ENEMIES = {
-    "forest": (("mushroom", "tanuki", "slime"), ("bee", "karakasa")),
-    "desert": (("scorpion", "snake"), (("crow", {"body": (120, 84, 56), "wing": (160, 116, 76)}),)),   # vultures
-    "arabian_night": ((("snake", {"body": (196, 150, 60)}), "scorpion"), ("bat", "ghost")),             # cobras
-    "underwater": (("crab", "squid"), ("pufferfish", "jellyfish")),
-    "sky": ((("slime", {"body": (236, 240, 255)}),), ("thundercloud", "seagull")),                      # cloud slimes
-    "tokyo": (("daruma", "rat", "oni"), ("crow", "chochin")),
-    "nagano": (("snowman", "tanuki"), ("crow",)),
-    "okinawa": (("crab", ("snake", {"body": (176, 150, 90)})), ("seagull", "flying_fish")),             # habu
-    "hokkaido": (("beetle", "tanuki"), ("bee",)),
+    "forest": (("mushroom", "tanuki", "boar"), ("bee", "karakasa")),
+    "desert": (("scorpion", "mummy", "snake"), (("crow", {"body": (120, 84, 56), "wing": (160, 116, 76)}),)),  # vultures
+    "arabian_night": ((("snake", {"body": (196, 150, 60)}), "scorpion"), ("genie", "bat")),               # cobras
+    "underwater": (("crab", "squid"), ("pufferfish", "jellyfish", "shark")),
+    "sky": ((RAIJIN, ("sheep", {"body": (250, 250, 255)})), ("thundercloud", "seagull")),
+    "tokyo": (("rat", "robot", "daruma"), ("crow", "drone")),
+    "nagano": (("snowman", "monkey"), ("crow",)),
+    "okinawa": (("crab", ("snake", {"body": (176, 150, 90)})), ("seagull", "flying_fish")),               # habu
+    "hokkaido": (("fox", "beetle"), ("bee",)),
     "kyoto": (("oni", "kappa", "daruma"), ("chochin", "karakasa")),
     "okinawa_drive": (("squid", "crab"), ("flying_fish", "pufferfish", "seagull")),
-    "aomori": (("caterpillar", "beetle"), ("crow",)),
-    "shizuoka": (("snail", "caterpillar"), ("bee",)),
-    "hokkaido_farm": (("bull", "rat"), ("crow", "bee")),
-    "island": (("crab", "snake"), ("seagull", "flying_fish")),
-    "fairy_tale": (("mushroom", "slime"), ("ghost", "bat")),
-    "london": (("rat", "slime"), (("crow", {"body": (130, 132, 146), "wing": (170, 172, 186)}), "ghost")),  # pigeons
-    "new_york": (("rat", "slime"), (("crow", {"body": (130, 132, 146), "wing": (170, 172, 186)}),)),
-    "korea": ((("oni", {"body": (70, 120, 220)}), "tanuki"), (("crow", {"body": (30, 30, 40), "wing": (245, 245, 250)}),
-                                                             "chochin")),   # dokkaebi, magpies
+    "aomori": (("bear", "caterpillar", "beetle"), ("crow",)),
+    "shizuoka": (("frog", "snail", "caterpillar"), ("bee",)),
+    "hokkaido_farm": (("bull", "fox", "rat"), ("crow", "bee")),
+    "island": (("crab", ("monkey", {"body": (150, 104, 70)})),
+               (("seagull", {"body": (60, 190, 90), "wing": (240, 90, 70)}), "flying_fish")),          # parrots
+    "fairy_tale": (("wolf", "mushroom"), ("ghost", "bat")),
+    "london": (("soldier", "rat"), (PIGEON, "ghost")),
+    "new_york": (("raccoon", "rat"), (PIGEON, "drone")),
+    "korea": ((("oni", {"body": (70, 120, 220)}), "tiger"),                                              # dokkaebi
+              (("crow", {"body": (30, 30, 40), "wing": (245, 245, 250)}), "chochin")),                  # magpies
 }
 
 

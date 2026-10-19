@@ -484,28 +484,35 @@ one-eyed paper-lantern ghost **chōchin-obake**, and the umbrella ghost
 **karakasa-obake** hopping on its handle.
 
 **Each world has its own enemies**, matching the place (`WORLD_ENEMIES` in
-`kobito/themes.py`); the lineup rotates from level to level, and the
-hidden rooms keep their own critters (rats, gators, moles, cloud sheep,
-thunder imps, moon rabbits):
+`kobito/themes.py`, drawings in `kobito/enemy_art.py`); the lineup rotates
+from level to level:
 
 | World | On the ground | In the air |
 | --- | --- | --- |
-| Whispering Forest | mushroom, tanuki, slime | hornet, umbrella ghost |
-| Sunfall Desert / Arabian Night | scorpion, snake / cobra | vulture / bat, ghost |
-| Coral Deep | crab, squid | pufferfish, jellyfish |
-| Cloud Kingdom | cloud slime | thundercloud, seagull |
-| Neon Tokyo | daruma, rat, oni | crow, lantern ghost |
-| Nagano Snowfield | snowman (yuki-daruma), tanuki | crow |
-| Okinawa Shore / Tropical Island | crab, habu snake | seagull, flying fish |
+| Whispering Forest | mushroom, tanuki, wild boar | hornet, umbrella ghost |
+| Sunfall Desert | scorpion, mummy, sand snake | vulture |
+| Arabian Night | cobra, scorpion | genie, bat |
+| Coral Deep | crab, squid | pufferfish, jellyfish, shark |
+| Cloud Kingdom | raijin thunder imp, cloud sheep | thundercloud, seagull |
+| Neon Tokyo | rat, robot, daruma | crow, drone |
+| Nagano Snowfield | snowman (yuki-daruma), snow monkey | crow |
+| Okinawa Shore | crab, habu snake | seagull, flying fish |
 | Okinawa Island Drive | squid, crab | flying fish, pufferfish, seagull |
-| Hokkaido Lavender | rhino beetle, tanuki | bee |
+| Hokkaido Lavender | Ezo fox, rhino beetle | bee |
 | Kyoto Autumn | oni, kappa, daruma | lantern ghost, umbrella ghost |
-| Aomori Apple Orchard | caterpillar, rhino beetle | crow |
-| Shizuoka Tea Fields | snail, caterpillar | bee |
-| Hokkaido Dairy Farm | bull, rat | crow, bee |
-| Fairy Tale | mushroom, slime | ghost, bat |
-| London / New York | rat, slime | pigeon (+ ghost in London) |
-| Korea | blue dokkaebi, tanuki | magpie, lantern ghost |
+| Aomori Apple Orchard | moon bear (tsukinowa-guma), caterpillar, rhino beetle | crow |
+| Shizuoka Tea Fields | frog, snail, caterpillar | bee |
+| Hokkaido Dairy Farm | bull, fox, rat | crow, bee |
+| Coconut Island | crab, monkey | parrot, flying fish |
+| Enchanted Kingdom | big bad wolf, mushroom | ghost, bat |
+| Foggy London | Queen's guard, rat | pigeon, ghost |
+| Empire City (New York) | raccoon, rat | pigeon, drone |
+| Seoul Palace | blue dokkaebi, tiger | magpie, lantern ghost |
+
+The secret rooms have their own too: rats in the **subway**, gators and
+rats in the **sewer**, moles and bats in the **mine**, cloud sheep and pink
+birds on the **rainbow**, thunder imps and thunderclouds in the **thunder**
+clouds, and moon rabbits and night bats on the **moon**.
 
 Every mascot has a **power gauge, 10 pips** (shown under the score). Each
 enemy hit costs **1 power**, so ten hits drain a full gauge — hits no

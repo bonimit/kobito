@@ -35,7 +35,8 @@ STYLES = {
         "example": "地下鉄で行きます。", "example_en": "I'll go by subway.",
         "ground": (118, 118, 126), "cap": (240, 200, 60), "shade": (84, 84, 94),   # yellow platform edge
         "ledge": (150, 150, 160), "pillar": (60, 92, 104),
-        "enemy": ((136, 130, 134), (226, 150, 164)),                              # rats
+        "enemy": ((136, 130, 134), (226, 150, 164)),
+        "species": (("rat",), ()),
         "flying": None, "treasure": "ekiben", "hint": "steam",
     },
     "sewer": {
@@ -43,7 +44,8 @@ STYLES = {
         "example": "下水道は暗いです。", "example_en": "The sewer is dark.",
         "ground": (78, 94, 82), "cap": (112, 156, 92), "shade": (50, 62, 54),       # slimy stone
         "ledge": (68, 140, 112), "pillar": (60, 128, 100),                         # green pipes
-        "enemy": ((84, 146, 72), (52, 96, 44)),                                    # little gators
+        "enemy": ((84, 146, 72), (52, 96, 44)),
+        "species": (("gator", "rat"), ()),
         "flying": None, "treasure": "pizza_bun", "hint": "glow",
     },
     "mine": {
@@ -51,8 +53,9 @@ STYLES = {
         "example": "鉱山で宝石をさがします。", "example_en": "I look for gems in the mine.",
         "ground": (96, 72, 54), "cap": (156, 112, 70), "shade": (62, 46, 36),
         "ledge": (140, 96, 56), "pillar": (110, 84, 64),                           # timber and rock
-        "enemy": ((116, 88, 72), (72, 52, 42)),                                    # moles
-        "flying": ((92, 70, 112), (62, 42, 82)),                                   # bats
+        "enemy": ((116, 88, 72), (72, 52, 42)),
+        "flying": ((92, 70, 112), (62, 42, 82)),
+        "species": (("mole",), ("bat",)),
         "treasure": "gem", "hint": "sparkle",
     },
 }
@@ -76,7 +79,8 @@ def build_underground(style, level_number=1, pit_index=0, favorites=()):
     b.rng = random.Random(5000 + level_number * 10 + pit_index)
     b.enemy_body_color, b.enemy_foot_color = spec["enemy"]
     b.flying_palette = spec["flying"]
-    b.ground_species = b.flying_species = None   # this room's own coloured critters
+    # This room's own creatures: subway rats, sewer gators, miner moles, ...
+    b.ground_species, b.flying_species = list(spec["species"][0]), list(spec["species"][1])
     W = ROOM_WIDTH_TILES
 
     b._add_ground(0, W)
