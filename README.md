@@ -722,6 +722,19 @@ Press Enter on the stage-clear card and the stage wraps up in three steps
 
 The checkpoint is saved again afterwards, so the bonus and prizes are kept.
 
+### How long is a stage?
+
+Every stage is **408 tiles** long (13,056 px — about 13½ screens). Running
+straight through takes about 30 seconds, but with 30 quiz boxes (20 answered
+for the badge), enemies and six secrets, a real playthrough is more like
+**8–12 minutes**.
+
+A **mini-map** under the level pill shows where you are: a green flag at
+the start, the ground with its pits, every quiz box (gold = still to do,
+green = answered right, red = wrong), the checkered ゴール flag at the end,
+your hero's spot and how far along you are (e.g. **37%**). In a secret
+room it maps that room instead, up to its **EXIT**.
+
 ### 30 quiz boxes per level, 20 answers to qualify
 
 Every level contains **30 yellow "?" quiz boxes** (`QUESTION_BLOCKS_PER_LEVEL`
