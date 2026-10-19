@@ -16,6 +16,9 @@ its contiguous kanji runs -- so a compound like "何度見" resolves as
 needing an entry for every possible concatenation.
 """
 
+import re
+
+
 # Multi-kanji compounds and single-kanji stems, longest-match wins.
 # Grouped roughly by where they came from for anyone auditing this list.
 READINGS = {
@@ -114,6 +117,14 @@ READINGS = {
     # can't distinguish -- showing no furigana beats showing a wrong one.
 }
 
+# Whole words with their readings, learned from the game's own data (see
+# learn_words): written form -> [(text, reading or None), ...], e.g.
+# 締め切り -> [("締", "し"), ("め", None), ("切", "き"), ("り", None)].
+# Checked before READINGS, and only where the word covers the whole kanji
+# run it sits in -- so 父 never labels the 父 inside 祖父母.
+WORDS = {}
+_words_by_first = {}
+
 _enabled = True
 _translation_visible = False
 
@@ -140,15 +151,20 @@ def toggle_translation():
 
 def annotate_word(word):
     """Splits one space-delimited word into (text, reading_or_None)
-    segments, by greedily matching the longest known substring at each
-    position within the word's kanji runs. Non-kanji runs (kana, ASCII,
-    punctuation) pass through as a single segment with reading None.
+    segments: known whole words first (WORDS), then the longest known
+    kanji substring at each position (READINGS). Non-kanji runs (kana,
+    ASCII, punctuation) pass through as a single segment with reading None.
     """
     segments = []
     i = 0
     length = len(word)
     while i < length:
         char = word[i]
+        known = _word_at(word, i)
+        if known:
+            segments.extend(WORDS[known])
+            i += len(known)
+            continue
         if _is_kanji(char):
             match_len, reading = _longest_match(word, i)
             if reading:
@@ -167,6 +183,63 @@ def annotate_word(word):
             segments.append((word[i:j], None))
             i = j
     return _merge_plain_runs(segments)
+
+
+def _word_at(word, start):
+    """The longest WORDS entry at `start` that covers whole kanji runs."""
+    for key in _words_by_first.get(word[start], ()):
+        end = start + len(key)
+        if not word.startswith(key, start):
+            continue
+        if start > 0 and _is_kanji(word[start - 1]) and _is_kanji(key[0]):
+            continue                 # starts mid-way through a kanji run
+        if end < len(word) and _is_kanji(word[end]) and _is_kanji(key[-1]):
+            continue                 # stops mid-way through one
+        if READINGS.get(word[start:_run_end(word, start)]) and _run_end(word, start) - start > len(key):
+            continue                 # a longer compound is known: let READINGS have it
+        return key
+    return None
+
+
+def _run_end(word, start):
+    end = start
+    while end < len(word) and _is_kanji(word[end]):
+        end += 1
+    return end
+
+
+def _hiragana(text):
+    return "".join(chr(ord(c) - 0x60) if "ァ" <= c <= "ヶ" else c for c in text)
+
+
+def align(written, kana):
+    """Splits a word's whole reading over its kanji runs by matching the
+    kana around them: align("締め切り", "しめきり") ->
+    [("締", "し"), ("め", None), ("切", "き"), ("り", None)], or None."""
+    parts = re.findall(r"[一-鿿々]+|[^一-鿿々]+", written)
+    if not any(_is_kanji(p[0]) for p in parts):
+        return None
+    pattern = "".join("(.+?)" if _is_kanji(p[0]) else re.escape(_hiragana(p)) for p in parts)
+    match = re.fullmatch(pattern, _hiragana(kana))
+    if not match:
+        return None
+    readings = iter(match.groups())
+    return [(p, next(readings)) if _is_kanji(p[0]) else (p, None) for p in parts]
+
+
+def add_word(written, kana):
+    """Teaches the furigana a word and its reading (first one wins)."""
+    written, kana = written.strip(), kana.strip().replace(" ", "")
+    if not written or not kana or written in WORDS:
+        return False
+    segments = align(written, kana)
+    if not segments:
+        return False
+    WORDS[written] = segments
+    keys = _words_by_first.setdefault(written[0], [])
+    keys.append(written)
+    keys.sort(key=len, reverse=True)
+    return True
 
 
 def _longest_match(word, start):
@@ -200,4 +273,4 @@ def _merge_plain_runs(segments):
 
 
 def _is_kanji(char):
-    return "一" <= char <= "鿿"
+    return "一" <= char <= "鿿" or char == "々"

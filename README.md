@@ -339,6 +339,15 @@ question's own — and, with Ume-shu (Deep Insight), **WHY**: the full
 explanation. The question box stays put above it, and **Read more** (R, or
 Y on a gamepad) sits in the box's bottom row for the full write-up.
 
+**Furigana** (on/off in Settings, or F during a question) covers every
+kanji in every question and answer — readings come from the game's own
+data (each word's and verb's kana, every conjugated form, item and place
+names, and readings written into the questions like 「日本語 (にほんご)」),
+split over each word's kanji automatically (締め切り → 締し め 切き り). It
+applies everywhere in the quiz: the question box, your companion's bar and
+the hint panel. Kanji-reading questions never show it, since the reading
+is the answer.
+
 The question box itself wraps everything to fit — Japanese is broken
 between characters where Japanese allows it (never before 、。」 or small
 kana, never inside a kanji word), long answers wrap under their number, and

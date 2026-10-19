@@ -262,8 +262,60 @@ def generate(skip_words=()):
     return questions
 
 
-def furigana_readings():
-    """Readings for the listed words that are written all in kanji (天気 →
-    てんき), so generated prompts and choices get furigana."""
-    return {w[0]: w[1] for words in WORDS.values() for w in words
-            if len(w[0]) > 1 and all("一" <= ch <= "鿿" for ch in w[0])}
+def teach_furigana(questions):
+    """Gives the furigana every word the questions use, from the game's own
+    data: the word and verb lists (every conjugated form, right and wrong),
+    the items and secret places, and the readings written into the
+    questions themselves -- 「日本語 (にほんご)」, 「犬 (inu)」."""
+    import re
+    from kobito import furigana
+    from kobito.conjugation import mistakes
+    from kobito.items import ITEMS
+    from kobito.kana import has_katakana, romaji_to_hiragana
+    from kobito.levels.sky import STYLES as SKY
+    from kobito.levels.underground import STYLES as UNDERGROUND
+
+    for words in WORDS.values():
+        for jp, kana, *_ in words:
+            furigana.add_word(jp, kana)
+    for verbs in VERBS.values():
+        for verb, kana, _, kind in verbs:
+            furigana.add_word(verb, kana)
+            for form in FORMS:
+                furigana.add_word(conjugate(verb, kind, form), conjugate(kana, kind, form))
+            for form in FORMS:
+                for wrong, wrong_kana in zip(mistakes(verb, kind, form), mistakes(kana, kind, form)):
+                    furigana.add_word(wrong, wrong_kana)
+    for item in ITEMS.values():
+        if not has_katakana(item.jp):
+            kana = romaji_to_hiragana(item.reading)
+            if kana:
+                furigana.add_word(item.jp, kana)
+    for spec in list(UNDERGROUND.values()) + list(SKY.values()):
+        kana = romaji_to_hiragana(spec["reading"])
+        if kana:
+            furigana.add_word(spec["jp"], kana)
+
+    # A few words only the hand-written questions use. (Wrong choices like
+    # 来れ / 来よ / 来ろ are left bare on purpose: they have no real reading.)
+    for written, kana in (("公園", "こうえん"), ("来なかった", "こなかった"), ("収入", "しゅうにゅう"),
+                          ("変わる", "かわる"), ("対して", "たいして"), ("任せる", "まかせる"),
+                          ("任せさせる", "まかせさせる"), ("任せせる", "まかせせる"), ("任さす", "まかさす"),
+                          ("任せらせる", "まかせらせる"), ("始められない", "はじめられない"), ("十さい", "じゅっさい"),
+                          ("入る", "はいる"), ("遊いで", "あそいで"), ("死んいで", "しんいで")):
+        furigana.add_word(written, kana)
+
+    # Readings written into the questions: "日本語 (にほんご)" or "犬 (inu)".
+    with_kana = re.compile(r"([ぁ-ゖ一-鿿々]*[一-鿿々][ぁ-ゖ一-鿿々]*)\s*[（(]([ぁ-ゖー]+)[)）]")
+    with_romaji = re.compile(r"([ぁ-ゖ一-鿿々]*[一-鿿々][ぁ-ゖ一-鿿々]*)\s*\(([a-z][a-z' ]*)\)")
+    for q in questions:
+        text = " ".join([q.get("prompt", ""), q.get("explanation", ""), q.get("hint", "")])
+        pairs = [(w, k) for w, k in with_kana.findall(text)]
+        pairs += [(w, romaji_to_hiragana(r)) for w, r in with_romaji.findall(text)]
+        for written, kana in pairs:
+            # The match can swallow kana from before the word ("は日本語"):
+            # drop leading kana until the reading lines up.
+            while written and kana and not furigana.add_word(written, kana) and written not in furigana.WORDS:
+                if furigana._is_kanji(written[0]):
+                    break
+                written = written[1:]

@@ -13,15 +13,13 @@ _cache = {}
 def _load(path):
     """The hand-written questions plus the generated ones (built once)."""
     if path not in _cache:
-        from kobito import furigana
-        from kobito.question_gen import furigana_readings, generate
+        from kobito.question_gen import generate, teach_furigana
         with open(path, encoding="utf-8") as f:
             written = json.load(f)
         taught = {m.group(1) for q in written if q["category"] == "vocabulary"
                   for m in [_WORD_IN_PROMPT.search(q["prompt"])] if m}
-        for word, reading in furigana_readings().items():
-            furigana.READINGS.setdefault(word, reading)
         _cache[path] = written + generate(skip_words=taught)
+        teach_furigana(_cache[path])
     return _cache[path]
 
 

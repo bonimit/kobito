@@ -112,7 +112,7 @@ RPG_CONTINUE_BLINK_MS = 500
 # reaction, the right answer, a tip (Claude's, or the question's own), and
 # -- with Ume-shu -- why. Its top can reach HINT_TOP, so the question box
 # always stays above that line (no jumping when the panel opens).
-HINT_TOP = 398
+HINT_TOP = 378
 HINT_TYPE_SPEED = 110.0      # characters per second
 TIP_COLOR = (150, 205, 255)
 WHY_COLOR = (245, 150, 200)
@@ -617,9 +617,15 @@ class QuizScreen:
         if companion.get("always_show_explanation") and explanation and explanation != tip:
             rows += [("why" if i == 0 else "why+", line)
                      for i, line in enumerate(wrap_text(explanation, font, text_w - 52)[:2])]
-        rows = rows[:6]
-        row_h = font.get_height() + 3
-        height = 22 + row_h * len(rows)
+        # Rows with kanji get a furigana line above them when furigana is on
+        # (as in the question box); drop trailing tip/why lines that don't fit.
+        base_h = font.get_height() + 3
+        ruby_h = self.font_ruby.get_height()
+        heights = [base_h + (ruby_h if self._line_needs_ruby(text) else 0) for _, text in rows]
+        while len(rows) > 3 and 22 + sum(heights) > SCREEN_HEIGHT - 4 - HINT_TOP:
+            rows, heights = rows[:-1], heights[:-1]
+        row_h = base_h
+        height = 22 + sum(heights)
         box = pygame.Rect(RPG_BOX.x, 0, RPG_BOX.width, height)
         box.bottom = SCREEN_HEIGHT - 4
         self._rpg_box_rect = box
@@ -629,7 +635,9 @@ class QuizScreen:
 
         shown = int((self._age - (self._hint_started or self._age)) * HINT_TYPE_SPEED)
         y = box.y + 11
-        for kind, text in rows:
+        for (kind, text), h in zip(rows, heights):
+            ruby = h - base_h          # room for furigana above this row's text
+            y += ruby
             x = text_x
             if kind == "name":
                 chip = self.font_category.render(companion["name"].upper(), True, (30, 22, 10))
@@ -657,7 +665,9 @@ class QuizScreen:
                 color = RPG_TEXT_COLOR
             visible = text[:max(0, shown)]
             shown -= len(text)
-            if visible:
+            if visible == text and ruby:
+                self._draw_annotated_line(text, font, x, y - ruby, color)   # typed out: with furigana
+            elif visible:
                 self.screen.blit(font.render(visible, True, color), (x, y))
             y += row_h
 
@@ -858,7 +868,10 @@ class QuizScreen:
         chip_w = 50 if chip else 0
         font, lines, name_label = self._fit_dialogue(companion["name"], text or "...", text_width, chip_w)
         line_h = font.get_height() + 1
-        y = box.y + (box.height - line_h * len(lines)) // 2
+        # Furigana over kanji when it's on and the text fits in two lines.
+        ruby = self.font_ruby.get_height() if len(lines) <= 2 and any(map(self._line_needs_ruby, lines)) else 0
+        line_h += ruby
+        y = box.y + (box.height - line_h * len(lines)) // 2 + ruby
         for i, line in enumerate(lines):
             x = text_x
             if i == 0:
@@ -870,7 +883,10 @@ class QuizScreen:
                     pygame.draw.rect(self.screen, TIP_COLOR, rect, border_radius=6)
                     self.screen.blit(label, label.get_rect(center=rect.center))
                     x += chip_w
-            self.screen.blit(font.render(line, True, RPG_TEXT_COLOR), (x, y))
+            if ruby and self._line_needs_ruby(line):
+                self._draw_annotated_line(line, font, x, y - ruby, RPG_TEXT_COLOR)
+            else:
+                self.screen.blit(font.render(line, True, RPG_TEXT_COLOR), (x, y))
             y += line_h
 
         if show_continue and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
