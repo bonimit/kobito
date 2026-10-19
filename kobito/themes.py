@@ -47,6 +47,11 @@ class FloatyLayer:
     # where along the screen it stands at the level's start, instead of a
     # random spot along the whole level.
     screen_x: tuple = None
+    # For a band that fills the whole width (rows of trees, lavender or tea
+    # stretching to the horizon): draw_fn is called once per `tile` pixels
+    # across the screen, scrolled by the parallax, with x = the tile's left
+    # edge. count / size_range / y_range still give y, size and color.
+    tile: int = 0
 
 
 @dataclass
@@ -441,25 +446,34 @@ OKINAWA = Theme(
 HOKKAIDO = Theme(
     id="hokkaido",
     name="Hokkaido Lavender",
-    mid_layers=[
-        # Biei / Furano's rainbow rows of flowers over the nearer hills.
-        FloatyLayer(shapes.draw_flower_hill, [(150, 118, 206), (166, 132, 216)], lambda w: w // 600, (392, 410),
-                    (60, 84), 0.3),
+    # Summer in Furano: everything purple, from the hills to the path --
+    # a lilac glow on the horizon, lavender on top of every platform.
+    sky_top=(96, 160, 232),
+    sky_bottom=(236, 222, 250),
+    ground_color=(120, 98, 84),
+    platform_color=(120, 98, 84),
+    cap_color=(150, 118, 206),
+    shade_color=(90, 72, 62),
+    far_layers=[
+        # The Tokachi range, hazy blue-violet.
+        FloatyLayer(lambda s, x, y, size, c: shapes.draw_fuji(s, x, y, size, c, (236, 232, 248)),
+                    [(136, 132, 186), (150, 144, 196)], lambda w: 3, (238, 262), (46, 58), 0.04,
+                    screen_x=(150, 900)),
     ],
-    sky_top=(88, 166, 224),
-    sky_bottom=(218, 238, 250),
-    ground_color=(138, 114, 86),
-    platform_color=(138, 114, 86),
-    cap_color=(126, 176, 102),
-    shade_color=(102, 82, 60),
     bump_layers=[
-        # Snow-capped peaks far back, rolling farmland nearer.
-        BumpLayer((196, 208, 226), spacing=(230, 310), radius=(100, 150), parallax=0.08, base_offset=66,
-                  highlight=(226, 234, 246)),
-        BumpLayer((132, 174, 132), spacing=(170, 240), radius=(60, 92), parallax=0.22, base_offset=32,
-                  highlight=(158, 196, 152)),
-        BumpLayer((106, 156, 108), spacing=(130, 195), radius=(38, 60), parallax=0.42, base_offset=16,
-                  highlight=(132, 180, 130)),
+        BumpLayer((168, 150, 210), spacing=(220, 300), radius=(100, 150), parallax=0.1, base_offset=70,
+                  highlight=(184, 168, 222)),
+    ],
+    mid_layers=[
+        # Hill after hill carpeted in lavender rows (and now and then one of
+        # Biei's rainbow flower hills)...
+        FloatyLayer(shapes.draw_lavender_hill, [(146, 112, 204), (160, 124, 214)], lambda w: w // 200, (330, 372),
+                    (60, 96), 0.22),
+        FloatyLayer(shapes.draw_flower_hill, [(150, 118, 206)], lambda w: w // 2500, (372, 384), (60, 70), 0.3),
+        # ...then lavender right up to the path, nearer rows bigger.
+        FloatyLayer(shapes.draw_lavender_band, [(140, 110, 200)], lambda w: 1, (418, 418), (12, 12), 0.35, tile=24),
+        FloatyLayer(shapes.draw_lavender_band, [(150, 118, 208)], lambda w: 1, (436, 436), (17, 17), 0.5, tile=34),
+        FloatyLayer(shapes.draw_lavender_band, [(160, 126, 214)], lambda w: 1, (456, 456), (23, 23), 0.7, tile=46),
     ],
     floaty_layers=[
         FloatyLayer(shapes.draw_glow, [(255, 250, 220)], lambda w: 1, (62, 62), (66, 66), 0.04),
@@ -467,16 +481,15 @@ HOKKAIDO = Theme(
         FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 280, (26, 110), (22, 36), 0.22),
     ],
     ground_props=[
-        # Lavender packed tightly, the way Furano's rows actually look.
-        GroundProp(shapes.draw_lavender, [(150, 118, 206), (166, 132, 216), (134, 104, 192)], (26, 36), (30, 52), 12),
-        GroundProp(shapes.draw_pine_tree, [(60, 112, 78), (72, 126, 88)], (44, 70), (200, 300), 35),
-        GroundProp(shapes.draw_bush, [(112, 162, 104)], (9, 12), (110, 180), 25),
-        GroundProp(shapes.draw_flower, [(255, 255, 255), (255, 226, 120)], (11, 13), (140, 220), 20),
+        # A lone tree here and there, and lavender packed along the path.
+        GroundProp(shapes.draw_pine_tree, [(60, 112, 78), (72, 126, 88)], (44, 70), (800, 1200), 35),
+        GroundProp(shapes.draw_lavender, [(150, 118, 206), (166, 132, 216), (134, 104, 192)], (30, 44), (12, 20), 8),
     ],
     flying_creatures=[
-        FlyingCreature(shapes.draw_crane, [(250, 250, 250)], lambda w: 3, (50, 150), (15, 21), (28, 46), 0.26,
+        FlyingCreature(shapes.draw_butterfly, [(255, 255, 255), (255, 226, 120)], lambda w: 6, (300, 420), (7, 10),
+                       (16, 30), 0.5, bob_amplitude=10, bob_period=1.4),
+        FlyingCreature(shapes.draw_crane, [(250, 250, 250)], lambda w: 2, (50, 150), (15, 21), (28, 46), 0.26,
                        bob_amplitude=5, bob_period=3.0),
-        FlyingCreature(shapes.draw_bird, [(78, 70, 64)], lambda w: 4, (40, 120), (10, 14), (32, 55), 0.34),
     ],
     ground_creatures=[
         GroundCreature(shapes.draw_fox, [(214, 128, 62), (204, 116, 54)], lambda w: 3, (16, 22), (14, 24), (70, 130)),
@@ -780,9 +793,15 @@ AOMORI = Theme(
         FloatyLayer(shapes.draw_maple_leaf, [(226, 112, 62), (240, 170, 70)], lambda w: w // 160, (120, 400),
                     (5, 8), 0.55),
     ],
+    mid_layers=[
+        # The orchard runs all the way back: rows of apple trees, the
+        # further ones smaller and slower.
+        FloatyLayer(shapes.draw_orchard_band, [(104, 150, 82)], lambda w: 1, (418, 418), (20, 20), 0.25, tile=40),
+        FloatyLayer(shapes.draw_orchard_band, [(90, 146, 72)], lambda w: 1, (446, 446), (30, 30), 0.4, tile=60),
+    ],
     ground_props=[
-        # Orchard rows: apple trees close together, crates between them.
-        GroundProp(shapes.draw_apple_tree, [(84, 146, 70), (96, 158, 76)], (56, 72), (70, 120), 30),
+        # Giant apple trees right along the path, crowns touching.
+        GroundProp(shapes.draw_apple_tree, [(78, 140, 66), (92, 154, 74)], (130, 170), (80, 120), 40),
         GroundProp(shapes.draw_apple_crate, [(196, 146, 92)], (22, 26), (300, 460), 40),
         GroundProp(shapes.draw_scarecrow, [(70, 110, 180), (180, 80, 70)], (44, 52), (600, 900), 60),
         GroundProp(shapes.draw_grass_tuft, [(140, 170, 80)], (10, 14), (50, 90), 15),
@@ -801,20 +820,24 @@ AOMORI = Theme(
 SHIZUOKA = Theme(
     id="shizuoka",
     name="Shizuoka Tea Fields",
-    sky_top=(96, 160, 224),
-    sky_bottom=(222, 240, 250),
-    ground_color=(118, 92, 66),
-    platform_color=(118, 92, 66),
-    cap_color=(88, 160, 76),
-    shade_color=(86, 66, 48),
+    # A misty early morning: Mt Fuji over hillsides stepped with tea
+    # terraces, on Shizuoka's red earth.
+    sky_top=(132, 184, 230),
+    sky_bottom=(252, 242, 214),
+    ground_color=(150, 84, 56),
+    platform_color=(150, 84, 56),
+    cap_color=(58, 132, 62),
+    shade_color=(112, 60, 40),
     far_layers=[
-        # Mt Fuji fills the sky over the tea hills.
         FloatyLayer(shapes.draw_fuji, [(84, 108, 168)], lambda w: 1, (150, 150), (100, 100), 0.03,
                     screen_x=(640, 680)),
     ],
     mid_layers=[
-        FloatyLayer(shapes.draw_tea_hill, [(74, 150, 74), (86, 160, 80)], lambda w: w // 420, (372, 400),
-                    (56, 84), 0.2),
+        # Tea terraces climbing every hillside, nearer slopes bigger.
+        FloatyLayer(shapes.draw_tea_terraces, [(52, 124, 60), (60, 134, 64)], lambda w: w // 260, (300, 330),
+                    (56, 70), 0.18),
+        FloatyLayer(shapes.draw_tea_terraces, [(46, 120, 54), (56, 132, 60)], lambda w: w // 340, (350, 380),
+                    (70, 90), 0.32),
     ],
     floaty_layers=[
         FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 360, (30, 110), (20, 32), 0.18),
@@ -822,7 +845,7 @@ SHIZUOKA = Theme(
         FloatyLayer(shapes.draw_viaduct, [(196, 198, 204)], lambda w: 1, (418, 418), (2000, 2000), 0.3),
     ],
     ground_props=[
-        GroundProp(shapes.draw_tea_bush, [(64, 140, 66), (74, 150, 72)], (26, 32), (58, 76), 30),
+        GroundProp(shapes.draw_tea_bush, [(52, 128, 58), (62, 140, 64)], (26, 32), (46, 58), 24),
         GroundProp(shapes.draw_frost_fan, [(230, 232, 236)], (70, 84), (260, 380), 40),
         GroundProp(shapes.draw_stone_lantern, [(150, 146, 140)], (28, 36), (700, 1000), 50),
     ],

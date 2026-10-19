@@ -641,7 +641,7 @@ Island, Fairy Tale, London, New York, Korea):
 | Whispering Forest — torii, sakura, stone lanterns, drifting petals | **Neon Tokyo** — lit skyline, Tokyo Tower, crows, night planes |
 | Sunfall Desert — pyramids, cacti, camels, scorpions | **Nagano Snowfield** — snowy alps, falling snow, snow monkeys |
 | Arabian Night — minarets, pagodas, bats under a hazy moon | **Okinawa Shore** — turquoise sea, palms, hibiscus, shisa, crabs |
-| Coral Deep — reef, fish, jellyfish, turtles, a whale | **Hokkaido Lavender** — Furano rows, rainbow flower hills (Biei / Shikisai-no-oka), red-crowned cranes, Ezo foxes |
+| Coral Deep — reef, fish, jellyfish, turtles, a whale | **Hokkaido Lavender** — summer in Furano, purple from the hills to the path: lavender-carpeted hills, row after row of lavender, lavender on every platform, the hazy Tokachi range, a rainbow flower hill now and then (Biei), butterflies, cranes, Ezo foxes |
 | Cloud Kingdom — cloud hills, floating islands, balloons | **Kyoto Autumn** — bamboo grove, momiji maples, machiya, Inari foxes |
 
 More of the Japanese countryside:
@@ -649,8 +649,8 @@ More of the Japanese countryside:
 | World | What's there |
 | --- | --- |
 | **Okinawa Island Drive** | the coast road itself (asphalt, a pale kerb), the turquoise sea with a long ocean bridge like Kouri Ohashi and green islands on the horizon, red-tiled Ryukyu houses with a shisa on the ridge, sugarcane, palms, guardrails — and rental cars cruising up and down the road |
-| **Aomori Apple Orchard** | rows of apple trees heavy with red apples, harvest crates, kakashi scarecrows, Mt Iwaki ("Tsugaru Fuji") with its first snow, falling autumn leaves and red dragonflies (aka-tombo) |
-| **Shizuoka Tea Fields** | Mt Fuji filling the sky, hills striped with tea rows, clipped tea hedges, frost fans (防霜ファン) on tall poles — and the Shinkansen gliding along its viaduct |
+| **Aomori Apple Orchard** | giant apple trees along the path, crowns touching, and rows of them all the way back to the hills, heavy with red apples, harvest crates, kakashi scarecrows, Mt Iwaki ("Tsugaru Fuji") with its first snow, falling autumn leaves and red dragonflies (aka-tombo) |
+| **Shizuoka Tea Fields** | a misty morning, Mt Fuji filling the sky, every hillside stepped with green tea terraces on Shizuoka's red earth, clipped tea hedges along the path, frost fans (防霜ファン) on tall poles — and the Shinkansen gliding along its viaduct |
 | **Hokkaido Dairy Farm** | red gambrel barns and silos, white ranch fences, wrapped hay bales, white birches (shirakaba), the snowy Daisetsuzan peaks — and Holstein cows wandering the pasture |
 
 Each world has its own sky gradient, ground/platform colors and layered
@@ -663,7 +663,9 @@ an 11th world doesn't require touching the rendering code, only a new
 `Theme(...)` entry. The backdrop is layered for depth (back to front):
 far landmarks (Mt Fuji, the sea and its bridge — `far_layers`, some pinned
 to a spot on screen with `screen_x` so they're always in view), rolling
-silhouette layers, striped hills in front of them (`mid_layers`), the sky
+silhouette layers, hills and fields in front of them (`mid_layers` — tea
+terraces, lavender hills, and repeating `tile` bands such as rows of
+lavender or apple trees that fill the field to the horizon), the sky
 layer (clouds/stars/snow/petals/...), then ground props. Each layer scrolls at its own rate relative to the
 camera (parallax); silhouette layers are clipped to the horizon so they
 never hang into a ground gap, and ground props are only ever placed on

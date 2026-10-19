@@ -194,10 +194,7 @@ class Background:
 
         # Far landmarks first, so the hills sit in front of them.
         for layer, items in self.far:
-            for x, y, size, color in items:
-                draw_x = self._wrapped_x(x, camera_x, layer.parallax, screen_width)
-                if -size * 3 < draw_x < screen_width + size * 3:
-                    layer.draw_fn(screen, draw_x, y, size, color)
+            self._draw_floaty(screen, layer, items, camera_x, 3)
 
         for layer, bumps in self.bumps:
             base_y = self.ground_y - layer.base_offset
@@ -222,18 +219,12 @@ class Background:
                     )
 
         for layer, items in self.mid:
-            for x, y, size, color in items:
-                draw_x = self._wrapped_x(x, camera_x, layer.parallax, screen_width)
-                if -size * 3 < draw_x < screen_width + size * 3:
-                    layer.draw_fn(screen, draw_x, y, size, color)
+            self._draw_floaty(screen, layer, items, camera_x, 3)
 
         screen.set_clip(previous_clip)
 
         for layer, items in self.floaties:
-            for x, y, size, color in items:
-                draw_x = self._wrapped_x(x, camera_x, layer.parallax, screen_width)
-                if -size * 2 < draw_x < screen_width + size * 2:
-                    layer.draw_fn(screen, draw_x, y, size, color)
+            self._draw_floaty(screen, layer, items, camera_x, 2)
 
         for prop, positions in self.ground_props:
             for i, x in enumerate(positions):
@@ -257,6 +248,22 @@ class Background:
                 if -60 < draw_x < screen_width + 60:
                     facing = 1 if inst["vx"] >= 0 else -1
                     creature.draw_fn(screen, draw_x, self.ground_y, inst["size"], inst["color"], facing=facing)
+
+    def _draw_floaty(self, screen, layer, items, camera_x, margin):
+        screen_width = screen.get_width()
+        if layer.tile:
+            # A repeating band: the same tile across the whole width.
+            start = -(camera_x * layer.parallax) % layer.tile - layer.tile
+            for _, y, size, color in items:
+                x = start
+                while x < screen_width:
+                    layer.draw_fn(screen, x, y, size, color)
+                    x += layer.tile
+            return
+        for x, y, size, color in items:
+            draw_x = self._wrapped_x(x, camera_x, layer.parallax, screen_width)
+            if -size * margin < draw_x < screen_width + size * margin:
+                layer.draw_fn(screen, draw_x, y, size, color)
 
     def _wrapped_x(self, world_x, camera_x, parallax, screen_width):
         # Wrapping with % lets a sparse layer still cover an arbitrarily

@@ -1478,3 +1478,85 @@ def draw_shinkansen(screen, x, y, size, color=(250, 250, 252), facing=1):
         pygame.draw.line(screen, stripe, (left, bottom - size * 0.3), (right - (car_w * 0.2 if k == cars - 1 and facing > 0 else 0), bottom - size * 0.3), 2)
         for wx in range(int(left) + 4, int(right) - 6, 7):
             pygame.draw.rect(screen, (90, 110, 140), (wx, top + size * 0.25, 4, size * 0.25))
+
+
+# --- Field bands (Theme layers with `tile`): one tile of a row that fills
+# the whole width, from its top edge (y) down to the ground. -------------
+
+FIELD_GROUND = 480   # the level's ground line (GROUND_ROW * TILE_SIZE), where bands stop
+
+
+def draw_orchard_band(screen, x, y, size, color, apple_color=(214, 40, 48)):
+    """A row of apple-tree crowns, packed shoulder to shoulder: one tree per
+    tile, crown radius `size`, crown bottoms at y."""
+    dark = tuple(max(0, c - 28) for c in color)
+    light = tuple(min(255, c + 22) for c in color)
+    cx = x + size
+    pygame.draw.rect(screen, dark, (x, y, size * 2 + 1, FIELD_GROUND - y))
+    pygame.draw.line(screen, (100, 72, 50), (cx, y), (cx, FIELD_GROUND), max(2, size // 6))
+    pygame.draw.circle(screen, dark, (cx, y - size * 0.55), size * 1.05)
+    pygame.draw.circle(screen, color, (cx, y - size * 0.62), size)
+    pygame.draw.circle(screen, light, (cx - size * 0.3, y - size * 0.95), size * 0.45)
+    r = max(1, size // 9)
+    for k in range(7):
+        ax = cx + ((k * 41) % 100 - 50) / 100 * size * 1.5
+        ay = y - size * 0.62 + ((k * 67) % 100 - 50) / 100 * size * 1.2
+        pygame.draw.circle(screen, apple_color, (ax, ay), r)
+
+
+def draw_lavender_band(screen, x, y, size, color):
+    """One mound of a lavender row: a rounded purple hedge bristling with
+    flower spikes, the green row gap below it."""
+    w = size * 2
+    pygame.draw.rect(screen, (92, 122, 78), (x, y + size * 0.45, w + 1, FIELD_GROUND - y))
+    mound = pygame.Rect(x - size * 0.1, y, w + size * 0.2, size)
+    dark = tuple(max(0, c - 34) for c in color)
+    light = tuple(min(255, c + 36) for c in color)
+    pygame.draw.ellipse(screen, dark, mound.move(0, 2))
+    pygame.draw.ellipse(screen, color, mound)
+    for k in range(5):
+        sx = x + w * (k + 0.5) / 5
+        top = y - size * 0.18 - (k % 2) * size * 0.08
+        pygame.draw.line(screen, light, (sx, top), (sx, y + size * 0.3), max(1, size // 10))
+
+
+def draw_tea_band(screen, x, y, size, color):
+    """One stretch of a clipped tea row: a smooth, flat-topped green hedge
+    with a lit top and a dark furrow underneath."""
+    w = size * 2
+    dark = tuple(max(0, c - 36) for c in color)
+    light = tuple(min(255, c + 30) for c in color)
+    pygame.draw.rect(screen, (86, 70, 52), (x, y + size * 0.6, w + 1, FIELD_GROUND - y))
+    hedge = pygame.Rect(x - 1, y, w + 2, size * 0.8)
+    pygame.draw.rect(screen, color, hedge, border_radius=int(size * 0.4))
+    pygame.draw.rect(screen, light, (x + 2, y + 2, w - 3, max(2, size * 0.18)), border_radius=int(size * 0.1))
+    pygame.draw.line(screen, dark, (x, y + size * 0.78), (x + w, y + size * 0.78), 2)
+
+
+def draw_lavender_hill(screen, x, y, size, color):
+    """A big rolling hill carpeted in lavender: curving purple rows with
+    thin green gaps, like the slopes of Furano's farms (top at y)."""
+    dark = tuple(max(0, c - 30) for c in color)
+    light = tuple(min(255, c + 30) for c in color)
+    _striped_hill(screen, x, y, size, [color, light, color, dark, (96, 126, 80)], dark)
+
+
+def draw_tea_terraces(screen, x, y, size, color, soil=(150, 84, 56)):
+    """A hillside of stepped tea terraces: flat clipped tiers of tea, each
+    narrower than the one below, with red-earth paths between (top at y)."""
+    tiers = 7
+    tier_h = size * 0.34
+    base_w = size * 5.2
+    dark = tuple(max(0, c - 34) for c in color)
+    light = tuple(min(255, c + 40) for c in color)
+    for k in reversed(range(tiers)):   # top tier first: each wider one below overlaps the last
+        w = base_w * (1 - k / (tiers + 1.5))
+        top = y + (tiers - 1 - k) * tier_h
+        tier = pygame.Rect(0, 0, w, tier_h + size * 2.4)
+        tier.midtop = (x, top)
+        pygame.draw.rect(screen, soil, tier.inflate(4, 0), border_radius=int(tier_h * 0.5))
+        hedge = pygame.Rect(tier.x, top + 2, tier.width, tier_h + size * 2.4 - 2)
+        pygame.draw.rect(screen, color, hedge, border_radius=int(tier_h * 0.45))
+        pygame.draw.rect(screen, light, (hedge.x + 4, hedge.y + 1, hedge.width - 8, max(2, tier_h * 0.22)),
+                         border_radius=3)
+        pygame.draw.line(screen, dark, (hedge.x + 3, top + tier_h - 3), (hedge.right - 3, top + tier_h - 3), 2)
