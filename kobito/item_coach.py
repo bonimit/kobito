@@ -197,6 +197,10 @@ class ItemCoach:
             pet=self.character_name, power=power, place=place,
         )
 
+    def say(self, line, expression="talking", seconds=5.0):
+        """Says one line right away (game events: the finish-line reminder)."""
+        self._say([line], expression, seconds=seconds)
+
     def _say(self, lines, expression, seconds=4.5):
         self._token += 1
         self.speech = Speech(lines=list(lines), expression=expression, seconds_left=seconds, total=seconds,

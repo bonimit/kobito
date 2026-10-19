@@ -688,7 +688,7 @@ patrol, so enemy density scales with the level's length rather than
 staying fixed. It ends at a **finish flag** (a checkered flag with a red
 ゴール "goal" banner) in front of a **Japanese castle**
 (`kobito/entities/goal.py`) — non-solid, the player runs straight into
-it.
+it, **once 20 questions are answered** (see below).
 
 ### After the castle: review, Stage Test, lucky draw
 
@@ -725,15 +725,17 @@ The checkpoint is saved again afterwards, so the bonus and prizes are kept.
 ### How long is a stage?
 
 Every stage is **408 tiles** long (13,056 px — about 13½ screens). Running
-straight through takes about 30 seconds, but with 30 quiz boxes (20 answered
-for the badge), enemies and six secrets, a real playthrough is more like
+straight through takes about 30 seconds, but with 30 quiz boxes (20 must be
+answered to pass), enemies and six secrets, a real playthrough is more like
 **8–12 minutes**.
 
 A minimal **progress line** under the level pill shows how close you are:
 it fills in gold from start to the ゴール flag, with a dot for where you are
 now. In a secret room it tracks the way to that room's exit (green flag).
+Once the companion has warned you that you're short of answers, small
+**gold markers** above the line show where the open ? boxes are.
 
-### 30 quiz boxes per level, 20 answers to qualify
+### 30 quiz boxes per level, 20 answers to pass
 
 Every level contains **30 yellow "?" quiz boxes** (`QUESTION_BLOCKS_PER_LEVEL`
 in `kobito/constants.py`) — and never repeats a question within a level,
@@ -742,15 +744,24 @@ since each JLPT level's pool holds more than 30 (`assets/data/questions.json`).
 answer can be in any of the four slots (a skipped box keeps its order when
 you come back to it).
 
-You don't have to answer them all. Every quiz box has a **Skip** button (or press **S**, a gamepad shoulder button/Start, or tap it): nothing is lost — no XP, and it doesn't count as answered or wrong — and **the box stays a "?" box**, keeping that question for you. Come back to it later (step away and bump it again) and it asks the same question. The badge needs **at least 20 answered**
-(`MIN_QUESTIONS_ANSWERED`), so you can skip up to 10 boxes — a tricky one,
+You don't have to answer them all. Every quiz box has a **Skip** button (or press **S**, a gamepad shoulder button/Start, or tap it): nothing is lost — no XP, and it doesn't count as answered or wrong — and **the box stays a "?" box**, keeping that question for you. Come back to it later (step away and bump it again) and it asks the same question. **Passing the stage needs at least 20 answered**
+— right or wrong, it's the answering that counts (`MIN_QUESTIONS_ANSWERED`) —
+so you can skip up to 10 boxes — a tricky one,
 or one in a risky spot. Later levels get harder through faster enemies and
 tougher JLPT questions, not longer levels. Levels run about 400 tiles, with
 at least 8 tiles between quiz boxes.
 
+The HUD's quiz card reads **12/20 to pass** until you get there (then
+**20/20 answered**, in green). Coming within about 30 tiles of the finish
+still short, your **companion warns you** how many are left and points you
+back to the ? boxes behind you; it says it again whenever the number
+changes. Run into the castle anyway and it **turns you back** a few steps
+with the same reminder ("Not yet! 3 more answers to pass. Head back to the
+? boxes!"). Answer the rest and the castle lets you in.
+
 ### Badges
 
-Reaching the castle awards a **badge** — one of the 20 hexagonal prizes
+Clearing the stage awards a **badge** — one of the 20 hexagonal prizes
 in `kobito/badges.py`, grouped **four per JLPT level** so the prize
 tracks proficiency rather than just how far you've played. Clearing at
 N5 hands you an N5-tier badge; an N1 clear hands you an N1-tier one.
@@ -769,11 +780,10 @@ without art falls back to a drawn hexagon in that badge's colors with
 its kanji emblem — the same silhouette as the real artwork, so a
 part-finished set still reads as one collection.
 
-You don't need a clean sweep: answer **at least 20 questions, with 70%
-of the ones you answered correct** (`BADGE_PASS_ACCURACY`) — 14 of 20, or
-21 of 30 if you answer them all. The HUD tracks progress toward it as you
-play ("answer 5 more for the badge"), and a badge you narrowly missed is
-shown greyed out rather than hidden.
+The 20 answers get you through the castle; the badge also wants **70% of
+the ones you answered correct** (`BADGE_PASS_ACCURACY`) — 14 of 20, or
+21 of 30 if you answer them all. A badge you narrowly missed is shown
+greyed out on the stage-clear card, with the accuracy you got.
 Because the bar is 70%, a wrong quiz answer costs XP but **not** a
 life — otherwise a few mistakes would end the run before you could ever
 reach it.

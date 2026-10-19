@@ -421,8 +421,11 @@ def script(g):
     yield from wait(40)
 
     # -- The finish ---------------------------------------------------------------
+    # The recording skips most of the level, so count the 20 answers a
+    # real run would have by now (the castle won't open without them).
+    g.correct_count = max(g.correct_count, 20 - g.wrong_count)
     yield from teleport(g, s.goal.rect.left - 420, world=s)
-    set_caption("Reach the ゴール to clear the stage")
+    set_caption("Answer 20, then reach the ゴール")
     yield from run_right(g, s.goal.rect.right, limit=400)
     set_caption("Stage clear!", "bottom")
     yield from wait(100)

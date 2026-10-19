@@ -31,6 +31,7 @@ from kobito.constants import (
     STOMP_BOUNCE_SPEED,
     STOMP_DROP_CHANCE,
     STOMP_GAUGE,
+    TILE_SIZE,
     XP_PER_LIFE,
     STOMP_SCORE,
     WAKE_INVULNERABILITY_SECONDS,
@@ -100,6 +101,12 @@ SKY_ENTRY_SPEED = 950.0    # shooting up into a sky room from below
 LAUNCH_SECONDS = 1.6       # how long a launch can take to clear the top before it fizzles
 
 SPRING_RAINBOW = [(232, 72, 72), (250, 200, 60), (110, 200, 100), (80, 160, 230), (170, 110, 210), (255, 150, 200)]
+
+# Passing a stage takes required_question_count() answers (right or wrong).
+# This far before the finish the companion reminds the player if they're
+# short, and the progress line marks the ? boxes still open.
+FINISH_WARN_DISTANCE = 30 * TILE_SIZE
+FINISH_PUSHBACK = 3 * TILE_SIZE
 
 # The mini-map under the level pill: a thin line from start to finish.
 MINIMAP_W = 200
@@ -202,6 +209,8 @@ class Game:
         self._sky_states = {}
         self.sky_found = set()
         self.launch = None              # (spring link, seconds left) while flying up off a spring
+        self._finish_warned = None      # the shortfall last reminded about near the finish
+        self._gate_said_at = -10.0      # when the castle last turned the player back
         # For the end-of-stage review: every question asked this level, in
         # order (id -> {"question", "chosen", "result"}), and the items picked up.
         self.quiz_log = {}
@@ -725,8 +734,50 @@ class Game:
         elif not self.drowsy:
             self.drowsy_warned = False
 
+    @property
+    def answered(self):
+        return self.correct_count + self.wrong_count
+
+    @property
+    def answers_needed(self):
+        """How many more questions must be answered to pass the stage."""
+        return max(0, required_question_count(self.level_number) - self.answered)
+
+    def _open_blocks_behind(self):
+        return sum(1 for b in self.surface.question_blocks if not b.used and b.rect.centerx < self.player.rect.centerx)
+
+    def _finish_line(self, need, at_gate=False):
+        """What the companion says when the player nears (or reaches) the
+        finish without enough answers -- short enough for the two-line
+        bubble."""
+        plural = "s" if need > 1 else ""
+        where = "Head back to the ? boxes!" if self._open_blocks_behind() else "Find a ? box!"
+        if at_gate:
+            return f"Not yet! {need} more answer{plural} to pass. {where}"
+        return f"Finish ahead! You need {need} more answer{plural} to pass. {where}"
+
+    def _check_finish_reminder(self):
+        """Near the finish without enough answers: say so, once per shortfall."""
+        need = self.answers_needed
+        near = self.goal.rect.left - self.player.rect.centerx < FINISH_WARN_DISTANCE
+        if need and near and self._finish_warned != need:
+            self._finish_warned = need
+            self.coach.say(self._finish_line(need), "talking", seconds=6.0)
+
     def _check_goal(self):
+        self._check_finish_reminder()
         if self.level_complete or not self.player.rect.colliderect(self.goal.rect):
+            return
+        need = self.answers_needed
+        if need:
+            # The castle won't let them in yet: a step back, and a reminder.
+            self._place_player(self.goal.rect.left - FINISH_PUSHBACK, self.surface.ground_y)
+            self._finish_warned = need     # and the map marks the open ? boxes
+            if self.clock_time - self._gate_said_at > 2.0:
+                self._gate_said_at = self.clock_time
+                self.coach.say(self._finish_line(need, at_gate=True), "sympathetic", seconds=6.0)
+                self._add_effect_text(f"{need} more to answer!", (self.goal.rect.left, self.goal.rect.top - 10),
+                                      (255, 206, 70))
             return
 
         self.level_complete = True
@@ -1477,6 +1528,14 @@ class Game:
         pygame.draw.line(self.screen, (0, 0, 0), (left, y + 1), (right, y + 1), 3)      # shadow
         pygame.draw.line(self.screen, (110, 100, 135), (left, y), (right, y), 3)
         pygame.draw.line(self.screen, ui.GOLD, (left, y), (x, y), 3)
+        if not self.world.hidden and self._finish_warned and self.answers_needed:
+            # Short of answers near the end: mark the ? boxes still open.
+            scale = MINIMAP_W / max(1, self.goal.rect.centerx)
+            for block in self.surface.question_blocks:
+                if not block.used:
+                    bx = left + round(min(block.rect.centerx, self.goal.rect.centerx) * scale)
+                    pygame.draw.line(self.screen, ui.OUTLINE, (bx, y - 7), (bx, y - 2), 4)
+                    pygame.draw.line(self.screen, (255, 206, 70), (bx, y - 6), (bx, y - 3), 2)
         # The finish: a tiny flag (green for a secret room's exit).
         pygame.draw.line(self.screen, ui.CREAM, (right, y - 8), (right, y + 1), 2)
         flag = ui.GREEN if self.world.hidden else (240, 96, 96)
@@ -1501,11 +1560,12 @@ class Game:
         ui.text(self.screen, goal, label, (right, card.y + 8), color=ui.GREEN if ready else ui.MUTED,
                 anchor="topright", thickness=1)
         count = ui.text(self.screen, str(answered), big, (x, card.y + 24))
-        ui.text(self.screen, f"/{min_questions} answered", label, (count.right + 4, count.bottom - 6),
-                color=ui.CREAM, anchor="bottomleft")
+        passed = answered >= min_questions     # enough answers to pass the stage
+        ui.text(self.screen, f"/{min_questions} " + ("answered" if passed else "to pass"), label,
+                (count.right + 4, count.bottom - 6), color=ui.GREEN if passed else ui.CREAM, anchor="bottomleft")
 
-        ui.bar(self.screen, (x, card.y + 66, card.width - 28, 7), answered / min_questions,
-               ui.GREEN if ready else ui.GOLD, radius=3)
+        ui.bar(self.screen, (x, card.y + 66, card.width - 28, 7), min(1.0, answered / min_questions),
+               ui.GREEN if passed else ui.GOLD, radius=3)
 
         row = card.y + 80
         accuracy = round(100 * self.correct_count / answered) if answered else None
@@ -1681,7 +1741,6 @@ class Game:
         cx = SCREEN_WIDTH // 2
         answered = self.correct_count + self.wrong_count
         min_questions = required_question_count(self.level_number)
-        needed = round(min_questions * BADGE_PASS_ACCURACY)
 
         ui.text(self.screen, f"LEVEL {self.level_number}", ui.label_font(16), (cx, 30), color=ui.GOLD,
                 anchor="center")
@@ -1695,7 +1754,8 @@ class Game:
             headline, sub, color = f"Badge earned: {self.badge.name}", self.badge.caption, ui.GOLD
         else:
             headline = f"Badge locked: {self.badge.name}"
-            sub = f"Answer at least {min_questions} with {needed} right to claim it -- so close!"
+            pct = round(100 * self.correct_count / answered) if answered else 0
+            sub = f"Get {round(BADGE_PASS_ACCURACY * 100)}% right to claim it -- you got {pct}%. So close!"
             color = ui.MUTED
         ui.text(self.screen, headline, ui.body_font(22), (cx, 252), color=color, anchor="center")
         ui.text(self.screen, sub, ui.body_font(16), (cx, 280), color=ui.CREAM, anchor="center", thickness=1)
