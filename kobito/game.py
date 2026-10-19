@@ -1223,6 +1223,7 @@ class Game:
             x, y = cx + math.cos(a) * 26, cy + math.sin(a) * 14
             pygame.draw.circle(self.screen, (120, 60, 0), (x, y), 5)
             pygame.draw.circle(self.screen, (255, 210, 60), (x, y), 4)
+        self._draw_sun_timer(cx, t)
         # (after the "SUN POWER!" pop-up has floated away, so they don't overlap)
         if self.sun_throws == 0 and t - self.sun_gained_at > 1.4:
             key = "X" if game_input.using_gamepad() or not IS_WEB else "B"
@@ -1239,6 +1240,27 @@ class Game:
             ui.text(self.screen, key, label, (cap.centerx, cap.centery - 1), color=ui.OUTLINE, outline=None,
                     anchor="center")
             ui.text(self.screen, "THROW", label, (cap.right + 6, cap.centery), anchor="midleft")
+
+    def _draw_sun_timer(self, cx, t):
+        """A little countdown dial by the player's head: a gold ring that
+        empties over the 20 seconds, with the seconds left inside -- red
+        for the last few."""
+        left = max(0.0, self.sun_time_left)
+        center = (round(cx + 30), self.player.rect.top - 14)
+        low = left < 5
+        color = (255, 110, 90) if low else (255, 206, 70)
+        if low and self._sun_flicker_off():
+            return
+        pygame.draw.circle(self.screen, ui.OUTLINE, center, 15)
+        pygame.draw.circle(self.screen, (40, 28, 30), center, 13)
+        fraction = left / SUN_POWER_SECONDS
+        if fraction > 0:
+            rect = pygame.Rect(0, 0, 26, 26)
+            rect.center = center
+            start = math.pi / 2
+            pygame.draw.arc(self.screen, color, rect, start, start + 2 * math.pi * fraction, 4)
+        ui.text(self.screen, str(math.ceil(left)), ui.label_font(16), center, color=ui.CREAM, anchor="center",
+                thickness=1)
 
     def _draw_glows(self):
         """Soft halos behind the things worth touching -- unanswered "?"

@@ -6,6 +6,7 @@ import pygame
 
 from kobito import furigana
 from kobito import input as game_input
+from kobito import ui
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 from kobito.companion_art import draw_companion
@@ -44,7 +45,10 @@ WRONG_COLOR = (235, 120, 110)
 HINT_COLOR = (180, 180, 180)
 
 BOX_WIDTH = 340
+BOX_WIDTH_WIDE = 440    # reading passages, and choices too long for the normal box
 BOX_PADDING = 14
+FOOTER_H = 24           # the box's bottom row: controls hint + Skip, or "Read more" once answered
+PASSAGE_BG = (34, 30, 52)
 LINE_GAP = 4
 CHOICE_HEIGHT = 24
 # Tail and gap are equal on purpose: the tail's tip lands exactly on the
@@ -103,6 +107,72 @@ RPG_PORTRAIT_SIZE = 44
 RPG_MARKER_SPACE = 80   # room on the right for the blinking "Enter ▼"
 RPG_CONTINUE_BLINK_MS = 500
 
+# After a wrong answer the companion's box grows into a hint panel: its
+# reaction, the right answer, a tip (Claude's, or the question's own), and
+# -- with Ume-shu -- why. Its top can reach HINT_TOP, so the question box
+# always stays above that line (no jumping when the panel opens).
+HINT_TOP = 398
+HINT_TYPE_SPEED = 110.0      # characters per second
+TIP_COLOR = (150, 205, 255)
+WHY_COLOR = (245, 150, 200)
+
+# Japanese has no spaces, so a run that doesn't fit is broken between
+# characters -- but never before closing punctuation / small kana, after
+# an opening bracket, or between two kanji (that would split a word, and
+# its furigana).
+NO_LINE_START = set("、。，．・：；？！?!ー」』）)]}ぁぃぅぇぉっゃゅょァィゥェォッャュョ…")
+NO_LINE_END = set("「『（([{")
+
+
+def _kanji(ch):
+    return "一" <= ch <= "鿿" or ch == "々"
+
+
+def _break_at(prefix, rest, font, max_width):
+    """How many characters of `rest` to put on a line after `prefix`."""
+    fit = 0
+    while fit < len(rest) and font.size(prefix + rest[:fit + 1])[0] <= max_width:
+        fit += 1
+    for k in range(fit, 0, -1):
+        if k == len(rest):
+            return k
+        if rest[k] in NO_LINE_START or rest[k - 1] in NO_LINE_END or (_kanji(rest[k - 1]) and _kanji(rest[k])):
+            continue
+        return k
+    return fit
+
+
+def wrap_text(text, font, max_width):
+    """Word-wraps `text` to `max_width` pixels, breaking long Japanese runs
+    between characters where Japanese allows it."""
+    lines, current = [], ""
+    for word in text.split(" "):
+        candidate = f"{current} {word}" if current else word
+        if font.size(candidate)[0] <= max_width:
+            current = candidate
+            continue
+        if current and font.size(word)[0] <= max_width:
+            lines.append(current)
+            current = word
+            continue
+        prefix, rest = (f"{current} " if current else ""), word
+        while rest:
+            if font.size(prefix + rest)[0] <= max_width:
+                break
+            k = _break_at(prefix, rest, font, max_width)
+            if k == 0:
+                if prefix:          # nothing more fits on this line: start the next
+                    lines.append(prefix.rstrip())
+                    prefix = ""
+                    continue
+                k = 1
+            lines.append(prefix + rest[:k])
+            prefix, rest = "", rest[k:]
+        current = prefix + rest
+    if current:
+        lines.append(current)
+    return lines or [""]
+
 
 class QuizScreen:
     """A question-block encounter: a small translucent tooltip box pops
@@ -157,8 +227,9 @@ class QuizScreen:
         self.font_choice = get_font(16)
         self.font_hint = get_font(14)
         self.font_category = get_font(13)
-        self.font_companion = get_font(15)
-        self.font_dialogue_small = get_font(13)
+        self.font_companion = ui.body_font(16)
+        self.font_dialogue_small = ui.body_font(14)
+        self.font_hint_panel = ui.body_font(16)
         self.font_detail_title = get_font(20)
         self.font_detail_label = get_font(14)
         self.font_detail_body = get_font(15)
@@ -169,6 +240,12 @@ class QuizScreen:
         # literally asking for the reading, so showing it would hand
         # over the answer regardless of the player's furigana setting.
         self.suppress_furigana = question.get("category") == "kanji"
+        self._detail_rect = None
+        self._hint_started = None   # when the hint panel opened (seconds since the box did)
+        self._reaction = None
+        widest = max(self.font_choice.size(f"4. {c}")[0] for c in question["choices"])
+        self.box_width = (BOX_WIDTH_WIDE if question.get("category") == "reading"
+                          or widest > BOX_WIDTH - 2 * BOX_PADDING else BOX_WIDTH)
 
         # Read-more panel state: starts fully off-screen (panel_x ==
         # SCREEN_WIDTH) and slides left/right toward whichever edge
@@ -282,6 +359,8 @@ class QuizScreen:
                             selected = self.cursor
                             self.selected = selected
                             phase = PHASE_REVEAL
+                    elif selected is not None and event.button == game_input.Y:
+                        self.show_details = not self.show_details
                     elif phase == PHASE_HINT and event.button in game_input.FACE_BUTTONS:
                         return False
                 elif event.type == pygame.JOYHATMOTION and phase == PHASE_ANSWERING and event.value[1]:
@@ -297,7 +376,10 @@ class QuizScreen:
                         self.cursor = hovered
 
                 tap_pos = game_input.touch_tap_pos(event)
-                if tap_pos is not None:
+                if tap_pos is not None and selected is not None and self._detail_rect \
+                        and self._detail_rect.collidepoint(tap_pos):
+                    self.show_details = not self.show_details
+                elif tap_pos is not None:
                     if phase == PHASE_ANSWERING and self._skip_rect and self._skip_rect.collidepoint(tap_pos):
                         return None
                     if phase == PHASE_ANSWERING:
@@ -320,12 +402,7 @@ class QuizScreen:
                     # start working rather than a frozen screen.
                     self._draw(selected, phase, companion_state="thinking")
                     hint_text = self.hint_service.get_hint(self.question, chosen_index=selected)
-                    if self.hint_service.companion["always_show_explanation"]:
-                        # Ume-shu's Deep Insight: never leave the player
-                        # with just a nudge -- append the real answer.
-                        explanation = self.question.get("explanation")
-                        if explanation:
-                            hint_text = f"{hint_text} {explanation}"
+                    self._open_hint()
                     phase = PHASE_HINT
 
             self._update_detail_panel(dt)
@@ -340,41 +417,58 @@ class QuizScreen:
         else:
             self.panel_x = max(target, self.panel_x - step)
 
+    def _open_hint(self):
+        self._hint_started = self._age
+        reactions = self.hint_service.companion.get("reactions") or ["Not quite!"]
+        self._reaction = reactions[sum(map(ord, self.question["id"])) % len(reactions)]
+
+    def _split_passage(self, text):
+        """A reading question's prompt -> (lead-in, 「passage」, question).
+        Other questions -> (None, None, text)."""
+        if self.question.get("category") == "reading":
+            match = re.match(r"^(.*?)\s*(「.*」)\s*(.*)$", text)
+            if match:
+                return match.group(1) or None, match.group(2), match.group(3)
+        return None, None, text
+
+    def _layout(self, phase):
+        """What goes in the box, top to bottom: [(kind, data, height)]."""
+        width = self.box_width - 2 * BOX_PADDING
+        items = []
+        prompt_main, translation = self._split_translation(self.question["prompt"])
+        lead, passage, question = self._split_passage(prompt_main)
+        if lead:
+            items.append(("lead", lead, self.font_hint.get_height() + LINE_GAP))
+        if passage:
+            lines = wrap_text(passage, self.font_prompt, width - 20)
+            height = sum(self._line_height(line, self.font_prompt) + 2 for line in lines) + 14
+            items.append(("passage", lines, height + LINE_GAP + 2))
+        for line in wrap_text(question, self.font_prompt, width):
+            items.append(("prompt", line, self._line_height(line, self.font_prompt) + LINE_GAP))
+        if translation and furigana.is_translation_visible():
+            for line in wrap_text(translation, self.font_hint, width):
+                items.append(("translation", line, self.font_hint.get_height() + LINE_GAP))
+        for index, choice in enumerate(self.question["choices"]):
+            number = f"{index + 1}. "
+            indent = self.font_choice.size(number)[0]
+            lines = wrap_text(choice, self.font_choice, width - indent)
+            heights = [self._line_height(line, self.font_choice) for line in lines]
+            height = max(CHOICE_HEIGHT, sum(heights) + 2 * (len(lines) - 1))
+            items.append(("choice", (index, number, indent, lines, heights), height + LINE_GAP))
+        items.append(("footer", None, FOOTER_H))
+        return items
+
     def _draw(self, selected, phase, hint_text=None, companion_state="idle"):
         if self.background is not None:
             self.screen.blit(self.background, (0, 0))
         else:
             self.screen.fill((25, 25, 40))
 
-        content_width = BOX_WIDTH - 2 * BOX_PADDING
-        prompt_main, prompt_translation = self._split_translation(self.question["prompt"])
-        prompt_lines = self._wrap_text(prompt_main, self.font_prompt, content_width)
-        show_translation = bool(prompt_translation) and furigana.is_translation_visible()
-        translation_lines = self._wrap_text(prompt_translation, self.font_hint, content_width) if show_translation else []
-
-        footer = self._footer_text(phase, selected)
-        footer_lines = self._wrap_text(footer, self.font_hint, content_width) if footer else []
-
-        content_height = (
-            self.font_category.get_height() + LINE_GAP
-            + sum(self._line_height(line, self.font_prompt) + LINE_GAP for line in prompt_lines)
-            + len(translation_lines) * (self.font_hint.get_height() + LINE_GAP)
-            + sum(
-                self._line_height(f"{i + 1}. {c}", self.font_choice, min_height=CHOICE_HEIGHT) + LINE_GAP
-                for i, c in enumerate(self.question["choices"])
-            )
-            + len(footer_lines) * (self.font_hint.get_height() + LINE_GAP)
-        )
-        box_height = content_height + 2 * BOX_PADDING
-        # Once the companion's RPG dialogue box is showing (or about to), reserve
-        # its footprint at the bottom of the screen so the question box
-        # never gets positioned underneath/behind it. The companion is present
-        # for the whole reveal -> (thinking ->) hint arc, i.e. any time
-        # an answer has been picked.
-        # The companion's box is docked at the bottom for the whole quiz, so
-        # the question box always stays clear of it.
-        bottom_reserve = SCREEN_HEIGHT - RPG_BOX.top
-        box, side = self._position_box(BOX_WIDTH, box_height, bottom_reserve)
+        items = self._layout(phase)
+        box_height = HEADER_BAND + 8 + sum(h for *_, h in items) + BOX_PADDING - 4
+        # The question box always stays above the tallest the companion's
+        # hint panel can get, so it never moves when the hint opens.
+        box, side = self._position_box(self.box_width, box_height, SCREEN_HEIGHT - HINT_TOP)
         self._question_rect = box
 
         accent = CATEGORY_ACCENTS.get(self.question.get("category"), CATEGORY_COLOR)
@@ -390,44 +484,33 @@ class QuizScreen:
         pygame.draw.rect(self.screen, accent, box, width=2, border_radius=8)
         self._draw_tail(box, side, accent)
 
-        y = box.y + BOX_PADDING
         x = box.x + BOX_PADDING
-
         category = self.font_category.render(self._header_text(), True, accent)
         self.screen.blit(category, category.get_rect(midleft=(x, box.y + HEADER_BAND // 2)))
         y = box.y + HEADER_BAND + 8
 
-        for line in prompt_lines:
-            y += self._draw_annotated_line(line, self.font_prompt, x, y, TEXT_COLOR) + LINE_GAP
-
-        for line in translation_lines:
-            surface = self.font_hint.render(line, True, DETAIL_TRANSLATION_COLOR)
-            self.screen.blit(surface, (x, y))
-            y += surface.get_height() + LINE_GAP
-
         self._choice_rects = []
-        for index, choice_text in enumerate(self.question["choices"]):
-            color = TEXT_COLOR
-            if phase == PHASE_ANSWERING and index == self.cursor:
-                # The highlighted choice: just its text, lit up in the
-                # question type's colour (brightened so it reads on the card).
-                color = tuple(min(255, round(c + (255 - c) * 0.35)) for c in accent)
-            if selected is not None:
-                if index == self.question["answer"]:
-                    color = CORRECT_COLOR
-                elif index == selected:
-                    color = WRONG_COLOR
-            line_height = max(
-                self._draw_annotated_line(f"{index + 1}. {choice_text}", self.font_choice, x, y, color),
-                CHOICE_HEIGHT,
-            )
-            self._choice_rects.append(pygame.Rect(box.x, y, box.width, line_height))
-            y += line_height + LINE_GAP
-
-        for line in footer_lines:
-            surface = self.font_hint.render(line, True, HINT_COLOR)
-            self.screen.blit(surface, (x, y))
-            y += surface.get_height() + LINE_GAP
+        self._skip_rect = self._detail_rect = None
+        for kind, data, height in items:
+            if kind == "lead":
+                self.screen.blit(self.font_hint.render(data, True, HINT_COLOR), (x, y))
+            elif kind == "passage":
+                block = pygame.Rect(x, y, box.width - 2 * BOX_PADDING, height - LINE_GAP - 2)
+                pygame.draw.rect(self.screen, PASSAGE_BG, block, border_radius=6)
+                pygame.draw.rect(self.screen, accent, (block.x, block.y, 4, block.height),
+                                 border_top_left_radius=6, border_bottom_left_radius=6)
+                ly = block.y + 7
+                for line in data:
+                    ly += self._draw_annotated_line(line, self.font_prompt, block.x + 12, ly, TEXT_COLOR) + 2
+            elif kind == "prompt":
+                self._draw_annotated_line(data, self.font_prompt, x, y, TEXT_COLOR)
+            elif kind == "translation":
+                self.screen.blit(self.font_hint.render(data, True, DETAIL_TRANSLATION_COLOR), (x, y))
+            elif kind == "choice":
+                self._draw_choice(data, x, y, phase, selected, accent, box)
+            elif kind == "footer":
+                self._draw_footer(box, phase, selected)
+            y += height
 
         if phase == PHASE_ANSWERING:
             if self.prompted:
@@ -436,7 +519,7 @@ class QuizScreen:
             else:
                 self._draw_rpg_dialogue("Take your time! If you get stuck, I'll give you a hint.", expression="happy")
         elif phase == PHASE_HINT:
-            self._draw_rpg_dialogue(hint_text, expression="talking", show_continue=True)
+            self._draw_hint_panel(hint_text)
         elif companion_state == "thinking":
             self._draw_rpg_dialogue("...", expression="thinking", show_continue=False)
         elif phase == PHASE_REVEAL and selected is not None:
@@ -449,16 +532,131 @@ class QuizScreen:
                     f"Not quite... let me think.{loss}", expression="sympathetic", show_continue=False
                 )
 
-        self._skip_rect = None
-        if phase == PHASE_ANSWERING:
-            self._draw_skip_button(box)
-
-        if selected is not None:
-            self._draw_detail_tab()
         if self.panel_x < SCREEN_WIDTH:
             self._draw_detail_panel()
 
         pygame.display.flip()
+
+    def _draw_choice(self, data, x, y, phase, selected, accent, box):
+        index, number, indent, lines, heights = data
+        color = TEXT_COLOR
+        if phase == PHASE_ANSWERING and index == self.cursor:
+            # The highlighted choice: just its text, lit up in the question
+            # type's colour (brightened so it reads on the card).
+            color = tuple(min(255, round(c + (255 - c) * 0.35)) for c in accent)
+        if selected is not None:
+            if index == self.question["answer"]:
+                color = CORRECT_COLOR
+            elif index == selected:
+                color = WRONG_COLOR
+        # Level with the text, below any furigana row over the first line.
+        ruby = self.font_ruby.get_height() if self._line_needs_ruby(lines[0]) else 0
+        self.screen.blit(self.font_choice.render(number, True, color), (x, y + ruby))
+        top = y
+        for line, h in zip(lines, heights):
+            self._draw_annotated_line(line, self.font_choice, x + indent, y, color)
+            y += h + 2
+        self._choice_rects.append(pygame.Rect(box.x, top, box.width, max(CHOICE_HEIGHT, y - top)))
+
+    def _draw_footer(self, box, phase, selected):
+        """The box's bottom row: how to answer and Skip while answering;
+        a "Read more" button once an answer is in."""
+        row_y = box.bottom - BOX_PADDING + 4 - FOOTER_H // 2
+        x = box.x + BOX_PADDING
+        if phase == PHASE_ANSWERING:
+            text = self._footer_text(phase, selected)
+            self.screen.blit(self.font_hint.render(text, True, HINT_COLOR),
+                             self.font_hint.render(text, True, HINT_COLOR).get_rect(midleft=(x, row_y)))
+            self._draw_skip_button(box)
+        elif selected is not None:
+            label = game_input.prompt("R  Read more", "Y  Read more", "Read more")
+            if self.show_details:
+                label = game_input.prompt("R  Close", "Y  Close", "Close")
+            text = self.font_detail_label.render(label, True, DETAIL_LABEL_COLOR)
+            rect = pygame.Rect(0, 0, text.get_width() + 18, SKIP_BUTTON_SIZE[1])
+            rect.midright = (box.right - BOX_PADDING, row_y)
+            pygame.draw.rect(self.screen, DETAIL_TAB_BG, rect, border_radius=6)
+            pygame.draw.rect(self.screen, DETAIL_TAB_BORDER, rect, width=1, border_radius=6)
+            self.screen.blit(text, text.get_rect(center=rect.center))
+            self._detail_rect = rect
+
+    def _draw_hint_panel(self, hint_text):
+        """After a wrong answer: the companion's reaction, the right answer,
+        a tip -- and for Ume-shu (Deep Insight) the full explanation too --
+        typed out in a panel along the bottom."""
+        companion = self.hint_service.companion
+        font = self.font_hint_panel
+        text_x = RPG_BOX.x + 96
+        text_w = RPG_BOX.right - 100 - text_x
+        answer = self.question["choices"][self.question["answer"]]
+        rows = [("name", self._reaction or "Not quite!"), ("answer", f"Answer: {answer}")]
+        tip = (hint_text or "").strip()
+        explanation = (self.question.get("explanation") or "").strip()
+        if tip:
+            rows += [("tip" if i == 0 else "tip+", line) for i, line in enumerate(wrap_text(tip, font, text_w - 52)[:3])]
+        if companion.get("always_show_explanation") and explanation and explanation != tip:
+            rows += [("why" if i == 0 else "why+", line)
+                     for i, line in enumerate(wrap_text(explanation, font, text_w - 52)[:2])]
+        rows = rows[:6]
+        row_h = font.get_height() + 3
+        height = 22 + row_h * len(rows)
+        box = pygame.Rect(RPG_BOX.x, 0, RPG_BOX.width, height)
+        box.bottom = SCREEN_HEIGHT - 4
+        self._rpg_box_rect = box
+        ui.panel(self.screen, box, bg=(14, 12, 26, 240), edge=(*RPG_NAME_COLOR, 200), radius=12)
+        draw_companion(self.screen, companion["id"], box.x + 48, box.centery, 64,
+                       expression="talking" if self._typing(rows) else "sympathetic")
+
+        shown = int((self._age - (self._hint_started or self._age)) * HINT_TYPE_SPEED)
+        y = box.y + 11
+        for kind, text in rows:
+            x = text_x
+            if kind == "name":
+                chip = self.font_category.render(companion["name"].upper(), True, (30, 22, 10))
+                rect = chip.get_rect(midleft=(x, y + row_h // 2)).inflate(14, 6)
+                pygame.draw.rect(self.screen, RPG_NAME_COLOR, rect, border_radius=8)
+                self.screen.blit(chip, chip.get_rect(center=rect.center))
+                x = rect.right + 10
+                color = RPG_TEXT_COLOR
+            elif kind == "answer":
+                c = (x + 8, y + row_h // 2)
+                pygame.draw.lines(self.screen, CORRECT_COLOR, False,
+                                  [(c[0] - 6, c[1]), (c[0] - 2, c[1] + 5), (c[0] + 7, c[1] - 5)], 3)
+                x += 22
+                color = CORRECT_COLOR
+            elif kind in ("tip", "why"):
+                label, color_ = ("TIP", TIP_COLOR) if kind == "tip" else ("WHY", WHY_COLOR)
+                chip = self.font_category.render(label, True, (20, 16, 30))
+                rect = pygame.Rect(x, y + 3, 42, row_h - 6)
+                pygame.draw.rect(self.screen, color_, rect, border_radius=6)
+                self.screen.blit(chip, chip.get_rect(center=rect.center))
+                x += 52
+                color = RPG_TEXT_COLOR
+            else:   # continuation of a tip / why
+                x += 52
+                color = RPG_TEXT_COLOR
+            visible = text[:max(0, shown)]
+            shown -= len(text)
+            if visible:
+                self.screen.blit(font.render(visible, True, color), (x, y))
+            y += row_h
+
+        if not self._typing(rows) and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
+            self._continue_marker(box.right - 14, box.bottom - 18)
+
+    def _continue_marker(self, right, centery):
+        """"Enter ▼" (or "A ▼" / "Tap ▼") -- the triangle drawn, since the
+        fonts have no glyph for it."""
+        words = self.font_hint_panel.render(game_input.prompt("Enter", "A", "Tap"), True, RPG_TEXT_COLOR)
+        tri_x = right - 6
+        pygame.draw.polygon(self.screen, RPG_TEXT_COLOR, [(tri_x - 6, centery - 3), (tri_x + 6, centery - 3),
+                                                          (tri_x, centery + 5)])
+        self.screen.blit(words, words.get_rect(midright=(tri_x - 12, centery)))
+
+    def _typing(self, rows):
+        if self._hint_started is None:
+            return False
+        return (self._age - self._hint_started) * HINT_TYPE_SPEED < sum(len(t) for _, t in rows)
 
     def _line_needs_ruby(self, text):
         if self.suppress_furigana or not furigana.is_enabled():
@@ -504,29 +702,6 @@ class QuizScreen:
                 self.screen.blit(space_surface, (cursor_x, y + top_offset))
                 cursor_x += space_surface.get_width()
         return font.get_height() + top_offset
-
-    def _draw_detail_tab(self):
-        """A small always-visible affordance once an answer is locked
-        in, so the player knows there's more detail available without
-        having to discover the R key by accident.
-        """
-        label = "R  Close details" if self.show_details else "R  Read more"
-        text = self.font_detail_label.render(label, True, DETAIL_LABEL_COLOR)
-        tab = pygame.Rect(0, 0, text.get_width() + 20, text.get_height() + 12)
-        # Pinned to the question box (just above its top-right corner, or
-        # under it when the box is near the top), so it never lands on the HUD.
-        box = self._question_rect
-        tab.right = min(box.right, min(self.panel_x, SCREEN_WIDTH) - 10)
-        if box.top - tab.height - 4 >= 150:
-            tab.bottom = box.top - 4
-        else:
-            tab.top = box.bottom + 4
-
-        tab_surface = pygame.Surface(tab.size, pygame.SRCALPHA)
-        tab_surface.fill(DETAIL_TAB_BG)
-        self.screen.blit(tab_surface, tab.topleft)
-        pygame.draw.rect(self.screen, DETAIL_TAB_BORDER, tab, width=1)
-        self.screen.blit(text, text.get_rect(center=tab.center))
 
     def _draw_detail_panel(self):
         """The slide-in "Read more" panel: full explanation, the
@@ -611,7 +786,7 @@ class QuizScreen:
         leaves the question unanswered (no XP lost, no hint) -- a level
         holds 30 quiz boxes but the badge only needs 20 answered."""
         rect = pygame.Rect((0, 0), SKIP_BUTTON_SIZE)
-        rect.bottomright = (box.right - BOX_PADDING, box.bottom - BOX_PADDING + 2)
+        rect.midright = (box.right - BOX_PADDING, box.bottom - BOX_PADDING + 4 - FOOTER_H // 2)
         self._skip_rect = rect
         pygame.draw.rect(self.screen, (60, 60, 82), rect, border_radius=6)
         pygame.draw.rect(self.screen, (170, 170, 190), rect, width=1, border_radius=6)
@@ -672,9 +847,7 @@ class QuizScreen:
             y += line_h
 
         if show_continue and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
-            marker_text = game_input.prompt("Enter ▼", "A ▼", "Tap ▼")
-            marker = self.font_hint.render(marker_text, True, RPG_TEXT_COLOR)
-            self.screen.blit(marker, marker.get_rect(midright=(box.right - 12, box.centery)))
+            self._continue_marker(box.right - 12, box.centery)
 
     def _fit_dialogue(self, name, text, width):
         """Wraps the line -- its first row shortened to make room for the
@@ -796,16 +969,4 @@ class QuizScreen:
         return max(low, min(value, high))
 
     def _wrap_text(self, text, font, max_width):
-        words = text.split(" ")
-        lines = []
-        current = ""
-        for word in words:
-            candidate = f"{current} {word}".strip()
-            if font.size(candidate)[0] <= max_width or not current:
-                current = candidate
-            else:
-                lines.append(current)
-                current = word
-        if current:
-            lines.append(current)
-        return lines
+        return wrap_text(text, font, max_width)

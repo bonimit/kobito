@@ -321,6 +321,19 @@ left alone, since that's a reading, not a translation.
 
 ## Your AI hint companion
 
+**After a wrong answer** the companion's bar grows into a **hint panel**,
+typed out line by line: its own reaction ("Ooh, so close!" for Hana,
+"Mushroom for improvement!" for Kinoko), the **✓ answer**, a **TIP** —
+Claude's hint for that exact question with an API key, otherwise the
+question's own — and, with Ume-shu (Deep Insight), **WHY**: the full
+explanation. The question box stays put above it, and **Read more** (R, or
+Y on a gamepad) sits in the box's bottom row for the full write-up.
+
+The question box itself wraps everything to fit — Japanese is broken
+between characters where Japanese allows it (never before 、。」 or small
+kana, never inside a kanji word), long answers wrap under their number, and
+reading questions get a wider box with the passage in its own quote block.
+
 While a question is open, your companion's dialogue box is a **slim,
 full-width bar docked in the strip under the ground line** — always the same
 place, never covering the level or your character (while you answer or right
@@ -420,8 +433,9 @@ Like a classic platformer hero, your mascot can do more than walk and jump
   on screen) that defeat any enemy they hit, like Mario's fire flower. A
   "X THROW" prompt shows over your head until your first throw. While powered
   up your mascot glows gold with little suns circling it — one fewer as each
-  third of the time runs out, flickering in the last 3 seconds; another
-  sunflower refills it. Getting hit costs you the sun power
+  third of the time runs out, flickering in the last 3 seconds — and a
+  little **countdown dial** by its head shows the seconds left (a gold ring
+  that empties, red for the last 5); another sunflower refills it. Getting hit costs you the sun power
   instead of a power pip. Sun power is kept in your save.
 
 ## Power, enemies and stomping

@@ -404,7 +404,7 @@ class TileScreen(_Screen):
         band = pygame.Rect(card.x + 2, card.y + 2, card.width - 4, 30)
         pygame.draw.rect(self.screen, [round(c * 0.38) for c in accent], band, border_top_left_radius=11,
                          border_top_right_radius=11)
-        kind = "READING  読み" if self.kind == "reading" else "WRITING  書き"
+        kind = "READING" if self.kind == "reading" else "WRITING"
         ui.text(self.screen, f"{self.title}  ·  {kind}", get_font(15), (card.x + 16, band.centery), color=accent,
                 anchor="midleft", outline=None)
 
@@ -445,7 +445,7 @@ class TileScreen(_Screen):
 
         # Tiles.
         t, g = self.TILE, self.GAP
-        per_row = min(len(self.tiles), 8)
+        per_row = min(len(self.tiles), 10)
         rows = (len(self.tiles) + per_row - 1) // per_row
         tx0 = cx - (per_row * t + (per_row - 1) * g) // 2
         ty0 = card.y + 272 - (rows - 1) * (t + g) // 2

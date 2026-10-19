@@ -3033,7 +3033,7 @@
     "id": "read_n5_001",
     "category": "reading",
     "jlpt": "N5",
-    "prompt": "Read: 「わたしは まいあさ 七時に おきます。」 When does the writer get up?",
+    "prompt": "「わたしは まいあさ 七時に おきます。」 When does the writer get up?",
     "choices": [
       "At 7 every morning",
       "At 7 every evening",
@@ -3048,7 +3048,7 @@
     "id": "read_n5_002",
     "category": "reading",
     "jlpt": "N5",
-    "prompt": "Read: 「きのう ともだちと えいがを みました。」 What did the writer do yesterday?",
+    "prompt": "「きのう ともだちと えいがを みました。」 What did the writer do yesterday?",
     "choices": [
       "Went to school with a friend",
       "Watched a movie with a friend",
@@ -3063,7 +3063,7 @@
     "id": "read_n5_003",
     "category": "reading",
     "jlpt": "N5",
-    "prompt": "Read: 「つくえの 上に ねこが います。」 Where is the cat?",
+    "prompt": "「つくえの 上に ねこが います。」 Where is the cat?",
     "choices": [
       "Next to the door",
       "In the box",
@@ -3078,7 +3078,7 @@
     "id": "read_n5_004",
     "category": "reading",
     "jlpt": "N5",
-    "prompt": "Read: 「この りんごは 一つ 百円です。」 How much is one apple?",
+    "prompt": "「この りんごは 一つ 百円です。」 How much is one apple?",
     "choices": [
       "10 yen",
       "1,000 yen",
@@ -3093,7 +3093,7 @@
     "id": "read_n5_005",
     "category": "reading",
     "jlpt": "N5",
-    "prompt": "Read: 「あしたは 雨ですから、うちで べんきょうします。」 What will the writer do tomorrow?",
+    "prompt": "「あしたは 雨ですから、うちで べんきょうします。」 What will the writer do tomorrow?",
     "choices": [
       "Study at home",
       "Go out in the rain",
@@ -3108,7 +3108,7 @@
     "id": "read_n5_006",
     "category": "reading",
     "jlpt": "N5",
-    "prompt": "Read: 「わたしの いもうとは 十さいです。」 Who is ten years old?",
+    "prompt": "「わたしの いもうとは 十さいです。」 Who is ten years old?",
     "choices": [
       "The writer",
       "The writer's little sister",
@@ -3303,7 +3303,7 @@
     "id": "read_n4_001",
     "category": "reading",
     "jlpt": "N4",
-    "prompt": "Read: 「駅から 学校まで あるいて 十五分 かかります。」 How long is the walk from the station to school?",
+    "prompt": "「駅から 学校まで あるいて 十五分 かかります。」 How long is the walk from the station to school?",
     "choices": [
       "5 minutes",
       "1.5 hours",
@@ -3318,7 +3318,7 @@
     "id": "read_n4_002",
     "category": "reading",
     "jlpt": "N4",
-    "prompt": "Read: 「かぜを ひいたので、きょうは 会社を 休みます。」 Why is the writer off work today?",
+    "prompt": "「かぜを ひいたので、きょうは 会社を 休みます。」 Why is the writer off work today?",
     "choices": [
       "They're going on a trip",
       "The company is closed",
@@ -3333,7 +3333,7 @@
     "id": "read_n4_003",
     "category": "reading",
     "jlpt": "N4",
-    "prompt": "Read: 「田中さんは 山田さんより せが 高いです。」 Who is taller?",
+    "prompt": "「田中さんは 山田さんより せが 高いです。」 Who is taller?",
     "choices": [
       "Tanaka",
       "Yamada",
@@ -3348,7 +3348,7 @@
     "id": "read_n4_004",
     "category": "reading",
     "jlpt": "N4",
-    "prompt": "Read: 「レポートは 金曜日までに 出して ください。」 What is the deadline?",
+    "prompt": "「レポートは 金曜日までに 出して ください。」 What is the deadline?",
     "choices": [
       "Read it on Friday",
       "Hand in the report by Friday",
@@ -3363,7 +3363,7 @@
     "id": "read_n4_005",
     "category": "reading",
     "jlpt": "N4",
-    "prompt": "Read: 「あの レストランは 安くて おいしいですが、いつも こんで います。」 What's the problem?",
+    "prompt": "「あの レストランは 安くて おいしいですが、いつも こんで います。」 What's the problem?",
     "choices": [
       "The food isn't good",
       "It's always closed",
@@ -3378,7 +3378,7 @@
     "id": "read_n4_006",
     "category": "reading",
     "jlpt": "N4",
-    "prompt": "Read: 「日曜日に 母の たんじょうびの プレゼントを 買いに 行きました。」 Why did the writer go out on Sunday?",
+    "prompt": "「日曜日に 母の たんじょうびの プレゼントを 買いに 行きました。」 Why did the writer go out on Sunday?",
     "choices": [
       "To celebrate their own birthday",
       "To meet their mother for lunch",
@@ -3573,7 +3573,7 @@
     "id": "read_n3_001",
     "category": "reading",
     "jlpt": "N3",
-    "prompt": "Read: 「雨が 降りそうだから、かさを 持って 行った ほうが いいよ。」 What is the speaker advising?",
+    "prompt": "「雨が 降りそうだから、かさを 持って 行った ほうが いいよ。」 What is the speaker advising?",
     "choices": [
       "Take an umbrella -- it looks like rain",
       "Stay home because it's raining",
@@ -3588,7 +3588,7 @@
     "id": "read_n3_002",
     "category": "reading",
     "jlpt": "N3",
-    "prompt": "Read: 「この 薬は 一日に 三回、食事の 後に 飲んで ください。」 How should the medicine be taken?",
+    "prompt": "「この 薬は 一日に 三回、食事の 後に 飲んで ください。」 How should the medicine be taken?",
     "choices": [
       "Once, after dinner",
       "Three times a day, after meals",
@@ -3603,7 +3603,7 @@
     "id": "read_n3_003",
     "category": "reading",
     "jlpt": "N3",
-    "prompt": "Read: 「せっかく 来たのに、店は 休みだった。」 How does the writer feel?",
+    "prompt": "「せっかく 来たのに、店は 休みだった。」 How does the writer feel?",
     "choices": [
       "Relieved that the shop was closed",
       "Surprised the shop had moved",
@@ -3618,7 +3618,7 @@
     "id": "read_n3_004",
     "category": "reading",
     "jlpt": "N3",
-    "prompt": "Read: 「部屋が 寒かったので、窓を 閉めて おきました。」 What did the writer do?",
+    "prompt": "「部屋が 寒かったので、窓を 閉めて おきました。」 What did the writer do?",
     "choices": [
       "Opened the window because it was hot",
       "Left the window open",
@@ -3633,7 +3633,7 @@
     "id": "read_n3_005",
     "category": "reading",
     "jlpt": "N3",
-    "prompt": "Read: 「明日の 会議は 十時から 十一時に 変更に なりました。」 What changed?",
+    "prompt": "「明日の 会議は 十時から 十一時に 変更に なりました。」 What changed?",
     "choices": [
       "The meeting moved from 10:00 to 11:00",
       "The meeting was cancelled",
@@ -3648,7 +3648,7 @@
     "id": "read_n3_006",
     "category": "reading",
     "jlpt": "N3",
-    "prompt": "Read: 「兄は 料理が 得意ですが、私は 全然 できません。」 Which is true?",
+    "prompt": "「兄は 料理が 得意ですが、私は 全然 できません。」 Which is true?",
     "choices": [
       "Both are good cooks",
       "The older brother is good at cooking; the writer can't cook at all",
@@ -3843,7 +3843,7 @@
     "id": "read_n2_001",
     "category": "reading",
     "jlpt": "N2",
-    "prompt": "Read: 「彼の 言う ことにも 一理 ある。」 What does the writer think?",
+    "prompt": "「彼の 言う ことにも 一理 ある。」 What does the writer think?",
     "choices": [
       "He only said one thing",
       "He is always right",
@@ -3858,7 +3858,7 @@
     "id": "read_n2_002",
     "category": "reading",
     "jlpt": "N2",
-    "prompt": "Read: 「この 仕事は 忙しい わりに、給料が 安い。」 What's the complaint?",
+    "prompt": "「この 仕事は 忙しい わりに、給料が 安い。」 What's the complaint?",
     "choices": [
       "The job isn't busy",
       "The pay is high",
@@ -3873,7 +3873,7 @@
     "id": "read_n2_003",
     "category": "reading",
     "jlpt": "N2",
-    "prompt": "Read: 「天気予報に よると、明日は 晴れる らしい。」 Where does this information come from?",
+    "prompt": "「天気予報に よると、明日は 晴れる らしい。」 Where does this information come from?",
     "choices": [
       "The weather forecast",
       "The writer's own guess",
@@ -3888,7 +3888,7 @@
     "id": "read_n2_004",
     "category": "reading",
     "jlpt": "N2",
-    "prompt": "Read: 「この 店は 味は もちろん、サービスも 素晴らしい。」 What does the writer say?",
+    "prompt": "「この 店は 味は もちろん、サービスも 素晴らしい。」 What does the writer say?",
     "choices": [
       "Neither is good",
       "The food tastes great, and the service is wonderful too",
@@ -3903,7 +3903,7 @@
     "id": "read_n2_005",
     "category": "reading",
     "jlpt": "N2",
-    "prompt": "Read: 「試験に 合格する ために、毎晩 遅くまで 勉強して いる。」 Why does the writer study late?",
+    "prompt": "「試験に 合格する ために、毎晩 遅くまで 勉強して いる。」 Why does the writer study late?",
     "choices": [
       "Because they failed",
       "To help a friend",
@@ -3918,7 +3918,7 @@
     "id": "read_n2_006",
     "category": "reading",
     "jlpt": "N2",
-    "prompt": "Read: 「いくら たのんでも、彼は 引き受けて くれなかった。」 What happened?",
+    "prompt": "「いくら たのんでも、彼は 引き受けて くれなかった。」 What happened?",
     "choices": [
       "He agreed straight away",
       "He asked them for help",
@@ -4113,7 +4113,7 @@
     "id": "read_n1_001",
     "category": "reading",
     "jlpt": "N1",
-    "prompt": "Read: 「彼の 努力なくして、この 成功は あり得なかった。」 What does the writer mean?",
+    "prompt": "「彼の 努力なくして、この 成功は あり得なかった。」 What does the writer mean?",
     "choices": [
       "Without his effort, this success would have been impossible",
       "His effort wasn't needed",
@@ -4128,7 +4128,7 @@
     "id": "read_n1_002",
     "category": "reading",
     "jlpt": "N1",
-    "prompt": "Read: 「雨が 降ろうが 降るまいが、試合は おこなわれる。」 What happens to the match?",
+    "prompt": "「雨が 降ろうが 降るまいが、試合は おこなわれる。」 What happens to the match?",
     "choices": [
       "It's postponed",
       "It goes ahead whether it rains or not",
@@ -4143,7 +4143,7 @@
     "id": "read_n1_003",
     "category": "reading",
     "jlpt": "N1",
-    "prompt": "Read the sign: 「許可なく この 部屋に 入る べからず。」 What does it say?",
+    "prompt": "A sign says: 「許可なく この 部屋に 入る べからず。」 What does it say?",
     "choices": [
       "Permission is given inside",
       "Please enter quietly",
@@ -4158,7 +4158,7 @@
     "id": "read_n1_004",
     "category": "reading",
     "jlpt": "N1",
-    "prompt": "Read: 「このような 結果に なったのは、ひとえに 私の 責任です。」 What is the speaker saying?",
+    "prompt": "「このような 結果に なったのは、ひとえに 私の 責任です。」 What is the speaker saying?",
     "choices": [
       "It's partly their fault",
       "It's someone else's fault",
@@ -4173,7 +4173,7 @@
     "id": "read_n1_005",
     "category": "reading",
     "jlpt": "N1",
-    "prompt": "Read: 「彼女は 疲れて いる にも かかわらず、笑顔を 絶やさなかった。」 What did she do?",
+    "prompt": "「彼女は 疲れて いる にも かかわらず、笑顔を 絶やさなかった。」 What did she do?",
     "choices": [
       "Kept smiling despite being tired",
       "Stopped smiling because she was tired",
@@ -4188,7 +4188,7 @@
     "id": "read_n1_006",
     "category": "reading",
     "jlpt": "N1",
-    "prompt": "Read: 「これは 言わずと 知れた 名作だ。」 What kind of work is it?",
+    "prompt": "「これは 言わずと 知れた 名作だ。」 What kind of work is it?",
     "choices": [
       "An unfinished work",
       "A masterpiece everyone knows, needless to say",
