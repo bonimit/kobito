@@ -69,6 +69,11 @@ face button. Recognised layouts:
 | Xbox / XInput pads | Native layout. |
 | Any pad in the **web build** | The browser's standard layout; its d-pad (buttons 12–15) is turned into d-pad movement. |
 
+**Controller not responding?** Run `python tools/pad_test.py`: it lists the
+controllers your computer sees (and the layout the game will use), then
+shows each button as the game reads it. On a Mac, a Logitech F310 must be
+on **D** — in X mode macOS doesn't see it at all.
+
 On the web build (see below), on-screen touch buttons appear automatically
 instead — a left/right/jump trio during gameplay, and prev/next/OK
 arrows on every menu and quiz screen — since a phone has neither a

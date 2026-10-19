@@ -1,14 +1,19 @@
 import asyncio
+import os
 
-from kobito import save_game
-from kobito.adaptive import AdaptiveTutor
-from kobito.difficulty import MODE_ADAPTIVE
-from kobito.companion_select_screen import CompanionSelectScreen
-from kobito.difficulty_select_screen import DifficultySelectScreen
-from kobito.game import Game, OUTCOME_ADVANCE
-from kobito.select_screen import SelectScreen
-from kobito.title_screen import RESULT_CONTINUE, TitleScreen
-from kobito.world_select_screen import WorldSelectScreen
+# Keep reading the gamepad even when the game window isn't the focused one
+# (on macOS it can open behind the Terminal it was started from).
+os.environ.setdefault("SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", "1")
+
+from kobito import save_game  # noqa: E402
+from kobito.adaptive import AdaptiveTutor  # noqa: E402
+from kobito.difficulty import MODE_ADAPTIVE  # noqa: E402
+from kobito.companion_select_screen import CompanionSelectScreen  # noqa: E402
+from kobito.difficulty_select_screen import DifficultySelectScreen  # noqa: E402
+from kobito.game import Game, OUTCOME_ADVANCE  # noqa: E402
+from kobito.select_screen import SelectScreen  # noqa: E402
+from kobito.title_screen import RESULT_CONTINUE, TitleScreen  # noqa: E402
+from kobito.world_select_screen import WorldSelectScreen  # noqa: E402
 
 
 async def new_run():
