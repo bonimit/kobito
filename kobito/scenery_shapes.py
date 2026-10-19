@@ -1274,8 +1274,21 @@ def draw_guardrail(screen, x, ground_y, size, color):
     pygame.draw.rect(screen, color, (x - size - 4, ground_y - 20, size * 2 + 8, 6), border_radius=2)
 
 
+def _leaf_and_apple(color, apple_color):
+    """Orchard colors come as (leaf, apple) pairs, so each tree in a row can
+    be a different variety; a plain color means the default red apples."""
+    if isinstance(color[0], tuple):
+        return color
+    return color, apple_color
+
+
 def draw_apple_tree(screen, x, ground_y, size, color, apple_color=(220, 40, 46)):
-    """A pruned orchard apple tree: short trunk, wide round canopy, apples."""
+    """A pruned orchard apple tree: short trunk, wide round canopy, apples.
+    `color` may be a (leaf, apple) pair -- red Fuji, yellow, green Orin...
+    -- or None for the lane between two blocks of trees."""
+    if color is None:
+        return
+    color, apple_color = _leaf_and_apple(color, apple_color)
     trunk = (110, 78, 52)
     pygame.draw.line(screen, trunk, (x, ground_y), (x, ground_y - size * 0.45), 6)
     pygame.draw.line(screen, trunk, (x, ground_y - size * 0.35), (x - size * 0.25, ground_y - size * 0.55), 4)
@@ -1286,11 +1299,13 @@ def draw_apple_tree(screen, x, ground_y, size, color, apple_color=(220, 40, 46))
         pygame.draw.circle(screen, dark, (x + dx * size, cy + dy * size + 3), r * size)
     for dx, dy, r in ((-0.32, 0.05, 0.33), (0.32, 0.05, 0.33), (0, -0.12, 0.39)):
         pygame.draw.circle(screen, color, (x + dx * size, cy + dy * size), r * size)
-    for k in range(9):
+    shine = tuple(min(255, c + 90) for c in apple_color)
+    for k in range(11):
         ax = x + ((k * 37) % 100 - 50) / 100 * size * 0.9
         ay = cy + ((k * 53) % 70 - 35) / 100 * size * 0.8
-        pygame.draw.circle(screen, apple_color, (ax, ay), max(2, size // 14))
-        pygame.draw.circle(screen, (255, 160, 150), (ax - 1, ay - 1), 1)
+        r = max(2, size // 14)
+        pygame.draw.circle(screen, apple_color, (ax, ay), r)
+        pygame.draw.circle(screen, shine, (ax - r // 3, ay - r // 3), max(1, r // 3))
 
 
 def draw_apple_crate(screen, x, ground_y, size, color):
@@ -1488,7 +1503,12 @@ FIELD_GROUND = 480   # the level's ground line (GROUND_ROW * TILE_SIZE), where b
 
 def draw_orchard_band(screen, x, y, size, color, apple_color=(214, 40, 48)):
     """A row of apple-tree crowns, packed shoulder to shoulder: one tree per
-    tile, crown radius `size`, crown bottoms at y."""
+    tile, crown radius `size`, crown bottoms at y. `color` may be a (leaf,
+    apple) pair, or None for a grass lane between blocks of trees."""
+    if color is None:
+        pygame.draw.rect(screen, (118, 156, 76), (x, y - size * 0.15, size * 2 + 1, FIELD_GROUND - y + size * 0.15))
+        return
+    color, apple_color = _leaf_and_apple(color, apple_color)
     dark = tuple(max(0, c - 28) for c in color)
     light = tuple(min(255, c + 22) for c in color)
     cx = x + size
@@ -1560,3 +1580,59 @@ def draw_tea_terraces(screen, x, y, size, color, soil=(150, 84, 56)):
         pygame.draw.rect(screen, light, (hedge.x + 4, hedge.y + 1, hedge.width - 8, max(2, tier_h * 0.22)),
                          border_radius=3)
         pygame.draw.line(screen, dark, (hedge.x + 3, top + tier_h - 3), (hedge.right - 3, top + tier_h - 3), 2)
+
+
+def draw_sheep(screen, x, ground_y, size, color=(246, 244, 238), facing=1):
+    """A woolly sheep: a cloud of fleece, black face and legs."""
+    face = (40, 36, 40)
+    body_y = ground_y - size * 0.62
+    for lx in (-0.35, -0.12, 0.15, 0.38):
+        pygame.draw.line(screen, face, (x + lx * size, body_y + size * 0.2), (x + lx * size, ground_y), 3)
+    shade = tuple(max(0, c - 26) for c in color)
+    for dx, dy, r in ((-0.38, 0.05, 0.3), (0.0, -0.08, 0.36), (0.36, 0.05, 0.3), (-0.18, 0.12, 0.3),
+                      (0.2, 0.12, 0.3)):
+        pygame.draw.circle(screen, shade, (x + dx * size, body_y + dy * size + 2), r * size)
+    for dx, dy, r in ((-0.38, 0.0, 0.28), (0.0, -0.12, 0.34), (0.36, 0.0, 0.28), (-0.18, 0.08, 0.28),
+                      (0.2, 0.08, 0.28)):
+        pygame.draw.circle(screen, color, (x + dx * size, body_y + dy * size), r * size)
+    head = pygame.Rect(0, 0, size * 0.34, size * 0.42)
+    head.center = (x + facing * size * 0.66, body_y - size * 0.05)
+    pygame.draw.ellipse(screen, face, head)
+    pygame.draw.ellipse(screen, face, (head.centerx - facing * size * 0.2 - 4, head.y + 3, 8, 5))
+    pygame.draw.circle(screen, color, (head.centerx - facing * 2, head.y + 1), size * 0.12)
+    pygame.draw.circle(screen, (250, 250, 250), (head.centerx + facing * 3, head.y + head.height * 0.4), 1)
+
+
+def draw_milk_cans(screen, x, ground_y, size, color=(208, 212, 220)):
+    """Milk churns waiting by the farm gate, blue bands round the middle."""
+    shade = tuple(max(0, c - 40) for c in color)
+    for k, dx in enumerate((-0.55, 0.0, 0.55)):
+        cx = x + dx * size
+        h = size * (1.0 if k != 1 else 1.1)
+        body = pygame.Rect(0, 0, size * 0.46, h * 0.72)
+        body.midbottom = (cx, ground_y)
+        pygame.draw.rect(screen, color, body, border_radius=4)
+        pygame.draw.rect(screen, shade, (body.right - body.width * 0.3, body.y, body.width * 0.3, body.height),
+                         border_top_right_radius=4, border_bottom_right_radius=4)
+        pygame.draw.rect(screen, (60, 110, 200), (body.x, body.y + body.height * 0.4, body.width, 4))
+        neck = pygame.Rect(0, 0, body.width * 0.6, h * 0.16)
+        neck.midbottom = body.midtop
+        pygame.draw.rect(screen, color, neck)
+        lid = pygame.Rect(0, 0, body.width * 0.78, h * 0.1)
+        lid.midbottom = neck.midtop
+        pygame.draw.rect(screen, shade, lid, border_radius=3)
+
+
+def draw_tractor(screen, x, ground_y, size, color=(200, 50, 46)):
+    """A little farm tractor: big back wheel, small front wheel, a cab."""
+    body = pygame.Rect(0, 0, size * 1.1, size * 0.4)
+    body.bottomleft = (x - size * 0.4, ground_y - size * 0.3)
+    pygame.draw.rect(screen, color, body, border_radius=3)
+    cab = pygame.Rect(0, 0, size * 0.42, size * 0.5)
+    cab.bottomleft = (body.x, body.y + 2)
+    pygame.draw.rect(screen, (60, 60, 70), cab, 3)
+    pygame.draw.rect(screen, (190, 226, 246), cab.inflate(-6, -6))
+    pygame.draw.rect(screen, (70, 70, 80), (body.right - size * 0.2, body.y - size * 0.25, 4, size * 0.25))
+    for wx, r in ((body.x + size * 0.2, size * 0.36), (body.right - size * 0.12, size * 0.2)):
+        pygame.draw.circle(screen, (40, 40, 44), (wx, ground_y - r), r)
+        pygame.draw.circle(screen, (240, 200, 60), (wx, ground_y - r), r * 0.45)

@@ -252,12 +252,17 @@ class Background:
     def _draw_floaty(self, screen, layer, items, camera_x, margin):
         screen_width = screen.get_width()
         if layer.tile:
-            # A repeating band: the same tile across the whole width.
-            start = -(camera_x * layer.parallax) % layer.tile - layer.tile
-            for _, y, size, color in items:
-                x = start
+            # A repeating band across the whole width. Each tile takes the
+            # next of the layer's colors by its place in the world, so a
+            # row of trees can alternate varieties without flickering.
+            offset = camera_x * layer.parallax
+            first = int(offset // layer.tile) - 1
+            for _, y, size, _ in items:
+                n = first
+                x = n * layer.tile - offset
                 while x < screen_width:
-                    layer.draw_fn(screen, x, y, size, color)
+                    layer.draw_fn(screen, x, y, size, layer.colors[n % len(layer.colors)])
+                    n += 1
                     x += layer.tile
             return
         for x, y, size, color in items:

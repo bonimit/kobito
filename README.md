@@ -649,9 +649,9 @@ More of the Japanese countryside:
 | World | What's there |
 | --- | --- |
 | **Okinawa Island Drive** | the coast road itself (asphalt, a pale kerb), the turquoise sea with a long ocean bridge like Kouri Ohashi and green islands on the horizon, red-tiled Ryukyu houses with a shisa on the ridge, sugarcane, palms, guardrails — and rental cars cruising up and down the road |
-| **Aomori Apple Orchard** | giant apple trees along the path, crowns touching, and rows of them all the way back to the hills, heavy with red apples, harvest crates, kakashi scarecrows, Mt Iwaki ("Tsugaru Fuji") with its first snow, falling autumn leaves and red dragonflies (aka-tombo) |
+| **Aomori Apple Orchard** | giant apple trees along the path, crowns touching, and rows of them all the way back to the hills — planted like a real orchard, in blocks of one variety with grass lanes between: red Fuji, golden Kinsei, crimson Jonagold, green-yellow Orin and pink Toki, harvest crates, kakashi scarecrows, Mt Iwaki ("Tsugaru Fuji") with its first snow, falling autumn leaves and red dragonflies (aka-tombo) |
 | **Shizuoka Tea Fields** | a misty morning, Mt Fuji filling the sky, every hillside stepped with green tea terraces on Shizuoka's red earth, clipped tea hedges along the path, frost fans (防霜ファン) on tall poles — and the Shinkansen gliding along its viaduct |
-| **Hokkaido Dairy Farm** | red gambrel barns and silos, white ranch fences, wrapped hay bales, white birches (shirakaba), the snowy Daisetsuzan peaks — and Holstein cows wandering the pasture |
+| **Hokkaido Dairy Farm** | big red gambrel barns and tall silos all along the path, white ranch fences, wrapped hay bales, milk churns waiting for collection, tractors, white birches (shirakaba), the snowy Daisetsuzan peaks — and Holstein cows and a flock of sheep wandering the pasture |
 
 Each world has its own sky gradient, ground/platform colors and layered
 scenery, but the same gameplay layout underneath (platforms, question
@@ -677,7 +677,7 @@ Each world also has living creatures that actually move over time (not
 just scroll with the camera) — birds, butterflies and dragonflies;
 camels, scorpions and lizards; fish, jellyfish, turtles and a whale;
 snow monkeys, cranes and foxes; planes over Tokyo; cars on Okinawa's coast
-road, the Shinkansen past Mt Fuji and cows on a Hokkaido farm. Flying/swimming
+road, the Shinkansen past Mt Fuji, and cows and sheep on a Hokkaido farm. Flying/swimming
 creatures wander the level with a gentle bob and wrap around when they
 exit; ground creatures patrol back and forth like a decorative,
 non-colliding cousin of Enemy. A world adds creatures by listing

@@ -766,6 +766,23 @@ OKINAWA_DRIVE = Theme(
     ],
 )
 
+# Aomori grows dozens of apple varieties: (leaf, apple) per tree -- red
+# Fuji, crimson Jonagold, golden Kinsei, green-yellow Orin, pink Toki.
+APPLE_VARIETIES = [
+    ((84, 146, 70), (214, 36, 46)),
+    ((96, 156, 76), (246, 196, 56)),
+    ((78, 138, 66), (168, 30, 52)),
+    ((92, 152, 72), (170, 206, 70)),
+    ((88, 148, 70), (240, 120, 130)),
+]
+
+
+def orchard_blocks(per_block, start=0):
+    """Trees planted the way a real orchard is: a block of one variety,
+    a lane (None), the next variety's block, ..."""
+    order = APPLE_VARIETIES[start:] + APPLE_VARIETIES[:start]
+    return [tree for variety in order for tree in [variety] * per_block + [None]]
+
 AOMORI = Theme(
     id="aomori",
     name="Aomori Apple Orchard",
@@ -796,12 +813,14 @@ AOMORI = Theme(
     mid_layers=[
         # The orchard runs all the way back: rows of apple trees, the
         # further ones smaller and slower.
-        FloatyLayer(shapes.draw_orchard_band, [(104, 150, 82)], lambda w: 1, (418, 418), (20, 20), 0.25, tile=40),
-        FloatyLayer(shapes.draw_orchard_band, [(90, 146, 72)], lambda w: 1, (446, 446), (30, 30), 0.4, tile=60),
+        FloatyLayer(shapes.draw_orchard_band, orchard_blocks(6, 2), lambda w: 1, (418, 418), (20, 20), 0.25,
+                    tile=40),
+        FloatyLayer(shapes.draw_orchard_band, orchard_blocks(5, 4), lambda w: 1, (446, 446), (30, 30), 0.4,
+                    tile=60),
     ],
     ground_props=[
         # Giant apple trees right along the path, crowns touching.
-        GroundProp(shapes.draw_apple_tree, [(78, 140, 66), (92, 154, 74)], (130, 170), (80, 120), 40),
+        GroundProp(shapes.draw_apple_tree, orchard_blocks(4), (130, 170), (80, 110), 40),
         GroundProp(shapes.draw_apple_crate, [(196, 146, 92)], (22, 26), (300, 460), 40),
         GroundProp(shapes.draw_scarecrow, [(70, 110, 180), (180, 80, 70)], (44, 52), (600, 900), 60),
         GroundProp(shapes.draw_grass_tuft, [(140, 170, 80)], (10, 14), (50, 90), 15),
@@ -884,11 +903,15 @@ HOKKAIDO_FARM = Theme(
         FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 260, (24, 120), (22, 38), 0.2),
     ],
     ground_props=[
-        GroundProp(shapes.draw_red_barn, [(186, 52, 46)], (60, 72), (700, 1000), 70),
-        GroundProp(shapes.draw_silo, [(214, 216, 222)], (70, 86), (900, 1300), 80),
-        GroundProp(shapes.draw_ranch_fence, [(250, 250, 246)], (26, 30), (150, 230), 40),
-        GroundProp(shapes.draw_hay_bale, [(244, 244, 236), (232, 208, 140)], (22, 28), (220, 340), 30),
-        GroundProp(shapes.draw_birch, [(132, 188, 96), (150, 200, 104)], (60, 80), (260, 400), 35),
+        # Big red barns and silos all along the way, the farm's fences, hay,
+        # milk churns waiting for collection and a tractor or two.
+        GroundProp(shapes.draw_birch, [(132, 188, 96), (150, 200, 104)], (60, 80), (420, 600), 35),
+        GroundProp(shapes.draw_silo, [(214, 216, 222)], (100, 120), (560, 760), 80),
+        GroundProp(shapes.draw_red_barn, [(196, 44, 40), (180, 40, 38)], (96, 120), (420, 600), 90),
+        GroundProp(shapes.draw_ranch_fence, [(250, 250, 246)], (26, 30), (110, 170), 40),
+        GroundProp(shapes.draw_hay_bale, [(244, 244, 236), (232, 208, 140)], (24, 30), (200, 300), 30),
+        GroundProp(shapes.draw_milk_cans, [(212, 216, 224)], (26, 30), (380, 520), 50),
+        GroundProp(shapes.draw_tractor, [(200, 50, 46), (60, 140, 70)], (40, 46), (900, 1300), 70),
         GroundProp(shapes.draw_flower, [(255, 255, 255), (255, 226, 120)], (10, 12), (120, 200), 20),
     ],
     flying_creatures=[
@@ -897,8 +920,10 @@ HOKKAIDO_FARM = Theme(
         FlyingCreature(shapes.draw_bird, [(78, 70, 64)], lambda w: 4, (40, 120), (10, 14), (32, 55), 0.34),
     ],
     ground_creatures=[
-        # Holsteins wandering the pasture.
-        GroundCreature(shapes.draw_cow, [(250, 250, 248)], lambda w: w // 800, (22, 28), (8, 14), (80, 160)),
+        # Holsteins and a flock of sheep wandering the pasture.
+        GroundCreature(shapes.draw_cow, [(250, 250, 248)], lambda w: w // 300, (30, 38), (8, 14), (80, 160)),
+        GroundCreature(shapes.draw_sheep, [(246, 244, 238), (236, 232, 222)], lambda w: w // 350, (24, 30), (6, 12),
+                       (60, 120)),
     ],
 )
 
