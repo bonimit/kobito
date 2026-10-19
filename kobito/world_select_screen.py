@@ -108,7 +108,7 @@ class WorldSelectScreen:
         position = f"{self.index + 1} / {len(WORLD_ORDER)}"
         self._draw_shadowed_text(position, self.font_hint, centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 90)
 
-        hint = "<- / -> to choose    Enter to confirm    Esc to quit"
+        hint = game_input.prompt("<- / -> to choose    Enter to confirm    Esc to quit", "D-pad to choose    A to confirm")
         self._draw_shadowed_text(hint, self.font_hint, centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 55)
 
         if self.menu_touch:

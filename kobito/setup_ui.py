@@ -192,15 +192,33 @@ def confirm_button(screen, label, t, flash=0.0):
 
 
 ARROWS = "<>"     # keycap label drawn as ◀ ▶
+DPAD = "dpad"     # a gamepad d-pad
+# Gamepad face buttons, drawn round in their usual colours.
+PAD_BUTTONS = {"pad-a": ("A", (80, 180, 90)), "pad-b": ("B", (215, 74, 74)),
+               "pad-x": ("X", (70, 130, 220)), "pad-y": ("Y", (225, 180, 50))}
 
 
 def _key_width(font, key):
+    if key in PAD_BUTTONS or key == DPAD:
+        return 28
     return 44 if key == ARROWS else max(26, font.size(key)[0] + 14)
 
 
 def keycap(screen, key, x, y):
     font = ui.label_font(16)
     rect = pygame.Rect(x, y - 13, _key_width(font, key), 26)
+    if key in PAD_BUTTONS:
+        letter, color = PAD_BUTTONS[key]
+        pygame.draw.circle(screen, (12, 8, 20), (rect.centerx, rect.centery + 2), 14)
+        pygame.draw.circle(screen, color, rect.center, 13)
+        ui.text(screen, letter, font, rect.center, color=ui.CREAM, outline=None, anchor="center")
+        return rect.right
+    if key == DPAD:
+        c = rect.center
+        for r in (pygame.Rect(c[0] - 4, c[1] - 12, 8, 24), pygame.Rect(c[0] - 12, c[1] - 4, 24, 8)):
+            pygame.draw.rect(screen, (12, 8, 20), r.move(0, 2), border_radius=2)
+            pygame.draw.rect(screen, (150, 140, 175), r, border_radius=2)
+        return rect.right
     pygame.draw.rect(screen, (12, 8, 20), rect.move(0, 3), border_radius=6)
     pygame.draw.rect(screen, (70, 62, 96), rect, border_radius=6)
     pygame.draw.rect(screen, (130, 120, 160), rect, width=1, border_radius=6)
@@ -213,9 +231,13 @@ def keycap(screen, key, x, y):
     return rect.right
 
 
-def hints(screen, items):
-    """Keycap hints centred at the bottom: [(key, what it does), ...]."""
-    if IS_WEB:
+def hints(screen, items, pad_items=None):
+    """Keycap hints centred at the bottom: [(key, what it does), ...] --
+    `pad_items` instead while the player is using a gamepad."""
+    from kobito import input as game_input
+    if pad_items and game_input.using_gamepad():
+        items = pad_items
+    elif IS_WEB:
         items = [("Tap", "a card to look"), ("Tap again", "to choose")]
     font = ui.label_font(16)
     widths = []

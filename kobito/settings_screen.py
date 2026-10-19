@@ -227,7 +227,7 @@ class SettingsScreen:
         width = font.size(label)[0] + 52
         self._back_rect = pygame.Rect(rect.right - width - 20, rect.y + 24, width, 30)
         ui.panel(self.screen, self._back_rect, bg=(40, 32, 58, 230), edge=ui.PANEL_EDGE, radius=15)
-        ui.text(self.screen, "Esc", ui.label_font(16), (self._back_rect.x + 12, self._back_rect.centery),
+        ui.text(self.screen, game_input.prompt("Esc", "B"), ui.label_font(16), (self._back_rect.x + 12, self._back_rect.centery),
                 color=ui.MUTED, anchor="midleft", thickness=1)
         ui.text(self.screen, label, font, (self._back_rect.right - 12, self._back_rect.centery),
                 anchor="midright", thickness=1)
@@ -269,7 +269,7 @@ class SettingsScreen:
             ui.text(self.screen, message, ui.label_font(16), (rect.centerx, rect.bottom - 22), color=color,
                     anchor="center")
         else:
-            hint = "↑↓ choose    Enter select    Esc resume"
+            hint = game_input.prompt("↑↓ choose    Enter select    Esc resume", "D-pad choose    A select    B resume")
             ui.text(self.screen, hint, ui.label_font(16), (rect.centerx, rect.bottom - 22), color=ui.MUTED,
                     anchor="center", thickness=1)
 

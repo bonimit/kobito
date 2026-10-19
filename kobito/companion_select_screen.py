@@ -143,7 +143,8 @@ class CompanionSelectScreen:
         self._cards = setup_ui.roster(screen, len(COMPANIONS), self.index, 96, self._draw_roster_item, self.time)
         flash = max(0.0, 1 - self.confirming / CONFIRM_SECONDS) if self.confirming is not None else 0.0
         self._confirm = setup_ui.confirm_button(screen, "CHOOSE", self.time, flash)
-        setup_ui.hints(screen, [(setup_ui.ARROWS, "browse"), ("Enter", "choose"), ("Esc", "quit")])
+        setup_ui.hints(screen, [(setup_ui.ARROWS, "browse"), ("Enter", "choose"), ("Esc", "quit")],
+                       [(setup_ui.DPAD, "browse"), ("pad-a", "choose")])
         pygame.display.flip()
 
     def _expression(self, companion):

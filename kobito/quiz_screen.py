@@ -6,7 +6,7 @@ import pygame
 
 from kobito import furigana
 from kobito import input as game_input
-from kobito.constants import FPS, IS_WEB, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 from kobito.companion_art import draw_companion
 from kobito.hint_service import HintService
@@ -615,12 +615,12 @@ class QuizScreen:
         self._skip_rect = rect
         pygame.draw.rect(self.screen, (60, 60, 82), rect, border_radius=6)
         pygame.draw.rect(self.screen, (170, 170, 190), rect, width=1, border_radius=6)
-        label = self.font_hint.render("Skip" if IS_WEB else "Skip (S)", True, (225, 225, 235))
+        label = self.font_hint.render(game_input.prompt("Skip (S)", "Skip (LB)", "Skip"), True, (225, 225, 235))
         self.screen.blit(label, label.get_rect(center=rect.center))
 
     def _footer_text(self, phase, selected):
         if phase == PHASE_ANSWERING:
-            return "Tap a choice to answer" if IS_WEB else "↑↓ choose · Enter answer"
+            return game_input.prompt("↑↓ choose · Enter answer", "D-pad choose · A answer", "Tap a choice to answer")
         return None  # once answered, the companion's dialogue box carries the message instead
 
     def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False, flash=None):
@@ -672,7 +672,7 @@ class QuizScreen:
             y += line_h
 
         if show_continue and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
-            marker_text = "Tap ▼" if IS_WEB else "Enter ▼"
+            marker_text = game_input.prompt("Enter ▼", "A ▼", "Tap ▼")
             marker = self.font_hint.render(marker_text, True, RPG_TEXT_COLOR)
             self.screen.blit(marker, marker.get_rect(midright=(box.right - 12, box.centery)))
 

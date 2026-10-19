@@ -148,7 +148,7 @@ class TitleScreen:
         if self.confirm_new:
             note, color = "Your saved game will be replaced. Press again to start over.", (255, 170, 170)
         else:
-            note, color = "↑↓ choose    Enter select    Esc quit", ui.MUTED
+            note, color = game_input.prompt("↑↓ choose    Enter select    Esc quit", "D-pad choose    A select"), ui.MUTED
         ui.text(self.screen, note, ui.label_font(16), (cx, SCREEN_HEIGHT - 26), color=color, anchor="center",
                 thickness=1)
         pygame.display.flip()

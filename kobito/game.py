@@ -1225,7 +1225,7 @@ class Game:
             pygame.draw.circle(self.screen, (255, 210, 60), (x, y), 4)
         # (after the "SUN POWER!" pop-up has floated away, so they don't overlap)
         if self.sun_throws == 0 and t - self.sun_gained_at > 1.4:
-            key = "B" if IS_WEB else "X"
+            key = "X" if game_input.using_gamepad() or not IS_WEB else "B"
             label = ui.label_font(16)
             bob = round(2 * math.sin(t * 4))
             words = label.render("THROW", True, ui.CREAM)
@@ -1628,7 +1628,7 @@ class Game:
             note = "Good try! Every question makes you stronger."
         ui.text(self.screen, note, ui.body_font(18), (cx, card.y + 172), color=(190, 200, 255), anchor="center",
                 thickness=1)
-        self._prompt("PRESS ENTER", card.bottom - 26)
+        self._prompt(game_input.prompt("PRESS ENTER", "PRESS A", "TAP TO CONTINUE"), card.bottom - 26)
 
     def _draw_level_complete(self):
         self._dim()
@@ -1676,4 +1676,5 @@ class Game:
         extras = (f"STOMPED {self.stomps}     SNACKS {self.snacks_eaten}     FAVORITES {self.favorites_found}"
                   f"     GIFTS {self.gifts_opened}     SECRETS {self.secrets_total_found}/{self.secrets_total}")
         ui.text(self.screen, extras, ui.label_font(16), (cx, 422), color=ui.SKY, anchor="center", thickness=1)
-        self._prompt("PRESS ENTER FOR THE LESSON REVIEW", 456)
+        self._prompt(game_input.prompt("PRESS ENTER FOR THE LESSON REVIEW", "PRESS A FOR THE LESSON REVIEW",
+                                       "TAP JUMP FOR THE LESSON REVIEW"), 456)

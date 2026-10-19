@@ -166,8 +166,10 @@ class ItemCoach:
 
     def power_up(self, item, first_time=True):
         """A sunflower: explain the new power the first time, then the word."""
-        tip = ("Sun power for 20 seconds! Press X (or F) to throw sunballs -- gamepad B/X."
-               if first_time else "More sun! Your sun power is topped back up.")
+        from kobito import input as game_input
+        how = game_input.prompt("Press X (or F) to throw sunballs!", "Press X or B to throw sunballs!",
+                                "Tap RUN to throw sunballs!")
+        tip = f"Sun power for 20 seconds! {how}" if first_time else "More sun! Your sun power is topped back up."
         self._say([tip, self.lesson_line(item)], "happy", seconds=7.0)
 
     def update(self, dt):

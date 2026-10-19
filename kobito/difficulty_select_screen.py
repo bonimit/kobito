@@ -147,7 +147,8 @@ class DifficultySelectScreen:
             fill = AI_COLOR if opt == MODE_ADAPTIVE else TEXT_COLOR
             pygame.draw.circle(self.screen, fill, center, 8 if i == self.index else 5, 0 if i == self.index else 2)
 
-        footer = self.font_hint.render("<- / -> to choose    Enter to confirm    Esc to quit", True, HINT_COLOR)
+        footer = self.font_hint.render(game_input.prompt("<- / -> to choose    Enter to confirm    Esc to quit",
+                                                         "D-pad to choose    A to confirm"), True, HINT_COLOR)
         self.screen.blit(footer, footer.get_rect(centerx=SCREEN_WIDTH // 2, y=SCREEN_HEIGHT - 55))
 
         if self.menu_touch:

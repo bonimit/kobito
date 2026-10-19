@@ -23,7 +23,7 @@ import pygame
 
 from kobito import input as game_input
 from kobito import ui
-from kobito.constants import FPS, IS_WEB, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 
 GREEN = (110, 220, 130)
@@ -272,7 +272,8 @@ class ReviewScreen(_Screen):
         self._skip_rect.bottomright = (self._start_rect.x - 12, self._start_rect.bottom)
         ui.panel(self.screen, self._skip_rect, bg=(40, 34, 60, 230), radius=12)
         ui.text(self.screen, "SKIP TEST", label, self._skip_rect.center, color=MUTED, anchor="center", thickness=1)
-        hint = "Tap to scroll" if IS_WEB else "↑↓ scroll    Enter start test    S skip"
+        hint = game_input.prompt("↑↓ scroll    Enter start test    S skip", "D-pad scroll    A start test    B skip",
+                                 "Tap to scroll")
         ui.text(self.screen, hint, label, (panel.x + 22, panel.bottom - 30), color=MUTED, anchor="midleft",
                 thickness=1)
         pygame.display.flip()
@@ -463,17 +464,18 @@ class TileScreen(_Screen):
             if i == self.cursor and self.result is None:
                 pygame.draw.rect(self.screen, accent, r.inflate(10, 10), width=3, border_radius=12)
 
-        hint = ("Tap tiles in order · tap the slots to undo" if IS_WEB
-                else "Arrows choose   Enter place   Backspace undo   S skip")
+        hint = game_input.prompt("Arrows choose   Enter place   Backspace undo   S skip",
+                                 "D-pad choose   A place   B undo   LB skip",
+                                 "Tap tiles in order · tap the slots to undo")
         if self.result is False:
-            hint = "Enter to continue"
+            hint = game_input.prompt("Enter to continue", "A to continue", "Tap to continue")
         ui.text(self.screen, hint, ui.label_font(16), (card.x + 18, card.bottom - 22), color=MUTED, anchor="midleft",
                 thickness=1)
         self._skip_rect = pygame.Rect(0, 0, 96, 26)
         self._skip_rect.bottomright = (card.right - 14, card.bottom - 10)
         if self.result is None:
             ui.panel(self.screen, self._skip_rect, bg=(40, 34, 60, 230), radius=10)
-            ui.text(self.screen, "SKIP (S)", ui.label_font(16), self._skip_rect.center, color=MUTED, anchor="center",
+            ui.text(self.screen, game_input.prompt("SKIP (S)", "SKIP (LB)", "SKIP"), ui.label_font(16), self._skip_rect.center, color=MUTED, anchor="center",
                     thickness=1)
         pygame.display.flip()
 
@@ -544,7 +546,8 @@ class ResultsScreen(_Screen):
         ui.text(self.screen, f"+{self.bonus_xp} XP", ui.title_font(32), (cx, card.bottom - 62), color=GREEN,
                 anchor="center")
         if int(pygame.time.get_ticks() / 500) % 2 == 0:
-            ui.text(self.screen, "PRESS ENTER TO CONTINUE", ui.label_font(16), (cx, card.bottom - 24),
+            ui.text(self.screen, game_input.prompt("PRESS ENTER TO CONTINUE", "PRESS A TO CONTINUE", "TAP TO CONTINUE"),
+                    ui.label_font(16), (cx, card.bottom - 24),
                     anchor="center")
         pygame.display.flip()
 
@@ -807,5 +810,6 @@ class LuckyDrawScreen(_Screen):
             ui.text(self.screen, f"You got: {prize_label(self.prize)}!", ui.body_font(24), (cx, 498),
                     color=ui.GOLD, anchor="center")
             if int(pygame.time.get_ticks() / 500) % 2 == 0:
-                ui.text(self.screen, "PRESS ENTER TO CONTINUE", ui.label_font(16), (cx, 528), anchor="center")
+                ui.text(self.screen, game_input.prompt("PRESS ENTER TO CONTINUE", "PRESS A TO CONTINUE",
+                                                       "TAP TO CONTINUE"), ui.label_font(16), (cx, 528), anchor="center")
         pygame.display.flip()

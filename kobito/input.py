@@ -52,6 +52,7 @@ LOGITECH_VENDOR = "046d"
 LOGITECH_D_PRODUCTS = {"c216", "c218", "c219"}
 
 _joysticks = None
+_device = None      # "gamepad" / "keyboard": what the player used last (None: not yet)
 _layouts = {}       # joystick instance id -> layout name
 _dpad = {}          # joystick instance id -> d-pad buttons held (standard layout)
 
@@ -115,11 +116,41 @@ def handle_hotplug(event):
 
 def events():
     """pygame.event.get(), with joystick buttons translated to the logical
-    layout (and the web d-pad's buttons turned into hat motion)."""
+    layout (and the web d-pad's buttons turned into hat motion). Also
+    notes whether the player is on the keyboard or a gamepad, for prompt()."""
     out = []
     for event in pygame.event.get():
+        _note_device(event)
         out.extend(translate(event))
     return out
+
+
+def _note_device(event):
+    global _device
+    if event.type in (pygame.JOYBUTTONDOWN, pygame.JOYHATMOTION) or (
+            event.type == pygame.JOYAXISMOTION and abs(event.value) >= AXIS_DEADZONE):
+        _device = "gamepad"
+    elif event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.FINGERDOWN):
+        _device = "keyboard"
+
+
+def using_gamepad():
+    """True when on-screen prompts should name gamepad buttons: the player
+    last pressed something on a pad -- or hasn't pressed anything yet and a
+    pad is plugged in."""
+    if _device is None:
+        return bool(get_joysticks())
+    return _device == "gamepad"
+
+
+def prompt(keyboard, gamepad, touch=None):
+    """The words of an on-screen prompt for whatever the player is using:
+    prompt("Press Enter", "Press A", "Tap")."""
+    if using_gamepad():
+        return gamepad
+    if IS_WEB and touch is not None:
+        return touch
+    return keyboard
 
 
 def translate(event):
