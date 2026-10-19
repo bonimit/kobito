@@ -13,7 +13,7 @@ from kobito.entities.question_block import QuestionBlock
 from kobito.entities.sky_spring import SkySpring
 from kobito.enemy_art import FLYING_SPECIES, GROUND_SPECIES, SLIME_COLORS
 from kobito.items import KONBINI_IDS
-from kobito.themes import ENEMY_PALETTES, FLYING_ENEMY_PALETTES, get_theme
+from kobito.themes import ENEMY_PALETTES, FLYING_ENEMY_PALETTES, WORLD_ENEMIES, get_theme
 
 # Ground enemies walk a little faster in later levels -- caps out so it
 # never outruns what the player can react to.
@@ -70,6 +70,16 @@ class Level:
     springs: pygame.sprite.Group = field(default_factory=pygame.sprite.Group)
 
 
+def _rotate(items, n):
+    n %= max(1, len(items))
+    return items[n:] + items[:n]
+
+
+def _species(entry):
+    """A WORLD_ENEMIES entry -> (species name, colors dict)."""
+    return (entry, {}) if isinstance(entry, str) else entry
+
+
 def build_level1(theme_id="forest", level_number=1, favorites=()):
     """Builds and returns the first level, skinned with the given world
     theme (see kobito/themes.py) and sized to the given level_number.
@@ -116,13 +126,13 @@ class _LevelBuilder:
         self.enemy_speed = min(ENEMY_SPEED_MAX, ENEMY_SPEED_BASE + (level_number - 1) * ENEMY_SPEED_STEP)
         self.enemy_body_color, self.enemy_foot_color = ENEMY_PALETTES.get(theme.id, (None, None))
         self.flying_palette = FLYING_ENEMY_PALETTES.get(theme.id)
-        # The surface mixes several enemy designs (kobito/enemy_art.py),
-        # rotated per level so each one opens with a different lineup. The
-        # hidden rooms set these to None and use their own coloured critters.
-        self.ground_species = GROUND_SPECIES[level_number % len(GROUND_SPECIES):] + \
-            GROUND_SPECIES[:level_number % len(GROUND_SPECIES)]
-        self.flying_species = FLYING_SPECIES[level_number % len(FLYING_SPECIES):] + \
-            FLYING_SPECIES[:level_number % len(FLYING_SPECIES)]
+        # Each world has its own enemies (kobito/themes.py WORLD_ENEMIES --
+        # crabs and squid by the sea, bulls on the farm, ...), rotated per
+        # level so each one opens with a different lineup. The hidden rooms
+        # set these to None and use their own coloured critters.
+        ground, flying = WORLD_ENEMIES.get(theme.id, (GROUND_SPECIES, FLYING_SPECIES))
+        self.ground_species = _rotate(list(ground), level_number)
+        self.flying_species = _rotate(list(flying), level_number)
         self._ground_count = self._flying_count = 0
         self.platforms = pygame.sprite.Group()
         self.question_blocks = pygame.sprite.Group()
@@ -166,9 +176,9 @@ class _LevelBuilder:
     def _add_enemy(self, spawn_col, row, patrol_start_col, patrol_end_col):
         species, body, foot = None, self.enemy_body_color, self.enemy_foot_color
         if self.ground_species:
-            species = self.ground_species[self._ground_count % len(self.ground_species)]
-            body = foot = None
-            if species == "slime":   # slimes come in several jelly colours
+            species, colors = _species(self.ground_species[self._ground_count % len(self.ground_species)])
+            body, foot = colors.get("body"), colors.get("foot")
+            if species == "slime" and not body:   # slimes come in several jelly colours
                 body = SLIME_COLORS[(self._ground_count // len(self.ground_species)) % len(SLIME_COLORS)]
         self._ground_count += 1
         enemy = Enemy(
@@ -187,8 +197,8 @@ class _LevelBuilder:
         body_color, wing_color = self.flying_palette or (None, None)
         species = None
         if self.flying_species:
-            species = self.flying_species[self._flying_count % len(self.flying_species)]
-            body_color = wing_color = None
+            species, colors = _species(self.flying_species[self._flying_count % len(self.flying_species)])
+            body_color, wing_color = colors.get("body"), colors.get("wing")
         self._flying_count += 1
         enemy = FlyingEnemy(
             col * TILE_SIZE,

@@ -24,8 +24,8 @@ class Enemy(pygame.sprite.Sprite):
 
         self.body_color = body_color or BODY_COLOR
         self.foot_color = foot_color or FOOT_COLOR
-        # The look (kobito/enemy_art.py): a named species (slime, oni, daruma,
-        # kappa), or -- when only colours are given, as in the hidden rooms --
+        # The look (kobito/enemy_art.py): a named species (slime, oni, crab,
+        # squid, bull, ... -- each world has its own, see WORLD_ENEMIES), or -- when only colours are given, as in the hidden rooms --
         # a round "critter" in those colours. The hitbox stays one size.
         self.species = species or ("critter" if body_color else "slime")
         colors = {"body": body_color, "foot": foot_color} if body_color else {}
@@ -90,6 +90,11 @@ class Enemy(pygame.sprite.Sprite):
             self.velocity_x = -abs(self.velocity_x)
 
 
+# Wingbeats per second: buzzing bees, flapping birds, slow-bobbing ghosts.
+FLAP_SPEEDS = {"bat": 7.0, "bee": 14.0, "crow": 6.0, "seagull": 5.0, "flying_fish": 6.0, "jellyfish": 2.5,
+               "pufferfish": 2.0}
+
+
 class FlyingEnemy(pygame.sprite.Sprite):
     """A bat-like hazard that patrols up and down through the air rather
     than walking the ground -- ignores gravity entirely, so it threatens
@@ -103,8 +108,8 @@ class FlyingEnemy(pygame.sprite.Sprite):
 
         self.body_color = body_color or (70, 55, 90)
         self.wing_color = wing_color or (100, 80, 120)
-        # bat / chochin (lantern ghost) / karakasa (umbrella ghost); a bat in
-        # the given colours when only colours are given (hidden rooms).
+        # bat, crow, seagull, bee, flying fish, lantern / umbrella ghost, ...;
+        # a bat in the given colours when only colours are given (hidden rooms).
         self.species = species or "bat"
         colors = {"body": body_color, "wing": wing_color} if body_color else {}
         self._frames = enemy_art.frames_for(enemy_art.render_flying, self.species, colors)
@@ -124,7 +129,7 @@ class FlyingEnemy(pygame.sprite.Sprite):
 
     def update(self, dt, platforms):
         self._anim += dt
-        right, left = self._frames[enemy_art.flap(self._anim, 7.0 if self.species == "bat" else 3.0)]
+        right, left = self._frames[enemy_art.flap(self._anim, FLAP_SPEEDS.get(self.species, 3.0))]
         self.image = left if self.facing_left else right
         self.rect.y += round(self.velocity_y * dt)
         if self.rect.top <= self.patrol_min_y:

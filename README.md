@@ -481,9 +481,31 @@ On the ground: a jelly **slime** (several colours), a horned **oni** with
 fangs and a tiger-stripe belt, a wobbling **daruma** doll, and a beaked
 **kappa** with a water dish on its head. In the air: a **bat**, the
 one-eyed paper-lantern ghost **chōchin-obake**, and the umbrella ghost
-**karakasa-obake** hopping on its handle. A level mixes them, and the
-lineup rotates from level to level; the hidden rooms keep their own
-critters (rats, gators, moles, cloud sheep, thunder imps, moon rabbits).
+**karakasa-obake** hopping on its handle.
+
+**Each world has its own enemies**, matching the place (`WORLD_ENEMIES` in
+`kobito/themes.py`); the lineup rotates from level to level, and the
+hidden rooms keep their own critters (rats, gators, moles, cloud sheep,
+thunder imps, moon rabbits):
+
+| World | On the ground | In the air |
+| --- | --- | --- |
+| Whispering Forest | mushroom, tanuki, slime | hornet, umbrella ghost |
+| Sunfall Desert / Arabian Night | scorpion, snake / cobra | vulture / bat, ghost |
+| Coral Deep | crab, squid | pufferfish, jellyfish |
+| Cloud Kingdom | cloud slime | thundercloud, seagull |
+| Neon Tokyo | daruma, rat, oni | crow, lantern ghost |
+| Nagano Snowfield | snowman (yuki-daruma), tanuki | crow |
+| Okinawa Shore / Tropical Island | crab, habu snake | seagull, flying fish |
+| Okinawa Island Drive | squid, crab | flying fish, pufferfish, seagull |
+| Hokkaido Lavender | rhino beetle, tanuki | bee |
+| Kyoto Autumn | oni, kappa, daruma | lantern ghost, umbrella ghost |
+| Aomori Apple Orchard | caterpillar, rhino beetle | crow |
+| Shizuoka Tea Fields | snail, caterpillar | bee |
+| Hokkaido Dairy Farm | bull, rat | crow, bee |
+| Fairy Tale | mushroom, slime | ghost, bat |
+| London / New York | rat, slime | pigeon (+ ghost in London) |
+| Korea | blue dokkaebi, tanuki | magpie, lantern ghost |
 
 Every mascot has a **power gauge, 10 pips** (shown under the score). Each
 enemy hit costs **1 power**, so ten hits drain a full gauge — hits no

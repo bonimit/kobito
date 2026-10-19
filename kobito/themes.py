@@ -943,6 +943,36 @@ def get_theme(theme_id):
     return THEMES[theme_id]
 
 
+# --- Enemies per world ----------------------------------------------------
+# Who you meet in each world (designs in kobito/enemy_art.py): ground
+# species, then flying ones. An entry is a species name, or (name, colors)
+# for a local variant -- a blue dokkaebi in Korea, grey pigeons in London.
+# The lineup is rotated per level so each level opens differently.
+
+WORLD_ENEMIES = {
+    "forest": (("mushroom", "tanuki", "slime"), ("bee", "karakasa")),
+    "desert": (("scorpion", "snake"), (("crow", {"body": (120, 84, 56), "wing": (160, 116, 76)}),)),   # vultures
+    "arabian_night": ((("snake", {"body": (196, 150, 60)}), "scorpion"), ("bat", "ghost")),             # cobras
+    "underwater": (("crab", "squid"), ("pufferfish", "jellyfish")),
+    "sky": ((("slime", {"body": (236, 240, 255)}),), ("thundercloud", "seagull")),                      # cloud slimes
+    "tokyo": (("daruma", "rat", "oni"), ("crow", "chochin")),
+    "nagano": (("snowman", "tanuki"), ("crow",)),
+    "okinawa": (("crab", ("snake", {"body": (176, 150, 90)})), ("seagull", "flying_fish")),             # habu
+    "hokkaido": (("beetle", "tanuki"), ("bee",)),
+    "kyoto": (("oni", "kappa", "daruma"), ("chochin", "karakasa")),
+    "okinawa_drive": (("squid", "crab"), ("flying_fish", "pufferfish", "seagull")),
+    "aomori": (("caterpillar", "beetle"), ("crow",)),
+    "shizuoka": (("snail", "caterpillar"), ("bee",)),
+    "hokkaido_farm": (("bull", "rat"), ("crow", "bee")),
+    "island": (("crab", "snake"), ("seagull", "flying_fish")),
+    "fairy_tale": (("mushroom", "slime"), ("ghost", "bat")),
+    "london": (("rat", "slime"), (("crow", {"body": (130, 132, 146), "wing": (170, 172, 186)}), "ghost")),  # pigeons
+    "new_york": (("rat", "slime"), (("crow", {"body": (130, 132, 146), "wing": (170, 172, 186)}),)),
+    "korea": ((("oni", {"body": (70, 120, 220)}), "tanuki"), (("crow", {"body": (30, 30, 40), "wing": (245, 245, 250)}),
+                                                             "chochin")),   # dokkaebi, magpies
+}
+
+
 # --- Enemy skins --------------------------------------------------------
 # (body_color, foot_color) per world, keeping every enemy's silhouette
 # but recoloring it to fit the setting -- a goblin-green forest imp reads
