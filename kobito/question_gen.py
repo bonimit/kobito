@@ -78,7 +78,7 @@ def _meaning_question(word, group, jlpt):
     choices = [meaning] + rng.sample(others, 3)
     prompt = rng.choice(MEANING_PROMPTS).format(jp=jp, romaji=kana_to_romaji(kana))
     explanation = f"{jp} ({kana}) is {POS_NAMES[pos]} meaning \"{meaning.lower()}\"."
-    hint = f"Say it out loud -- {kana}. Where would you hear it?"
+    hint = _meaning_hint(jp, kana, rng)
     return _question(qid, "vocabulary", jlpt, prompt, choices, meaning, explanation, hint, rng)
 
 
@@ -91,7 +91,12 @@ def _reverse_question(word, group, jlpt):
     choices = [answer] + rng.sample(others, 3)
     prompt = rng.choice(REVERSE_PROMPTS).format(meaning=meaning)
     explanation = f"{jp} ({kana}) means \"{meaning.lower()}\"."
-    hint = "Read each word's romaji aloud -- which one have you heard used that way?"
+    romaji = kana_to_romaji(kana)
+    hint = rng.choice((
+        f"The word you want starts with the sound “{romaji[:2]}…”.",
+        f"Listen for it: it begins “{romaji[:2]}…” when you say it.",
+        f"Sound each one out -- the right one starts with “{romaji[:2]}…”.",
+    ))
     return _question(qid, "vocabulary", jlpt, prompt, choices, answer, explanation, hint, rng)
 
 
@@ -136,8 +141,40 @@ def _reading_question(word, group, jlpt):
         wrong += [w for w in similar if w not in wrong][:3 - len(wrong)]
     prompt = rng.choice(READING_PROMPTS).format(jp=jp)
     explanation = f"{jp} is read {kana} ({kana_to_romaji(kana)}) and means \"{meaning.lower()}\"."
-    hint = "Watch the small details: long vowels (う / い), dakuten (゛) and small っ."
+    hint = _reading_hint(kana, wrong, rng)
     return _question(qid, "kanji", jlpt, prompt, [kana] + wrong, kana, explanation, hint, rng)
+
+
+def _meaning_hint(jp, kana, rng):
+    """A nudge for "what does X mean?": the first kanji, or the sound."""
+    first = next((ch for ch in jp if has_kanji(ch)), None)
+    options = [f"Say {kana} out loud, slowly -- where might you hear it?"]
+    if first:
+        options += [f"Focus on the kanji {first} -- what does it make you picture?",
+                    f"{first} is the key part of {jp}. Think about what {first} means on its own."]
+    else:
+        options += [f"It's written all in kana: {kana}. Sound it out and picture it."]
+    return rng.choice(options)
+
+
+def _reading_hint(kana, wrong, rng):
+    """What separates the right reading from its look-alikes here."""
+    clues = []
+    if any(w.replace("う", "") == kana.replace("う", "") and w != kana for w in wrong) or \
+            any(w.replace("い", "") == kana.replace("い", "") and w != kana for w in wrong):
+        clues.append("Listen for the long vowel -- is the sound stretched or short?")
+    for w in wrong:      # a dakuten slip: name the two kana, unvoiced first
+        pairs = [(a, b) for a, b in zip(kana, w) if a != b]
+        if len(w) == len(kana) and len(pairs) == 1 and _VOICED.get(pairs[0][0]) == pairs[0][1]:
+            plain, voiced = sorted(pairs[0], key=lambda ch: ch in "がぎぐげござじずぜぞだぢづでどばびぶべぼ")
+            clues.append(f"Check the dakuten: is it {plain} or {voiced}?")
+            break
+    if any(("っ" in w) != ("っ" in kana) for w in wrong):
+        clues.append("Is there a small っ (a little pause) in this word, or not?")
+    if any(any(c in w for c in "ゃゅょ") != any(c in kana for c in "ゃゅょ") for w in wrong):
+        clues.append("Watch for a small ゃ / ゅ / ょ -- it blends with the sound before it.")
+    clues.append(f"It's {len(kana)} kana long when you read it.")
+    return rng.choice(clues[:-1]) if len(clues) > 1 else clues[0]
 
 
 # -- Verbs ------------------------------------------------------------------------
@@ -194,7 +231,9 @@ def _verb_question(verb_entry, form, jlpt):
     label = FORMS[form][0]
     prompt = f"{verb} ({meaning}) → {label}?"
     explanation = f"{_rule(verb, kind, form)} → {answer}."
-    return _question(qid, "verb_conjugation", jlpt, prompt, choices, answer, explanation, FORM_HINTS[form], rng)
+    group = {"ru": "a ru-verb", "u": "an u-verb", "irr": "irregular"}[kind]
+    hint = f"{verb} is {group}. {FORM_HINTS[form]}"
+    return _question(qid, "verb_conjugation", jlpt, prompt, choices, answer, explanation, hint, rng)
 
 
 # -- The whole set ------------------------------------------------------------------

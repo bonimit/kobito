@@ -321,6 +321,16 @@ left alone, since that's a reading, not a translation.
 
 ## Your AI hint companion
 
+Your companion **talks like itself and doesn't repeat**: each one has its
+own lines for while you think ("I'm rooting for you! Get it? Roots?" —
+Kinoko), for a right answer ("Mooo-velous!" — Ushi) and for a miss, and
+never says the same line twice in a row. When it speaks up after ~10
+seconds, it goes straight to the point with a **TIP** — no "Hmm, a tricky
+one…" — and Claude is told to skip filler openers too. The generated
+questions' hints are specific to the question: which trap to watch for
+("Check the dakuten: is it と or ど?", "Is there a small っ?"), the first
+sound of the word you want, or the kanji to focus on.
+
 **After a wrong answer** the companion's bar grows into a **hint panel**,
 typed out line by line: its own reaction ("Ooh, so close!" for Hana,
 "Mushroom for improvement!" for Kinoko), the **✓ answer**, a **TIP** —

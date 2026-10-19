@@ -126,7 +126,9 @@ class HintService:
             "  choices in or out by number.",
             "- Be factually accurate: build only on the explanation above.",
             "- Point at the useful clue (a radical, a particle's role, a stem change, a nuance).",
-            "- Speak directly and warmly to the student. No preamble.",
+            "- Start with the clue itself. No filler openers like 'Hmm', 'Tricky one',",
+            "  'Looks like you're stuck' or 'Great question' -- the game already shows",
+            "  that you're speaking up.",
         ]
         return self.complete("\n".join(lines))
 
@@ -165,7 +167,9 @@ class HintService:
             "  change, a nuance that separates the answer from the distractor).",
             "- If the student's wrong choice reveals a specific misunderstanding,",
             "  gently steer them off it without naming the right answer.",
-            "- Speak directly and warmly to the student. No preamble.",
+            "- Start with the clue itself. The game already shows your reaction",
+            "  (e.g. 'Ooh, so close!') and the right answer right above your hint, so",
+            "  no filler openers like 'Hmm', 'Oops', 'Not quite' or 'Don't worry'.",
         ]
         return self.complete("\n".join(lines))
 

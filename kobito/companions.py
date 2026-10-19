@@ -10,7 +10,9 @@
 # companion" is a real choice, not just a skin -- shown on the
 # companion-select screen as `ability_name` / `ability_description`,
 # along with `jp` (its name in Japanese) and a `greeting` in its voice;
-# `reactions` open its hint after a wrong answer.
+# `waiting` is said while a question is open, `cheers` after a right
+# answer and `reactions` open its hint after a wrong one -- a different line
+# each time (see quiz_screen.companion_line).
 # Kobito is the baseline with no modifier; every multiplier/bonus below
 # is relative to that.
 COMPANIONS = [
@@ -18,7 +20,10 @@ COMPANIONS = [
         "id": "kobito",
         "name": "Kobito",
         "jp": "こびと",
-        "reactions": ["Not quite -- and that's okay!", "Almost! Let's look at it together."],
+        "waiting": ["Take your time -- I'm right here.", 'Read it slowly. You know more than you think!', 'One step at a time.', 'I believe in you!'],
+        "cheers": ['Well done!', 'Yes! Just like that.', "You're growing so fast!"],
+        "reactions": ["Not quite -- and that's okay!", "Almost! Let's look at it together.",
+                      "Good try! Here's the trick.", "Mistakes are how we learn."],
         "greeting": "Hi, I'm Kobito! Take your time -- I'll be right here whenever you get stuck.",
         "tagline": "A gentle forest spirit",
         "personality": "a small, warm, gentle forest-spirit companion who encourages softly",
@@ -34,7 +39,10 @@ COMPANIONS = [
         "id": "ushi",
         "name": "Ushi",
         "jp": "うし",
-        "reactions": ["Easy now, dear -- you were close.", "No worries. Let's see why together."],
+        "waiting": ['No rush, dear. Breathe first.', 'Slow and steady, like a good graze.', "I'm here whenever you need me.", 'A nice one. Have a good look.'],
+        "cheers": ['Lovely work, dear.', 'Mooo-velous!', "That's my clever one."],
+        "reactions": ["Easy now, dear -- you were close.", "No worries. Let's see why together.",
+                      "There, there. This one fools a lot of people.", "Don't fret, dear."],
         "greeting": "Moo~ No rush, dear. Every mistake is just a lesson wearing a disguise.",
         "tagline": "A calm, motherly cow spirit",
         "personality": "a calm, patient, motherly cow spirit who reassures like an old friend",
@@ -50,7 +58,10 @@ COMPANIONS = [
         "id": "hana",
         "name": "Hana",
         "jp": "はな",
-        "reactions": ["Ooh, so close!", "Aww, almost! You've totally got this!"],
+        "waiting": ["You've got this!", 'Ooh, I like this one!', 'Go go go! ...but carefully!', 'Eyes on the clue!'],
+        "cheers": ['YES! Amazing!!', 'Woohoo! Perfect!', "You're on fire!"],
+        "reactions": ["Ooh, so close!", "Aww, almost! You've totally got this!",
+                      "Nope -- but next time for sure!", "Eek! Sneaky one!"],
         "greeting": "Yay, let's go!! I'm going to cheer for every single right answer!",
         "tagline": "A bright, cheerful flower spirit",
         "personality": "a bright, bubbly, endlessly cheerful flower spirit, full of energy",
@@ -66,7 +77,10 @@ COMPANIONS = [
         "id": "umeshu",
         "name": "Ume-shu",
         "jp": "うめしゅ",
-        "reactions": ["Not this time. Allow me to explain.", "A small slip. Here is the reason."],
+        "waiting": ['Read every word. The answer hides in the details.', 'Patience reveals much.', 'Consider each choice in turn.', 'A calm mind reads best.'],
+        "cheers": ['Precisely.', 'Elegant work.', 'Exactly right. Well reasoned.'],
+        "reactions": ["Not this time. Allow me to explain.", "A small slip. Here is the reason.",
+                      "An understandable choice -- but no.", "Let us look closer."],
         "greeting": "Shall we begin? I will always show you the why behind each answer.",
         "tagline": "An elegant, quietly wise plum spirit",
         "personality": "an elegant, soft-spoken, quietly wise plum-blossom spirit",
@@ -82,7 +96,10 @@ COMPANIONS = [
         "id": "kinoko",
         "name": "Kinoko",
         "jp": "きのこ",
-        "reactions": ["Oops! Mushroom for improvement!", "Whoopsie! Let's spore-t this out."],
+        "waiting": ["Don't be a fungi-tive -- answer it!", 'Shroom for thought...', "I'm rooting for you! Get it? Roots?", 'Spore-tacular question, this one.'],
+        "cheers": ['Fun-gi-tastic!', "You're a fun guy!", 'Shroom-shroom! Nailed it!'],
+        "reactions": ["Oops! Mushroom for improvement!", "Whoopsie! Let's spore-t this out.",
+                      "Ah, a toadstool of a question!", "No worries, we'll get it next time-ber!"],
         "greeting": "Hey hey! Ready for a fun-gi time? ...Fun-gi? Get it? Mushroom joke!",
         "tagline": "A playful, quirky mushroom spirit",
         "personality": "a playful, quirky, slightly mischievous mushroom spirit who loves puns",

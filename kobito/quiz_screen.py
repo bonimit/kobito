@@ -1,4 +1,5 @@
 import asyncio
+import random
 import re
 import threading
 
@@ -124,6 +125,20 @@ NO_LINE_START = set("、。，．・：；？！?!ー」』）)]}ぁぃぅぇぉ
 NO_LINE_END = set("「『（([{")
 
 
+_last_line = {}     # (companion, pool) -> index of the line said last time
+
+
+def companion_line(companion, pool, fallback):
+    """One of the companion's lines from `pool` ("waiting", "cheers",
+    "reactions"), never the same one twice in a row."""
+    lines = companion.get(pool) or [fallback]
+    key = (companion.get("id"), pool)
+    choices = [i for i in range(len(lines)) if i != _last_line.get(key)] or [0]
+    index = random.choice(choices)
+    _last_line[key] = index
+    return lines[index]
+
+
 def _kanji(ch):
     return "一" <= ch <= "鿿" or ch == "々"
 
@@ -242,7 +257,9 @@ class QuizScreen:
         self.suppress_furigana = question.get("category") == "kanji"
         self._detail_rect = None
         self._hint_started = None   # when the hint panel opened (seconds since the box did)
-        self._reaction = None
+        self._reaction = None       # picked when the answer turns out wrong
+        self._cheer = None          # ...or right
+        self._waiting = companion_line(self.hint_service.companion, "waiting", "Take your time!")
         widest = max(self.font_choice.size(f"4. {c}")[0] for c in question["choices"])
         self.box_width = (BOX_WIDTH_WIDE if question.get("category") == "reading"
                           or widest > BOX_WIDTH - 2 * BOX_PADDING else BOX_WIDTH)
@@ -419,8 +436,8 @@ class QuizScreen:
 
     def _open_hint(self):
         self._hint_started = self._age
-        reactions = self.hint_service.companion.get("reactions") or ["Not quite!"]
-        self._reaction = reactions[sum(map(ord, self.question["id"])) % len(reactions)]
+        if self._reaction is None:
+            self._reaction = companion_line(self.hint_service.companion, "reactions", "Not quite!")
 
     def _split_passage(self, text):
         """A reading question's prompt -> (lead-in, 「passage」, question).
@@ -514,23 +531,26 @@ class QuizScreen:
 
         if phase == PHASE_ANSWERING:
             if self.prompted:
-                self._draw_rpg_dialogue(f"Hmm, a tricky one? Here's a hint: {self._nudge_text()}",
-                                        expression="talking", flash=self._age - self.prompted_at)
+                self._draw_rpg_dialogue(self._nudge_text(), expression="talking", flash=self._age - self.prompted_at,
+                                        chip="TIP")
             else:
-                self._draw_rpg_dialogue("Take your time! If you get stuck, I'll give you a hint.", expression="happy")
+                self._draw_rpg_dialogue(self._waiting, expression="happy")
         elif phase == PHASE_HINT:
             self._draw_hint_panel(hint_text)
         elif companion_state == "thinking":
             self._draw_rpg_dialogue("...", expression="thinking", show_continue=False)
         elif phase == PHASE_REVEAL and selected is not None:
+            companion = self.hint_service.companion
             if selected == self.question["answer"]:
-                gain = f" +{self.points} XP" if self.points is not None else ""
-                self._draw_rpg_dialogue(f"Correct! Nice work.{gain}", expression="happy", show_continue=False)
+                if self._cheer is None:
+                    self._cheer = companion_line(companion, "cheers", "Correct!")
+                gain = f"  +{self.points} XP" if self.points is not None else ""
+                self._draw_rpg_dialogue(f"{self._cheer}{gain}", expression="happy", show_continue=False)
             else:
-                loss = f" -{self.penalty} XP" if self.penalty is not None else ""
-                self._draw_rpg_dialogue(
-                    f"Not quite... let me think.{loss}", expression="sympathetic", show_continue=False
-                )
+                if self._reaction is None:
+                    self._reaction = companion_line(companion, "reactions", "Not quite!")
+                loss = f"  -{self.penalty} XP" if self.penalty is not None else ""
+                self._draw_rpg_dialogue(f"{self._reaction}{loss}", expression="sympathetic", show_continue=False)
 
         if self.panel_x < SCREEN_WIDTH:
             self._draw_detail_panel()
@@ -798,7 +818,7 @@ class QuizScreen:
             return game_input.prompt("↑↓ choose · Enter answer", "D-pad choose · A answer", "Tap a choice to answer")
         return None  # once answered, the companion's dialogue box carries the message instead
 
-    def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False, flash=None):
+    def _draw_rpg_dialogue(self, text, expression="talking", show_continue=False, flash=None, chip=None):
         """The companion speaking: a full-width bar in the strip under the
         ground line, portrait on the left and its name in gold leading the
         text -- the classic RPG dialogue box, kept slim so it never covers
@@ -835,7 +855,8 @@ class QuizScreen:
 
         text_x = box.x + 8 + RPG_PORTRAIT_SIZE + 12
         text_width = box.right - RPG_MARKER_SPACE - text_x
-        font, lines, name_label = self._fit_dialogue(companion["name"], text or "...", text_width)
+        chip_w = 50 if chip else 0
+        font, lines, name_label = self._fit_dialogue(companion["name"], text or "...", text_width, chip_w)
         line_h = font.get_height() + 1
         y = box.y + (box.height - line_h * len(lines)) // 2
         for i, line in enumerate(lines):
@@ -843,19 +864,25 @@ class QuizScreen:
             if i == 0:
                 self.screen.blit(name_label, (x, y + (line_h - name_label.get_height()) // 2))
                 x += name_label.get_width()
+                if chip:
+                    label = self.font_category.render(chip, True, (20, 16, 30))
+                    rect = pygame.Rect(x, y + 2, chip_w - 8, line_h - 4)
+                    pygame.draw.rect(self.screen, TIP_COLOR, rect, border_radius=6)
+                    self.screen.blit(label, label.get_rect(center=rect.center))
+                    x += chip_w
             self.screen.blit(font.render(line, True, RPG_TEXT_COLOR), (x, y))
             y += line_h
 
         if show_continue and (pygame.time.get_ticks() // RPG_CONTINUE_BLINK_MS) % 2 == 0:
             self._continue_marker(box.right - 12, box.centery)
 
-    def _fit_dialogue(self, name, text, width):
+    def _fit_dialogue(self, name, text, width, first_line_extra=0):
         """Wraps the line -- its first row shortened to make room for the
         companion's name -- at the largest font that fits in
         RPG_MAX_LINES; trims with "..." if even the smallest doesn't."""
         name_label = self.font_category.render(f"{name}  ", True, RPG_NAME_COLOR)
         for font in (self.font_companion, self.font_dialogue_small):
-            lines, current, limit = [], "", width - name_label.get_width()
+            lines, current, limit = [], "", width - name_label.get_width() - first_line_extra
             for word in text.split(" "):
                 candidate = f"{current} {word}".strip()
                 if current and font.size(candidate)[0] > limit:
