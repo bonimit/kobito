@@ -37,7 +37,6 @@ from kobito.constants import (
     required_question_count,
 )
 from kobito.adaptive import AdaptiveTutor
-from kobito.assets import load_character_animations
 from kobito.difficulty import JLPT_DESCRIPTIONS, JLPT_LEVELS, MODE_ADAPTIVE, MODE_CHOOSE, MODE_RANDOM, next_jlpt_level
 from kobito.companion_art import draw_companion
 from kobito.entities.collectible import Collectible
@@ -102,10 +101,10 @@ LAUNCH_SECONDS = 1.6       # how long a launch can take to clear the top before 
 
 SPRING_RAINBOW = [(232, 72, 72), (250, 200, 60), (110, 200, 100), (80, 160, 230), (170, 110, 210), (255, 150, 200)]
 
-# The mini-map under the level pill: the room from start to finish.
-MINIMAP = pygame.Rect(0, 0, 300, 22)
-MINIMAP.midtop = (SCREEN_WIDTH // 2 - 14, 46)
-MINIMAP_PAD = 10
+# The mini-map under the level pill: a thin line from start to finish.
+MINIMAP_W = 200
+MINIMAP_X = SCREEN_WIDTH // 2 - MINIMAP_W // 2
+MINIMAP_Y = 50
 
 # Every hidden room's look and words, underground and sky alike.
 HIDDEN_STYLES = {**underground_levels.STYLES, **sky_levels.STYLES}
@@ -210,7 +209,6 @@ class Game:
         self.pending_stage_end = False   # set when the player continues past the clear card
 
         self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
-        self._map_icon = load_character_animations(character["id"], character["color"], width=12, height=20)["idle"].frames[0]
         # A "sprite group" is pygame's container for a batch of sprites; the
         # world's group holds everything drawn in that room (the goal is in
         # it but deliberately not in `platforms`, so it's visible without
@@ -1469,59 +1467,23 @@ class Game:
         ui.panel(self.screen, pill, radius=14)
         ui.text(self.screen, words, label, pill.center, color=ui.GOLD, anchor="center")
 
-    def _minimap_track(self, world):
-        """The map's still part, drawn once per room: the ground as a strip,
-        pits as gaps, a flag at the start and the finish at the end."""
-        cache = self.__dict__.setdefault("_minimap_cache", {})
-        if id(world) in cache:
-            return cache[id(world)]
-        w, h = MINIMAP.width, MINIMAP.height
-        track = pygame.Surface((w, h), pygame.SRCALPHA)
-        pygame.draw.rect(track, (14, 10, 24, 200), track.get_rect(), border_radius=h // 2)
-        scale = (w - 2 * MINIMAP_PAD) / world.width_px
-        for start, end in world.ground_segments_px:
-            seg = pygame.Rect(MINIMAP_PAD + round(start * scale), h // 2 - 2,
-                              max(1, round((end - start) * scale)), 5)
-            pygame.draw.rect(track, (120, 110, 150), seg, border_radius=2)
-        pygame.draw.rect(track, (255, 214, 150, 140), track.get_rect(), width=1, border_radius=h // 2)
-        cache[id(world)] = track
-        return track
-
     def _draw_minimap(self):
-        """A slim map of the room from start to finish under the level pill:
-        quiz boxes along the way (gold to do, green / red answered), the
-        finish -- the castle's ゴール flag, or a secret room's EXIT -- and the
-        hero's spot, with how far along that is."""
-        world, area = self.world, MINIMAP
-        self.screen.blit(self._minimap_track(world), area.topleft)
-        scale = (area.width - 2 * MINIMAP_PAD) / world.width_px
-        to_x = lambda px: area.x + MINIMAP_PAD + round(px * scale)
-        cy = area.centery
-        for block in world.question_blocks:
-            color = ((240, 96, 96) if block.answered_wrong else (110, 220, 130)) if block.used else (255, 206, 70)
-            pygame.draw.circle(self.screen, ui.OUTLINE, (to_x(block.rect.centerx), cy - 7), 3)
-            pygame.draw.circle(self.screen, color, (to_x(block.rect.centerx), cy - 7), 2)
-        # Start flag and finish.
-        sx = to_x(0) + 2
-        pygame.draw.line(self.screen, ui.CREAM, (sx, cy - 8), (sx, cy + 5), 2)
-        pygame.draw.polygon(self.screen, (110, 220, 130), [(sx + 1, cy - 8), (sx + 8, cy - 5), (sx + 1, cy - 2)])
-        fx = to_x(self.goal.rect.centerx)
-        if world.hidden:
-            ui.text(self.screen, "EXIT", ui.label_font(16), (min(fx, area.right - 18), cy - 1), color=ui.GREEN,
-                    anchor="center", thickness=1)
-        else:
-            pygame.draw.line(self.screen, ui.CREAM, (fx, cy - 10), (fx, cy + 5), 2)
-            for i in range(3):        # a tiny checkered flag
-                for j in range(2):
-                    color = (20, 20, 20) if (i + j) % 2 else (250, 250, 250)
-                    pygame.draw.rect(self.screen, color, (fx + 1 + i * 3, cy - 10 + j * 3, 3, 3))
-        # The hero.
+        """A thin line under the level pill: it fills in gold as the hero
+        heads for the finish (the ゴール flag -- or a secret room's exit),
+        with a dot for where they are now."""
+        y, left, right = MINIMAP_Y, MINIMAP_X, MINIMAP_X + MINIMAP_W
         progress = max(0.0, min(1.0, self.player.rect.centerx / max(1, self.goal.rect.centerx)))
-        px = to_x(self.player.rect.centerx)
-        icon = self._map_icon
-        self.screen.blit(icon, icon.get_rect(midbottom=(px, cy + 6)))
-        ui.text(self.screen, f"{round(progress * 100)}%", ui.label_font(16), (area.right + 8, cy), color=ui.CREAM,
-                anchor="midleft", thickness=1)
+        x = left + round(progress * MINIMAP_W)
+        pygame.draw.line(self.screen, (0, 0, 0), (left, y + 1), (right, y + 1), 3)      # shadow
+        pygame.draw.line(self.screen, (110, 100, 135), (left, y), (right, y), 3)
+        pygame.draw.line(self.screen, ui.GOLD, (left, y), (x, y), 3)
+        # The finish: a tiny flag (green for a secret room's exit).
+        pygame.draw.line(self.screen, ui.CREAM, (right, y - 8), (right, y + 1), 2)
+        flag = ui.GREEN if self.world.hidden else (240, 96, 96)
+        pygame.draw.polygon(self.screen, flag, [(right + 1, y - 8), (right + 7, y - 6), (right + 1, y - 4)])
+        # The hero.
+        pygame.draw.circle(self.screen, ui.OUTLINE, (x, y), 6)
+        pygame.draw.circle(self.screen, ui.CREAM, (x, y), 4)
 
     def _draw_quiz_card(self):
         """Progress toward the badge -- at least N questions answered, 70%

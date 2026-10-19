@@ -729,11 +729,9 @@ straight through takes about 30 seconds, but with 30 quiz boxes (20 answered
 for the badge), enemies and six secrets, a real playthrough is more like
 **8–12 minutes**.
 
-A **mini-map** under the level pill shows where you are: a green flag at
-the start, the ground with its pits, every quiz box (gold = still to do,
-green = answered right, red = wrong), the checkered ゴール flag at the end,
-your hero's spot and how far along you are (e.g. **37%**). In a secret
-room it maps that room instead, up to its **EXIT**.
+A minimal **progress line** under the level pill shows how close you are:
+it fills in gold from start to the ゴール flag, with a dot for where you are
+now. In a secret room it tracks the way to that room's exit (green flag).
 
 ### 30 quiz boxes per level, 20 answers to qualify
 
