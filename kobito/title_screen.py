@@ -1,4 +1,5 @@
-"""The first screen when a saved game exists: Continue, New Game or Town.
+"""The title screen when a saved game exists: Continue, New Game, Town, or
+Player (switch to another player).
 
 Shown over the saved world itself (the level's backdrop, scrolled to where
 the player saved), with a card summarising the save -- mascot, companion,
@@ -6,7 +7,7 @@ level, score, badges, items. Starting a New Game replaces the save, so it
 asks once more before going ahead. Town visits the house and the konbini
 (kobito/town_screen.py) before playing.
 
-run() returns "continue", "new" or "town".
+run() returns "continue", "new", "town" or "player".
 """
 
 import asyncio
@@ -29,21 +30,23 @@ from kobito.themes import get_theme
 RESULT_CONTINUE = "continue"
 RESULT_NEW = "new"
 RESULT_TOWN = "town"
-LABELS = ("CONTINUE", "NEW GAME", "TOWN")
+RESULT_PLAYER = "player"
+LABELS = ("CONTINUE", "NEW GAME", "TOWN", "PLAYER")
 
 CARD = pygame.Rect(0, 0, 560, 236)
 CARD.midtop = (SCREEN_WIDTH // 2, 132)
-BUTTON_SIZE = (230, 52)
+BUTTON_SIZE = (200, 52)
 
 
 class TitleScreen:
-    def __init__(self, saved, profile=None):
+    def __init__(self, saved, profile=None, player_name=None):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito")
         self.clock = pygame.time.Clock()
         self.saved = saved
         self.profile = profile
+        self.player_name = player_name
         run = saved["run"]
         self.character = get_character(run["character_id"])
         self.companion = get_companion(run["companion_id"])
@@ -86,6 +89,8 @@ class TitleScreen:
             return RESULT_CONTINUE
         if index == 2:
             return RESULT_TOWN
+        if index == 3:
+            return RESULT_PLAYER
         if self.confirm_new:
             return RESULT_NEW
         self.confirm_new = True
@@ -178,7 +183,8 @@ class TitleScreen:
                 anchor="center", thickness=1)
 
         x = well.right + 22
-        ui.text(self.screen, "SAVED GAME", label, (x, card.y + 20), color=ui.GOLD)
+        ui.text(self.screen, f"{self.player_name.upper()}'S GAME" if self.player_name else "SAVED GAME", label,
+                (x, card.y + 20), color=ui.GOLD)
         ui.text(self.screen, self.saved.get("saved_at", ""), label, (card.right - 20, card.y + 20), color=ui.MUTED,
                 anchor="topright", thickness=1)
         mode = {"adaptive": f"AI {run['jlpt_level']}", "random": "RANDOM"}.get(run.get("difficulty_mode"), run["jlpt_level"])
@@ -200,7 +206,7 @@ class TitleScreen:
 
     def _draw_buttons(self):
         labels = LABELS
-        gap = 24
+        gap = 16
         total = len(labels) * BUTTON_SIZE[0] + (len(labels) - 1) * gap
         x0 = SCREEN_WIDTH // 2 - total // 2
         y = CARD.bottom + 34

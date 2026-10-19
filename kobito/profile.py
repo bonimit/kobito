@@ -15,6 +15,10 @@ profile is kept across runs: starting a new game keeps your level, your
     perk (the propeller cap flies, the kabuto blocks a hit, ...).
   * Stage boosts bought at the konbini wait in `boosts` and are used up
     at the start of the next stage.
+  * Gamification (kobito/progress.py): lifetime `stats`, earned
+    `trophies`, the daily study `streak` and today's `missions`. Things
+    worth celebrating (a trophy, a finished mission) queue up in `events`
+    for whichever screen is showing to pop up; they aren't saved.
 """
 
 from kobito import wardrobe
@@ -48,7 +52,8 @@ def level_for_exp(exp):
 
 
 class Profile:
-    def __init__(self, exp=0, yen=0, owned=None, equipped=None, boosts=None, seen=None):
+    def __init__(self, exp=0, yen=0, owned=None, equipped=None, boosts=None, seen=None, stats=None, trophies=None,
+                 streak=None, missions=None):
         self.exp = max(0, int(exp))
         self.yen = max(0, int(yen))
         self.owned = [g for g in (owned or []) if g in wardrobe.GEAR]
@@ -59,6 +64,13 @@ class Profile:
         # Gear the player has already been told about, so "NEW!" tags and
         # unlock announcements happen once.
         self.seen = [g for g in (seen or []) if g in wardrobe.GEAR]
+        self.stats = {k: int(v) for k, v in (stats or {}).items() if isinstance(v, (int, float)) and v >= 0}
+        self.trophies = [t for t in (trophies or []) if isinstance(t, str)]
+        streak = streak if isinstance(streak, dict) else {}
+        self.streak = {"last": str(streak.get("last", "")), "days": int(streak.get("days", 0)),
+                       "best": int(streak.get("best", 0))}
+        self.missions = missions if isinstance(missions, dict) else {}
+        self.events = []
 
     # -- Level ---------------------------------------------------------------
 
@@ -158,7 +170,8 @@ class Profile:
 
     def to_dict(self):
         return {"exp": self.exp, "yen": self.yen, "owned": list(self.owned), "equipped": dict(self.equipped),
-                "boosts": list(self.boosts), "seen": list(self.seen)}
+                "boosts": list(self.boosts), "seen": list(self.seen), "stats": dict(self.stats),
+                "trophies": list(self.trophies), "streak": dict(self.streak), "missions": self.missions}
 
     @classmethod
     def from_dict(cls, data):
@@ -167,6 +180,8 @@ class Profile:
         try:
             return cls(exp=data.get("exp", 0), yen=data.get("yen", 0), owned=data.get("owned"),
                        equipped=data.get("equipped") if isinstance(data.get("equipped"), dict) else None,
-                       boosts=data.get("boosts"), seen=data.get("seen"))
+                       boosts=data.get("boosts"), seen=data.get("seen"),
+                       stats=data.get("stats") if isinstance(data.get("stats"), dict) else None,
+                       trophies=data.get("trophies"), streak=data.get("streak"), missions=data.get("missions"))
         except (TypeError, ValueError):
             return cls()

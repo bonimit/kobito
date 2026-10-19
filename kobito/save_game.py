@@ -31,10 +31,21 @@ Where it lives:
 
 A missing, unreadable or out-of-date save is treated as "no save" -- a
 broken file must never stop the game from starting.
+
+Players: several people can share one computer (or browser). Each player
+account (kobito/account_screen.py) has its own save document like the one
+above -- players/<id>.json next to save.json, or localStorage key
+"kobito.player.<id>" on the web -- and accounts.json / "kobito.accounts"
+lists them: name, an optional PIN (stored salted and hashed), the mascot
+for their portrait and when they last played. Until an account is chosen
+(and for Guest play) the game uses save.json itself, exactly as before;
+the first account created takes over whatever progress is in it.
 """
 
+import hashlib
 import json
 import os
+import secrets
 import sys
 import time
 from pathlib import Path
@@ -44,6 +55,11 @@ from kobito.constants import IS_WEB
 
 SAVE_VERSION = 1
 WEB_STORAGE_KEY = "kobito.save"
+WEB_ACCOUNTS_KEY = "kobito.accounts"
+WEB_PLAYER_PREFIX = "kobito.player."
+MAX_NAME_LENGTH = 10
+
+_current = {"id": None}   # the signed-in account's id; None = save.json (guest)
 
 
 def save_path():
@@ -62,24 +78,34 @@ def save_path():
 
 # -- Raw storage ----------------------------------------------------------------
 
-def _read_raw():
+def _location(account_id="current"):
+    """(web localStorage key, desktop path) of a save document: the given
+    account's, the signed-in one's ("current"), or save.json (None)."""
+    if account_id == "current":
+        account_id = _current["id"]
+    if account_id is None:
+        return WEB_STORAGE_KEY, save_path()
+    return WEB_PLAYER_PREFIX + account_id, save_path().parent / "players" / f"{account_id}.json"
+
+
+def _read_raw(location=None):
+    key, path = location or _location()
     try:
         if IS_WEB:
             import platform  # Pygbag exposes the browser's `window` here
-            return platform.window.localStorage.getItem(WEB_STORAGE_KEY)
-        path = save_path()
+            return platform.window.localStorage.getItem(key)
         return path.read_text(encoding="utf-8") if path.exists() else None
     except Exception:
         return None
 
 
-def _write_raw(text):
+def _write_raw(text, location=None):
+    key, path = location or _location()
     try:
         if IS_WEB:
             import platform
-            platform.window.localStorage.setItem(WEB_STORAGE_KEY, text)
+            platform.window.localStorage.setItem(key, text)
             return True
-        path = save_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         # Write next to it and swap in, so a crash mid-write can't leave a
         # half-written (corrupt) save behind.
@@ -91,8 +117,8 @@ def _write_raw(text):
         return False
 
 
-def _read_doc():
-    raw = _read_raw()
+def _read_doc(location=None):
+    raw = _read_raw(location)
     if not raw:
         return {}
     try:
@@ -104,9 +130,118 @@ def _read_doc():
     return doc
 
 
-def _write_doc(doc):
+def _write_doc(doc, location=None):
     doc["version"] = SAVE_VERSION
-    return _write_raw(json.dumps(doc, ensure_ascii=False))
+    return _write_raw(json.dumps(doc, ensure_ascii=False), location)
+
+
+# -- Player accounts -------------------------------------------------------------
+
+def _accounts_location():
+    return WEB_ACCOUNTS_KEY, save_path().parent / "accounts.json"
+
+
+def list_accounts():
+    """Every player on this device, most recently played first."""
+    raw = _read_raw(_accounts_location())
+    try:
+        data = json.loads(raw) if raw else {}
+    except (TypeError, ValueError):
+        data = {}
+    accounts = [a for a in data.get("accounts", []) if isinstance(a, dict) and a.get("id") and a.get("name")]
+    return sorted(accounts, key=lambda a: a.get("last_played", ""), reverse=True)
+
+
+def _write_accounts(accounts):
+    return _write_raw(json.dumps({"version": SAVE_VERSION, "accounts": accounts}, ensure_ascii=False),
+                      _accounts_location())
+
+
+def _hash_pin(pin, salt):
+    return hashlib.sha256(f"{salt}:{pin}".encode("utf-8")).hexdigest()
+
+
+def clean_name(name):
+    name = " ".join(str(name).split())[:MAX_NAME_LENGTH]
+    return "".join(ch for ch in name if ch.isprintable())
+
+
+def create_account(name, pin=None, character_id=None):
+    """Adds a player and returns their account. The very first account
+    takes over the progress already in save.json, so nobody loses theirs
+    when accounts arrive."""
+    name = clean_name(name)
+    if not name:
+        raise ValueError("a name is needed")
+    accounts = list_accounts()
+    if any(a["name"].lower() == name.lower() for a in accounts):
+        raise ValueError("that name is taken")
+    account = {"id": secrets.token_hex(6), "name": name, "created": time.strftime("%Y-%m-%d"),
+               "last_played": time.strftime("%Y-%m-%d %H:%M:%S"), "character_id": character_id}
+    if pin:
+        account["salt"] = secrets.token_hex(8)
+        account["pin"] = _hash_pin(pin, account["salt"])
+    if not accounts:
+        legacy = _read_doc(_location(None))
+        if legacy.get("run") or legacy.get("profile"):
+            _write_doc(dict(legacy), _location(account["id"]))
+            run = legacy.get("run") or {}
+            account["character_id"] = account["character_id"] or run.get("character_id")
+    accounts.append(account)
+    _write_accounts(accounts)
+    return account
+
+
+def has_pin(account):
+    return bool(account.get("pin"))
+
+
+def check_pin(account, pin):
+    return not has_pin(account) or _hash_pin(pin, account.get("salt", "")) == account["pin"]
+
+
+def sign_in(account):
+    """Makes `account` (or None: guest) the one every load/save uses."""
+    _current["id"] = account["id"] if account else None
+    if account:
+        touch_account(last_played=time.strftime("%Y-%m-%d %H:%M:%S"))
+
+
+def current_account():
+    return next((a for a in list_accounts() if a["id"] == _current["id"]), None)
+
+
+def touch_account(**fields):
+    """Updates the signed-in account's listing (portrait, last played, ...)."""
+    if _current["id"] is None:
+        return
+    accounts = list_accounts()
+    for account in accounts:
+        if account["id"] == _current["id"]:
+            account.update(fields)
+    _write_accounts(accounts)
+
+
+def delete_account(account_id):
+    accounts = [a for a in list_accounts() if a["id"] != account_id]
+    _write_accounts(accounts)
+    key, path = _location(account_id)
+    try:
+        if IS_WEB:
+            import platform
+            platform.window.localStorage.removeItem(key)
+        elif path.exists():
+            path.unlink()
+    except Exception:
+        pass
+    if _current["id"] == account_id:
+        _current["id"] = None
+
+
+def load_profile_of(account_id):
+    """Another player's profile (for the leaderboard)."""
+    from kobito.profile import Profile
+    return Profile.from_dict(_read_doc(_location(account_id)).get("profile"))
 
 
 # -- Run ------------------------------------------------------------------------
@@ -171,9 +306,11 @@ def save_run(run, level=None, profile=None):
 # -- Profile --------------------------------------------------------------------
 
 def load_profile():
-    """The player's ability level, 円 and wardrobe (kept across runs)."""
+    """The player's ability level, 円, wardrobe and trophies (kept across runs)."""
     from kobito.profile import Profile
-    return Profile.from_dict(_read_doc().get("profile"))
+    profile = Profile.from_dict(_read_doc().get("profile"))
+    profile.seed = _current["id"] or "guest"   # whose daily missions these are
+    return profile
 
 
 def save_profile(profile):

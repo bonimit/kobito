@@ -15,7 +15,8 @@ import asyncio
 
 import pygame
 
-from kobito import audio, gear_art, setup_ui, town_ui, ui
+from kobito import audio, gear_art, progress, setup_ui, town_ui, ui
+from kobito.toasts import Toasts
 from kobito import input as game_input
 from kobito.companion_art import draw_companion
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
@@ -52,6 +53,7 @@ class ShopScreen:
         self.unlocked = []         # gear a study book's level-up unlocked, for the toast
         self.cards = []
         self.back_rect = pygame.Rect(0, 0, 0, 0)
+        self.toasts = Toasts(profile)
         audio.play("chime")
 
     @property
@@ -71,6 +73,7 @@ class ShopScreen:
                 if self._handle(event) == "back":
                     audio.play("chime")
                     return
+            self.toasts.update(dt)
             self._draw()
             await asyncio.sleep(0)
 
@@ -108,6 +111,7 @@ class ShopScreen:
             self._say(SHORT)
             return
         audio.play("buy")
+        progress.record(self.profile, "buys")
         if self.profile.level > level:
             audio.play("levelup")
         self.unlocked = unlocked
@@ -156,6 +160,7 @@ class ShopScreen:
         self._draw_info()
         setup_ui.hints(screen, [(setup_ui.ARROWS, "choose"), ("Enter", "buy"), ("Esc", "leave")],
                        [(setup_ui.DPAD, "choose"), ("pad-a", "buy"), ("pad-b", "leave")])
+        self.toasts.draw(screen)
         pygame.display.flip()
 
     def _draw_store(self):

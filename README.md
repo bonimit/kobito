@@ -239,7 +239,7 @@ Your run is saved automatically, and you can save any time yourself:
   Kobito Town*) are kept separately: they carry over even when you start a
   New Game.
 
-When a save exists the game opens on a title screen showing it (mascot,
+Saves are per player (see *Who's playing?* below). When a save exists the game opens on a title screen showing it (mascot,
 companion, level, world, score, your Lv, badges, items) with **Continue**,
 **New Game** or **Town** (visit your house and the konbini first) — New Game
 asks once more before replacing the save. Running out of
@@ -948,6 +948,79 @@ down one street with three stops — ←/→ to walk, Enter / A to go in:
 - **Next stage (つぎへ)** — the signpost onward.
 
 Everything is saved as you leave each shop.
+
+## Players, rewards and leaderboards
+
+### Who's playing? (accounts)
+
+The game opens on **Who's playing?** (`kobito/account_screen.py`): a card
+for every player on this computer or browser — their mascot in its
+costume, name, Lv and rank title, study-streak flame, trophies, and a
+padlock if they set a PIN. Pick a card to play, **+ NEW PLAYER** to make
+one (type a name — or pick letters with the on-screen keys on a gamepad —
+then choose a 4-digit PIN or skip it), or **G / Y: play as guest**.
+**Del** (gamepad **X**) twice deletes a player. The title screen's
+**PLAYER** button switches player.
+
+Each player has their **own save**: run, level, 円, costumes, trophies,
+missions and settings (`players/<id>.json` next to `save.json`, or the
+browser's localStorage). PINs are stored salted and hashed. The first
+account you make takes over the progress already in `save.json`, and
+guest play keeps using `save.json`.
+
+### Daily bonus, streak and missions
+
+The first time a player opens the game each day they get a **daily bonus**
+(100円, growing by 50円 a day to 400円 for a 7-day streak) stamped on a
+weekly card, and their **study streak** 🔥 grows — miss a day and it starts
+again (the best streak is kept). Each day also brings **three daily
+missions**, picked per player — "Answer 20 questions right", "Defeat 8
+enemies", "Get 5 right in a row", "Find a secret room", … — each paying
+円 and study EXP, plus a 300円 bonus for finishing all three.
+
+### Combos, trophies and ranks
+
+- **Answer combo**: three or more right answers in a row earn a growing
+  score bonus ("COMBO x5! +30"); the HUD shows the combo.
+- **27 trophies** in bronze, silver and gold (`kobito/progress.py`): first
+  answer, 50 / 250 / 1,000 right answers, 5 / 10 / 20 combos, stages
+  cleared, badges, a perfect Stage Test, coins, enemies, items, gift boxes,
+  secret rooms, sunflowers, first purchase, first costume, Lv 5 / 10 / 20,
+  3 / 7 / 30-day streaks. Each pays 円 and pops up the moment it's earned.
+- **Rank titles** by ability level: 入門 Newcomer → 見習い Apprentice →
+  学生 Student → 先輩 Senpai → 達人 Expert → 先生 Sensei → 名人 Master.
+- **Lifetime stats** for everything above.
+
+### The notice board (けいじばん)
+
+Kobito Town's fourth stop (`kobito/board_screen.py`), with tabs:
+**Missions** (today's, and the streak), **Trophies** (the trophy case —
+pick one to see its goal and your progress), **Ranking** and **Stats**.
+Tab / Q / E or LB / RB switch tabs.
+
+**Leaderboards** — Ability (Lv / study EXP), Best score, Right answers,
+Study streak and Trophies (←→ to switch). By default they rank everyone
+who plays on this device. For a **world leaderboard** shared between
+computers, run the included server anywhere Python runs (standard library
+only, scores kept in SQLite):
+
+```bash
+python server/kobito_server.py --port 8787
+```
+
+and start the game with `KOBITO_SERVER` pointing at it:
+
+```bash
+KOBITO_SERVER=http://your-server:8787 python main.py
+```
+
+Then Space / Y on the Ranking tab switches between **This device** and
+**World**. Each player is registered automatically the first time their
+scores are sent (after every stage) and gets a secret token, stored in
+their account, that lets only them update their own entries. Online
+boards work in the desktop game; the web build shows this device's
+boards. Scores are sent as the game reports them — fine for friends and a
+classroom, but not hardened against cheating.
 
 ## Adding real sprite art
 

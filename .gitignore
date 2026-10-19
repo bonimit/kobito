@@ -12,3 +12,6 @@ venv/
 
 # Pygbag web build output (packaging/build_web.sh)
 /web-build/
+
+# The leaderboard server's database
+*.db

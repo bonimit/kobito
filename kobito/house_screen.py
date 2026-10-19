@@ -16,7 +16,8 @@ import asyncio
 
 import pygame
 
-from kobito import audio, gear_art, setup_ui, town_ui, ui
+from kobito import audio, gear_art, progress, setup_ui, town_ui, ui
+from kobito.toasts import Toasts
 from kobito import input as game_input
 from kobito.constants import FPS, SCREEN_WIDTH
 from kobito.wardrobe import BACK, GEAR, HEAD
@@ -46,6 +47,7 @@ class HouseScreen:
         self.toast = None
         self.cells = []
         self.back_rect = pygame.Rect(0, 0, 0, 0)
+        self.toasts = Toasts(profile)
         self._look()
 
     @property
@@ -70,6 +72,7 @@ class HouseScreen:
                     audio.play("back")
                     return
             self.mascot.update(dt)
+            self.toasts.update(dt)
             self._draw()
             await asyncio.sleep(0)
 
@@ -93,6 +96,8 @@ class HouseScreen:
             return
         on = self.profile.equip(gear.id)
         audio.play("equip" if on else "back")
+        if on:
+            progress.record(self.profile, "dressed")
         self.toast = ((f"Wearing the {gear.name}!" if on else f"Took off the {gear.name}"),
                       ui.GREEN if on else ui.MUTED, TOAST_SECONDS)
 
@@ -142,6 +147,7 @@ class HouseScreen:
             town_ui.toast(screen, message, color, (CLOSET.centerx, CLOSET.bottom - 2))
         setup_ui.hints(screen, [(setup_ui.ARROWS, "choose"), ("Enter", "wear / take off"), ("Esc", "back")],
                        [(setup_ui.DPAD, "choose"), ("pad-a", "wear / take off"), ("pad-b", "back")])
+        self.toasts.draw(screen)
         pygame.display.flip()
 
     def _draw_header(self):

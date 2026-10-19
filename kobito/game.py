@@ -4,7 +4,7 @@ import random
 
 import pygame
 
-from kobito import audio
+from kobito import audio, progress
 from kobito import input as game_input
 from kobito.background import Background
 from kobito.characters import get_character
@@ -69,6 +69,7 @@ from kobito.sky_background import SkyBackground
 from kobito.stage_end_screens import LuckyDrawScreen, ResultsScreen, ReviewScreen, TileScreen, roll_prize
 from kobito.stage_test import build_test, learned_words, word_from_item, word_from_place
 from kobito.underground_background import UndergroundBackground
+from kobito.toasts import Toasts
 from kobito.wardrobe import GEAR, HEAD
 from kobito.world import World
 
@@ -84,6 +85,9 @@ SETTINGS_BUTTONS = (game_input.BACK, game_input.START)
 HUD_LEFT_CARD = pygame.Rect(10, 10, 286, 142)
 EXP_FILL = (255, 196, 110)
 EIYO_BOOST_SECONDS = 15.0     # the konbini's energy drink
+COMBO_FROM = 3                # right answers in a row before the combo bonus kicks in...
+COMBO_BONUS = 10              # ...worth this many points per step (capped)
+COMBO_BONUS_MAX = 60
 HUD_RIGHT_CARD = pygame.Rect(SCREEN_WIDTH - 10 - 262, 10, 262, 104)
 HUD_TRAY_HEIGHT = 40
 
@@ -230,6 +234,8 @@ class Game:
                              worn=self.profile.worn(),
                              perks={GEAR[g].perk for g in self.profile.worn() if GEAR[g].perk})
         self.guard_left = 1 if self.profile.perk("guard") else 0   # kabuto: one blocked hit per stage
+        self.toasts = Toasts(self.profile)   # trophies and missions pop up here (kobito/progress.py)
+        self.combo = 0                       # right answers in a row
         # A "sprite group" is pygame's container for a batch of sprites; the
         # world's group holds everything drawn in that room (the goal is in
         # it but deliberately not in `platforms`, so it's visible without
@@ -404,6 +410,7 @@ class Game:
         level = self.profile.level
         if level == before:
             return
+        progress.check_trophies(self.profile)
         audio.play("levelup")
         if unlocked:
             gear = unlocked[-1]
@@ -550,6 +557,7 @@ class Game:
                 block.animate(self.clock_time)
         self.background.update(dt)
         self.coach.update(dt)
+        self.toasts.update(dt)
         self._update_effects(dt)
 
         self._follow_camera()
@@ -601,6 +609,7 @@ class Game:
         where = (enemy.rect.centerx, enemy.rect.top)
         enemy.kill()
         audio.play("zap")
+        progress.record(self.profile, "stomps")
         self.stomps += 1
         self.score += STOMP_SCORE
         self._add_xp(STOMP_GAUGE)
@@ -689,6 +698,7 @@ class Game:
         self.secrets_found.add(pit["index"])
         if first_visit:
             self.coach.secret(spec["name"], underground_levels.place_lesson(pit["style"]))
+            progress.record(self.profile, "secrets")
 
     # -- The way up: cloud springs and sky rooms --------------------------------
 
@@ -741,6 +751,7 @@ class Game:
         self.sky_found.add(link["index"])
         if first_visit:
             self.coach.secret(spec["name"], sky_levels.place_lesson(link["style"]))
+            progress.record(self.profile, "secrets")
 
     # -- Leaving a hidden room ---------------------------------------------------
 
@@ -862,6 +873,10 @@ class Game:
             self.badges.append(self.badge.id)
         self.profile.add_yen(YEN_CLEAR + (YEN_BADGE if self.badge_earned else 0))
         self._gain_exp(EXP_CLEAR + (EXP_BADGE if self.badge_earned else 0))
+        progress.record(self.profile, "stages")
+        if self.badge_earned:
+            progress.record(self.profile, "badges")
+        progress.record_best(self.profile, "best_score", self.score)
         # Autosave: a checkpoint at the start of the next level, so closing
         # the game on the "stage clear" card loses nothing.
         save_game.save_run(self._run_record(level_number=self.level_number + 1, jlpt_level=self.next_jlpt_level),
@@ -895,6 +910,7 @@ class Game:
                 self.score += pickup.value
                 self._add_xp(pickup.value)
                 self.profile.add_yen(YEN_COIN)
+                progress.record(self.profile, "coins")
 
     def _collect_item(self, item, where, from_gift=False):
         """Applies one item: score, power, life, speed boost -- then has the
@@ -903,6 +919,7 @@ class Game:
         self.item_box[item.id] = self.item_box.get(item.id, 0) + 1
         self.level_items.append(item.id)
         self._gain_exp(EXP_ITEM)
+        progress.record(self.profile, "sunflowers" if item.group == "power" else "items")
         self.score += item.score
         self._add_xp(item.score)
 
@@ -949,12 +966,14 @@ class Game:
     def _open_gift(self, box):
         box.mark_used()
         audio.play("gift")
+        progress.record(self.profile, "gifts")
         self.gifts_opened += 1
         top = (box.rect.centerx, box.rect.top)
         gift = roll_gift(self.rng, self.character["favorites"], sleepy=self.drowsy)
         if gift["kind"] == "coins":
             earned = gift["coins"] * 5
             self.profile.add_yen(gift["coins"] * YEN_COIN)
+            progress.record(self.profile, "coins", gift["coins"])
             self.score += earned
             self._add_xp(earned)
             self._add_effect_text(f"+{gift['coins']} coins!", top, (255, 226, 120))
@@ -1071,11 +1090,23 @@ class Game:
             self.correct_count += 1
             self.profile.add_yen(YEN_CORRECT)
             self._gain_exp(EXP_CORRECT)
+            self.combo += 1
+            if self.combo >= COMBO_FROM:
+                # A streak of right answers is worth a growing bonus.
+                bonus = min(COMBO_BONUS_MAX, COMBO_BONUS * (self.combo - COMBO_FROM + 1))
+                self.score += bonus
+                self._add_effect_text(f"COMBO x{self.combo}!  +{bonus}", (block.rect.centerx, block.rect.top - 22),
+                                      (255, 150, 60))
+            progress.record(self.profile, "answered")
+            progress.record(self.profile, "correct")
+            progress.record_best(self.profile, "best_combo", self.combo)
         else:
             # Costs XP but not a life -- the badge only asks for 70%
             # accuracy, so getting a few wrong has to be survivable.
             self._lose_xp(penalty)
             self.wrong_count += 1
+            self.combo = 0
+            progress.record(self.profile, "answered")
         if correct is not None:
             block.mark_answered(correct)
         if correct is not None and self.tutor is not None:
@@ -1147,6 +1178,8 @@ class Game:
                         correct = None
                 results.append((item["kind"], correct))
             bonus = TEST_BONUS_XP * sum(1 for _, correct in results if correct)
+            if results and all(correct for _, correct in results):
+                progress.record(self.profile, "perfect_tests")
             self.profile.add_exp(EXP_TEST * sum(1 for _, correct in results if correct))
             self.score += bonus
             self._add_xp(bonus)
@@ -1221,6 +1254,7 @@ class Game:
         ground_enemy = not isinstance(enemy, FlyingEnemy)
         enemy.kill()
         audio.play("stomp")
+        progress.record(self.profile, "stomps")
         self.stomps += 1
         self.score += STOMP_SCORE
         self._add_xp(STOMP_GAUGE)
@@ -1340,6 +1374,7 @@ class Game:
             self._draw_banner()
             self._draw_hud()
             self._draw_speech()
+            self.toasts.draw(self.screen)
         if self.transition:
             tr = self.transition
             amount = tr["t"] / FADE_SECONDS if tr["phase"] == "out" else 1 - tr["t"] / FADE_SECONDS
@@ -1690,7 +1725,10 @@ class Game:
             ok = accuracy >= BADGE_PASS_ACCURACY * 100
             ui.text(self.screen, f"{accuracy}%", label, (right_text.right + 10, row),
                     color=ui.GREEN if ok else (255, 150, 150))
-        if self.skipped_count:
+        if self.combo >= 2:
+            ui.text(self.screen, f"COMBO x{self.combo}", label, (right, row), color=(255, 150, 60),
+                    anchor="topright")
+        elif self.skipped_count:
             ui.text(self.screen, f"{self.skipped_count} skipped", label, (right, row), color=ui.MUTED,
                     anchor="topright", thickness=1)
 

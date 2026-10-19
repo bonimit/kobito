@@ -5,14 +5,16 @@ import os
 # (on macOS it can open behind the Terminal it was started from).
 os.environ.setdefault("SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", "1")
 
-from kobito import audio, save_game  # noqa: E402
+from kobito import audio, online, progress, save_game  # noqa: E402
+from kobito.account_screen import choose_player  # noqa: E402
 from kobito.adaptive import AdaptiveTutor  # noqa: E402
 from kobito.difficulty import MODE_ADAPTIVE  # noqa: E402
 from kobito.companion_select_screen import CompanionSelectScreen  # noqa: E402
+from kobito.daily_screen import DailyBonusScreen  # noqa: E402
 from kobito.difficulty_select_screen import DifficultySelectScreen  # noqa: E402
 from kobito.game import Game, OUTCOME_ADVANCE  # noqa: E402
 from kobito.select_screen import SelectScreen  # noqa: E402
-from kobito.title_screen import RESULT_CONTINUE, RESULT_TOWN, TitleScreen  # noqa: E402
+from kobito.title_screen import RESULT_CONTINUE, RESULT_PLAYER, RESULT_TOWN, TitleScreen  # noqa: E402
 from kobito.town_screen import TownScreen  # noqa: E402
 from kobito.world_select_screen import WorldSelectScreen  # noqa: E402
 
@@ -34,27 +36,44 @@ async def new_run():
     return run
 
 
+async def sign_in():
+    """Who's playing (kobito/account_screen.py), then -- once a day -- the
+    daily bonus. Returns (account or None for guest, their profile)."""
+    account = await choose_player()
+    save_game.apply_saved_settings()   # furigana / translation / sound for this player
+    profile = save_game.load_profile()
+    bonus = progress.daily_login(profile)
+    save_game.save_profile(profile)
+    if bonus:
+        await DailyBonusScreen(profile, bonus, account["name"] if account else None).run()
+    return account, profile
+
+
 async def main():
-    save_game.apply_saved_settings()   # furigana / translation / sound from last time
+    save_game.apply_saved_settings()   # sound settings for the first screens
     audio.music(audio.MENU_TRACK)
 
-    # Ability level, 円 and the wardrobe: kept across runs, shared by every
-    # level and the town (kobito/profile.py).
-    profile = save_game.load_profile()
-
-    saved = save_game.load_run()
-    resume_state = None
-    choice = None
-    while saved:
-        choice = await TitleScreen(saved, profile).run()
-        if choice != RESULT_TOWN:
+    # Who's playing, then their title screen. Ability level, 円, wardrobe and
+    # trophies (the profile) are kept across runs and shared by every level
+    # and the town (kobito/profile.py); each player has their own.
+    while True:
+        account, profile = await sign_in()
+        saved = save_game.load_run()
+        choice = None
+        while saved:
+            audio.music(audio.MENU_TRACK)
+            choice = await TitleScreen(saved, profile, account["name"] if account else None).run()
+            if choice != RESULT_TOWN:
+                break
+            await TownScreen(profile, saved["run"]["character_id"], leave_label="TITLE", leave_jp="もどる").run()
+        if choice != RESULT_PLAYER:
             break
-        await TownScreen(profile, saved["run"]["character_id"], leave_label="TITLE", leave_jp="もどる").run()
-        audio.music(audio.MENU_TRACK)
     if choice == RESULT_CONTINUE:
         run, resume_state = saved["run"], saved["level"]
     else:
-        run = await new_run()
+        run, resume_state = await new_run(), None
+    save_game.touch_account(character_id=run["character_id"])   # their portrait on the player cards
+    online.submit(account, profile, run["character_id"])
 
     # Each Game instance is one level. Reaching the goal castle ends it
     # with OUTCOME_ADVANCE plus a JLPT level for the next one, picked
@@ -63,7 +82,8 @@ async def main():
     # The item box and badge list are shared by every level of the run;
     # Game autosaves at each stage clear (and on Save / window close).
     # After each clear the player walks through Kobito Town before the
-    # next stage starts.
+    # next stage starts, and their scores go to the world leaderboard
+    # (if a server is set up, see kobito/online.py).
     score, xp, jlpt_level, level_number = run["score"], run["xp"], run["jlpt_level"], run["level_number"]
     item_box, badges = run["item_box"], run["badges"]
     question_history = run["question_history"]   # so new levels favour questions not seen yet
@@ -90,10 +110,12 @@ async def main():
             profile=profile,
         ).run()
         resume_state = None
+        online.submit(account, profile, run["character_id"])
         if outcome != OUTCOME_ADVANCE:
             break
         level_number += 1
-        # Between stages: the town -- change costumes, shop at the konbini.
+        # Between stages: the town -- change costumes, shop at the konbini,
+        # check missions, trophies and the leaderboard.
         await TownScreen(profile, run["character_id"]).run()
 
 
