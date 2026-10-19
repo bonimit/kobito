@@ -2,6 +2,7 @@ import asyncio
 
 import pygame
 
+from kobito import audio
 from kobito import input as game_input
 from kobito import setup_ui
 from kobito.background import Background
@@ -53,9 +54,13 @@ class WorldSelectScreen:
         """Blocks until the player confirms a world, then returns its id."""
         while True:
             dt = self.clock.tick(FPS) / 1000.0
+            before = self.index
             chosen_id = self._handle_events()
             if chosen_id is not None:
+                audio.play("confirm")
                 return chosen_id
+            if self.index != before:
+                audio.play("select")
 
             self.previews[WORLD_ORDER[self.index]].update(dt)
             self._draw()

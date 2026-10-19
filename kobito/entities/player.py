@@ -1,5 +1,6 @@
 import pygame
 
+from kobito import audio, gear_art
 from kobito import input as game_input
 from kobito.assets import load_character_animations
 from kobito.constants import (
@@ -20,6 +21,9 @@ CLIMB_SECONDS = 1.2        # ...for this long per wall, then you slide
 WALL_SLIDE_SPEED = 90.0
 WALL_JUMP_PUSH = 1.3       # jump off a wall: kick away at this x RUN_SPEED
 WALL_KICK_SECONDS = 0.18   # steering is ignored briefly so the kick carries
+COPTER_SECONDS = 2.0       # propeller cap: this much flying per jump (refills on landing)...
+COPTER_RISE = 220.0        # ...rising at this speed while jump is held
+COPTER_SOUND_EVERY = 0.16
 RUN_KEYS = (pygame.K_LSHIFT, pygame.K_RSHIFT, pygame.K_x, pygame.K_j)
 FIRE_ONLY_KEYS = (pygame.K_f,)   # throw without running
 
@@ -27,8 +31,17 @@ FIRE_ONLY_KEYS = (pygame.K_f,)   # throw without running
 class Player(pygame.sprite.Sprite):
     """The mascot character: physics/collision plus animation state."""
 
-    def __init__(self, x, y, character_id="capybara", color=(200, 200, 200)):
+    def __init__(self, x, y, character_id="capybara", color=(200, 200, 200), worn=None, perks=()):
         super().__init__()
+        self.character_id = character_id
+        # Costumes and accessories being worn (kobito/wardrobe.py), drawn on
+        # every frame, and their perks: "fly" (propeller cap), "flap" (wings).
+        self.worn = list(worn or [])
+        self.perks = set(perks)
+        self.copter_left = COPTER_SECONDS
+        self.flying = False
+        self._copter_sound = 0.0
+        self._age = 0.0
 
         self.animations = load_character_animations(character_id, color)
         self.state = "idle"
@@ -52,7 +65,7 @@ class Player(pygame.sprite.Sprite):
         # Moves: run, flap/glide ("fly"), wall climb / wall jump. Game reads
         # fire_requested (a fresh press of the run button) to throw sunballs.
         self.running = False
-        self.flaps_left = FLAPS_PER_JUMP
+        self.flaps_left = self.flaps_per_jump
         self.gliding = False
         self.climbing = False
         self.wall_sliding = False
@@ -76,6 +89,10 @@ class Player(pygame.sprite.Sprite):
         # for overlap *after* resolution wouldn't work, since by then
         # the rects are touching but not overlapping.
         self.touched = set()
+
+    @property
+    def flaps_per_jump(self):
+        return FLAPS_PER_JUMP + (1 if "flap" in self.perks else 0)
 
     def handle_input(self, dt=1 / 60):
         keys = pygame.key.get_pressed()
@@ -110,8 +127,9 @@ class Player(pygame.sprite.Sprite):
         self.running = run_held
 
         if self.on_ground:
-            self.flaps_left = FLAPS_PER_JUMP
+            self.flaps_left = self.flaps_per_jump
             self.climb_time = 0.0
+            self.copter_left = COPTER_SECONDS
 
         # Horizontal: walk / run (a wall kick briefly overrides steering).
         if self.wall_kick > 0:
@@ -126,11 +144,12 @@ class Player(pygame.sprite.Sprite):
         self.climbing = False
         self.wall_sliding = False
         if on_wall and jump_pressed:
+            audio.play("jump")
             self.velocity_y = -JUMP_SPEED * self.jump_scale
             self.velocity_x = -self.wall_dir * RUN_SPEED * WALL_JUMP_PUSH
             self.wall_kick = WALL_KICK_SECONDS
             self.climb_time = 0.0
-            self.flaps_left = FLAPS_PER_JUMP
+            self.flaps_left = self.flaps_per_jump
             return
         if on_wall:
             if self.climb_time < CLIMB_SECONDS:
@@ -142,11 +161,25 @@ class Player(pygame.sprite.Sprite):
 
         # Jumping, flapping and gliding ("fly").
         if jump_held and self.on_ground:
+            if jump_pressed:
+                audio.play("jump")
             self.velocity_y = -JUMP_SPEED * self.jump_scale
             self.on_ground = False
         elif jump_pressed and not self.on_ground and not on_wall and self.flaps_left > 0:
+            audio.play("flap")
             self.flaps_left -= 1
             self.velocity_y = min(self.velocity_y, -FLAP_SPEED * self.jump_scale)
+        # Propeller cap: holding jump in the air (once the jump itself has
+        # slowed) flies straight up, until this jump's flying time runs out.
+        self.flying = ("fly" in self.perks and jump_held and not self.on_ground and not self.climbing
+                       and self.copter_left > 0 and self.velocity_y > -COPTER_RISE)
+        if self.flying:
+            self.copter_left = max(0.0, self.copter_left - dt)
+            self.velocity_y = -COPTER_RISE
+            self._copter_sound -= dt
+            if self._copter_sound <= 0:
+                self._copter_sound = COPTER_SOUND_EVERY
+                audio.play("copter")
         self.gliding = jump_held and not self.on_ground and not self.climbing and self.velocity_y > 0
 
     def apply_gravity(self, dt):
@@ -225,7 +258,11 @@ class Player(pygame.sprite.Sprite):
 
         animation = self.animations[self.state]
         animation.update(dt)
+        self._age += dt
         frame = animation.current_frame
+        if self.worn:
+            frame = gear_art.dress(frame, self.character_id, self.worn, t=self._age,
+                                   moving=self.velocity_x != 0 or not self.on_ground)
         self.image = frame if self.facing_right else pygame.transform.flip(frame, True, False)
 
     def draw_rect(self):

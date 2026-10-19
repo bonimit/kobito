@@ -1,11 +1,12 @@
-"""The first screen when a saved game exists: Continue or New Game.
+"""The first screen when a saved game exists: Continue, New Game or Town.
 
 Shown over the saved world itself (the level's backdrop, scrolled to where
 the player saved), with a card summarising the save -- mascot, companion,
 level, score, badges, items. Starting a New Game replaces the save, so it
-asks once more before going ahead.
+asks once more before going ahead. Town visits the house and the konbini
+(kobito/town_screen.py) before playing.
 
-run() returns "continue" or "new".
+run() returns "continue", "new" or "town".
 """
 
 import asyncio
@@ -13,6 +14,7 @@ import math
 
 import pygame
 
+from kobito import audio
 from kobito import input as game_input
 from kobito import ui
 from kobito.assets import load_character_animations
@@ -26,6 +28,8 @@ from kobito.themes import get_theme
 
 RESULT_CONTINUE = "continue"
 RESULT_NEW = "new"
+RESULT_TOWN = "town"
+LABELS = ("CONTINUE", "NEW GAME", "TOWN")
 
 CARD = pygame.Rect(0, 0, 560, 236)
 CARD.midtop = (SCREEN_WIDTH // 2, 132)
@@ -33,17 +37,18 @@ BUTTON_SIZE = (230, 52)
 
 
 class TitleScreen:
-    def __init__(self, saved):
+    def __init__(self, saved, profile=None):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Kobito")
         self.clock = pygame.time.Clock()
         self.saved = saved
+        self.profile = profile
         run = saved["run"]
         self.character = get_character(run["character_id"])
         self.companion = get_companion(run["companion_id"])
         self.theme = get_theme(run["theme_id"])
-        self.selected = 0            # 0 = Continue, 1 = New Game
+        self.selected = 0            # 0 = Continue, 1 = New Game, 2 = Town
         self.confirm_new = False     # New Game pressed once: ask again
         self.time = 0.0
         self._stick = 0
@@ -76,15 +81,19 @@ class TitleScreen:
     # -- Input ----------------------------------------------------------------
 
     def _choose(self, index):
+        audio.play("confirm")
         if index == 0:
             return RESULT_CONTINUE
+        if index == 2:
+            return RESULT_TOWN
         if self.confirm_new:
             return RESULT_NEW
         self.confirm_new = True
         return None
 
     def _move(self, step):
-        self.selected = (self.selected + step) % 2
+        audio.play("select")
+        self.selected = (self.selected + step) % len(LABELS)
         self.confirm_new = False
 
     def _handle(self, event):
@@ -176,7 +185,8 @@ class TitleScreen:
         ui.text(self.screen, f"LEVEL {run['level_number']}  ·  {mode}", big, (x, card.y + 40))
         ui.text(self.screen, self.theme.name, body, (x, card.y + 82), color=ui.SKY, thickness=1)
 
-        stats = [("SCORE", str(run["score"])), ("XP", str(run["xp"])),
+        ability = str(self.profile.level) if self.profile else "-"
+        stats = [("SCORE", str(run["score"])), ("LV", ability),
                  ("BADGES", str(len(run["badges"]))), ("ITEMS", str(sum(run["item_box"].values())))]
         tile_w = (card.right - 20 - x - 3 * 8) // 4
         for i, (name, value) in enumerate(stats):
@@ -189,9 +199,9 @@ class TitleScreen:
                 color=ui.MUTED, thickness=1)
 
     def _draw_buttons(self):
-        labels = ["CONTINUE", "NEW GAME"]
+        labels = LABELS
         gap = 24
-        total = 2 * BUTTON_SIZE[0] + gap
+        total = len(labels) * BUTTON_SIZE[0] + (len(labels) - 1) * gap
         x0 = SCREEN_WIDTH // 2 - total // 2
         y = CARD.bottom + 34
         self.buttons = []

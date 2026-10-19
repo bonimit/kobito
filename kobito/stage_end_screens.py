@@ -21,6 +21,7 @@ import math
 
 import pygame
 
+from kobito import audio
 from kobito import input as game_input
 from kobito import ui
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
@@ -106,8 +107,11 @@ class _Screen:
 class ReviewScreen(_Screen):
     PANEL = pygame.Rect(36, 20, SCREEN_WIDTH - 72, SCREEN_HEIGHT - 40)
 
-    def __init__(self, screen, background, level_number, entries, words, test_size):
+    def __init__(self, screen, background, level_number, entries, words, test_size, log=False):
         super().__init__(screen, background)
+        # log=True: the pause menu's lesson log -- the same cards, read-only,
+        # and every confirm / back button just returns "back".
+        self.log = log
         self.level_number = level_number
         self.entries = entries
         self.words = words
@@ -130,7 +134,9 @@ class ReviewScreen(_Screen):
             blocks.append((height, fn))
 
         if not self.entries:
-            add(40, lambda s, y: ui.text(s, "No questions this stage -- the test will use fresh ones.", body,
+            empty = ("No questions yet -- bump a ? box to start learning!" if self.log
+                     else "No questions this stage -- the test will use fresh ones.")
+            add(40, lambda s, y: ui.text(s, empty, body,
                                           (0, y + 8), color=MUTED, thickness=1))
         for n, e in enumerate(self.entries, 1):
             q, kind = e["question"], e["result"]
@@ -205,6 +211,15 @@ class ReviewScreen(_Screen):
             raise SystemExit
         game_input.handle_hotplug(event)
         ready = self.age >= GRACE_SECONDS
+        if self.log:
+            back = ((event.type == pygame.KEYDOWN and event.key in CONFIRM_KEYS + SKIP_KEYS
+                     + (pygame.K_ESCAPE, pygame.K_l, pygame.K_BACKSPACE))
+                    or (event.type == pygame.JOYBUTTONDOWN and event.button in game_input.CONFIRM_BUTTONS
+                        + game_input.CANCEL_BUTTONS + (game_input.Y, game_input.START, game_input.BACK)))
+            if back and ready:
+                return "back"
+            if back:
+                return None
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_DOWN:
                 self._scroll_by(40)
@@ -233,7 +248,7 @@ class ReviewScreen(_Screen):
         tap = game_input.touch_tap_pos(event)
         if tap is not None and ready:
             if self._start_rect.collidepoint(tap):
-                return "test"
+                return "back" if self.log else "test"
             if self._skip_rect.collidepoint(tap):
                 return "skip"
             self._scroll_by(60 if tap[1] > self.view.centery else -60)
@@ -245,9 +260,10 @@ class ReviewScreen(_Screen):
         right = sum(1 for e in self.entries if e["result"] == "right")
         wrong = sum(1 for e in self.entries if e["result"] == "wrong")
         skipped = sum(1 for e in self.entries if e["result"] == "skipped")
-        ui.text(self.screen, f"LEVEL {self.level_number}  ·  STAGE REVIEW", ui.label_font(16),
-                (panel.x + 22, panel.y + 16), color=ui.GOLD)
-        ui.text(self.screen, "What you studied", ui.title_font(32), (panel.x + 20, panel.y + 34))
+        ui.text(self.screen, f"LEVEL {self.level_number}  ·  " + ("LESSON LOG" if self.log else "STAGE REVIEW"),
+                ui.label_font(16), (panel.x + 22, panel.y + 16), color=ui.GOLD)
+        ui.text(self.screen, "Lessons so far" if self.log else "What you studied", ui.title_font(32),
+                (panel.x + 20, panel.y + 34))
         summary = f"{right} right   {wrong} wrong   {skipped} skipped   ·   {len(self.words)} words"
         ui.text(self.screen, summary, ui.label_font(16), (panel.right - 22, panel.y + 48), color=ui.SKY,
                 anchor="topright", thickness=1)
@@ -263,6 +279,10 @@ class ReviewScreen(_Screen):
             pygame.draw.rect(self.screen, ui.GOLD, (track.x, y, 4, h), border_radius=2)
 
         label = ui.label_font(16)
+        if self.log:
+            self._draw_log_footer(panel, label)
+            pygame.display.flip()
+            return
         self._start_rect = pygame.Rect(0, 0, 300, 34)
         self._start_rect.bottomright = (panel.right - 20, panel.bottom - 14)
         ui.panel(self.screen, self._start_rect, bg=(255, 210, 110, 240), edge=(20, 14, 26, 255), radius=12)
@@ -277,6 +297,19 @@ class ReviewScreen(_Screen):
         ui.text(self.screen, hint, label, (panel.x + 22, panel.bottom - 30), color=MUTED, anchor="midleft",
                 thickness=1)
         pygame.display.flip()
+
+
+    def _draw_log_footer(self, panel, label):
+        self._start_rect = pygame.Rect(0, 0, 200, 34)
+        self._start_rect.bottomright = (panel.right - 20, panel.bottom - 14)
+        self._skip_rect = pygame.Rect(0, 0, 0, 0)
+        ui.panel(self.screen, self._start_rect, bg=(255, 210, 110, 240), edge=(20, 14, 26, 255), radius=12)
+        ui.text(self.screen, "BACK TO MENU", label, self._start_rect.center, color=ui.OUTLINE, outline=None,
+                anchor="center")
+        hint = game_input.prompt("↑↓ scroll    Enter / Esc / L back", "D-pad scroll    A / B / Y back",
+                                 "Tap to scroll")
+        ui.text(self.screen, hint, label, (panel.x + 22, panel.bottom - 30), color=MUTED, anchor="midleft",
+                thickness=1)
 
 
 # -- Reading / writing tile question --------------------------------------------
@@ -691,8 +724,10 @@ class LuckyDrawScreen(_Screen):
             if self.hit:
                 self.slow_left -= 1
                 self.step_length *= self.SLOW_GROWTH
+                audio.play("select")
                 if self.finished:
                     self.item_pop = 0.3
+                    audio.play("gift")
 
     def _physics(self, dt):
         keys = pygame.key.get_pressed()
@@ -712,6 +747,7 @@ class LuckyDrawScreen(_Screen):
         if direction:
             self.facing_right = direction > 0
         if jump and not self._jump_was_down and self.on_ground and self.age > GRACE_SECONDS:
+            audio.play("jump")
             self.vy = -self.JUMP
             self.on_ground = False
         self._jump_was_down = jump
@@ -721,6 +757,8 @@ class LuckyDrawScreen(_Screen):
         if self.vy < 0 and self.player.colliderect(self.box):
             self.player.top = self.box.bottom
             self.vy = 0
+            if not self.hit:
+                audio.play("block")
             self._open()
         if self.player.bottom >= self.GROUND_Y:
             self.player.bottom = self.GROUND_Y

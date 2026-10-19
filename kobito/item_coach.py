@@ -169,7 +169,7 @@ class ItemCoach:
         from kobito import input as game_input
         how = game_input.prompt("Press X (or F) to throw sunballs!", "Press X or B to throw sunballs!",
                                 "Tap RUN to throw sunballs!")
-        tip = f"Sun power for 20 seconds! {how}" if first_time else "More sun! Your sun power is topped back up."
+        tip = f"Sun power for 20 seconds -- nothing can hurt you! {how}" if first_time else "More sun! Your sun power is topped back up."
         self._say([tip, self.lesson_line(item)], "happy", seconds=7.0)
 
     def update(self, dt):

@@ -3,6 +3,7 @@ import math
 
 import pygame
 
+from kobito import audio
 from kobito import input as game_input
 from kobito import setup_ui, ui
 from kobito.companion_art import draw_companion
@@ -83,11 +84,13 @@ class CompanionSelectScreen:
     def _select(self, index):
         index %= len(COMPANIONS)
         if index != self.index:
+            audio.play("select")
             self.index = index
             self.typed = 0.0
 
     def _confirm_pick(self):
         if self.confirming is None:
+            audio.play("confirm")
             self.confirming = 0.0
 
     def _handle(self, event):

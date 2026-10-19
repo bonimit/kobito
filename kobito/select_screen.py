@@ -3,6 +3,7 @@ import math
 
 import pygame
 
+from kobito import audio
 from kobito import input as game_input
 from kobito import setup_ui, ui
 from kobito.assets import load_character_animations
@@ -74,11 +75,13 @@ class SelectScreen:
     def _select(self, index):
         index %= len(CHARACTERS)
         if index != self.index:
+            audio.play("select")
             self.index = index
             self.hop = 0.0        # say hello with a hop
 
     def _confirm_pick(self):
         if self.confirming is None:
+            audio.play("confirm")
             self.confirming = 0.0
             self.hop = 0.0
 

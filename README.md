@@ -45,7 +45,9 @@ category-based canned hint instead of an AI-generated one.
   the mouse can hover/click a choice
 - **S** — skip (pass on) the question instead of answering it
 - **Enter/Space** — dismiss Kobito's hint after a wrong answer, or continue after completing a level
-- **Esc / P** — pause and open **Settings** (save, item box, furigana, translation, save & quit)
+- **Esc / P** — pause and open **Settings** (save, lesson log, item box, music, sound effects, furigana,
+  translation, save & quit); **L** in the pause menu opens the **lesson log** straight away
+- With the **propeller cap** on: **hold jump in mid-air** to fly up
 
 A gamepad works everywhere alongside the keyboard — plug one in before or
 during play, it's picked up automatically (hot-plug supported):
@@ -53,7 +55,7 @@ during play, it's picked up automatically (hot-plug supported):
 - **D-pad / left stick** — move / navigate menus
 - **A** — jump; confirm a selection; continue after Kobito's hint or a level
 - **B** — back (in Settings), undo a tile (Stage Test), skip the review
-- **Start / Back** — open Settings
+- **Start / Back** — open Settings; **Y** there opens the lesson log
 - **D-pad / stick up-down + A** — choose and answer in a quiz
 - **B / X** — hold to run; with sun power, press to throw a sunball
 - **LB / RB / Start** — skip the question
@@ -231,11 +233,16 @@ Your run is saved automatically, and you can save any time yourself:
   and enemies are already gone.
 - **Settings → Save & quit**, or just closing the window mid-level — the same.
 - Your **item box**, **badges**, score and XP are part of the save, and the
-  furigana / translation toggles are remembered between sessions.
+  furigana / translation / music / sound-effect toggles are remembered
+  between sessions.
+- Your **ability level, 円 and wardrobe** (see *Ability level, costumes and
+  Kobito Town*) are kept separately: they carry over even when you start a
+  New Game.
 
 When a save exists the game opens on a title screen showing it (mascot,
-companion, level, world, score, badges, items) with **Continue** or **New
-Game** — New Game asks once more before replacing the save. Running out of
+companion, level, world, score, your Lv, badges, items) with **Continue**,
+**New Game** or **Town** (visit your house and the konbini first) — New Game
+asks once more before replacing the save. Running out of
 lives leaves the save as it was, so Continue picks up from your last save.
 
 Where it's stored (`kobito/save_game.py`): `%APPDATA%\Kobito\save.json` on
@@ -249,7 +256,8 @@ completely fresh; a damaged or outdated save is simply ignored.
 The HUD is plain outlined text and icons in the top corners — no backing
 cards, so it covers as little of the world as possible — each read top-down as label →
 big number → detail: the left one is you (score, lives, the 10-pip power
-gauge, XP toward the next 1UP), the right one is the lesson (questions
+gauge, XP toward the next 1UP, and your ability **LV** with its study-EXP bar
+and your 円), the right one is the lesson (questions
 answered toward the badge, how many right, your accuracy). Temporary states
 (sleepy, boost) pop up as a tag under the left card. Under the quiz card is
 a small tray: your mascot's favourite foods, the **item box** (a crate with
@@ -260,8 +268,15 @@ The HUD only shows the crate; click/tap it (or open Settings → Item Box) to
 see each item with its Japanese word, reading and how many you've found.
 
 Settings (`kobito/settings_screen.py`) pauses the level: Resume, Save game,
-Item Box, Furigana ON/OFF, Translation ON/OFF, Save & quit. It works with arrow keys +
-Enter, the mouse, touch and a gamepad (d-pad, A, B).
+Lesson log, Item Box, Music ON/OFF, Sound effects ON/OFF, Furigana ON/OFF,
+Translation ON/OFF, Save & quit. It works with arrow keys + Enter, the mouse,
+touch and a gamepad (d-pad, A, B).
+
+**Lesson log** — one press of **L** (gamepad **Y**) in the pause menu, or
+its row, shows every question asked so far this stage: ✓ / ✗ / — (skipped),
+your answer, the right one and why, plus the words you've met (items, secret
+places). It's the same card layout as the end-of-stage review, read-only;
+Enter / Esc / L goes back to the menu.
 
 The companion's box (item comments and lessons) sits in the **bottom-left
 corner**, in the strip under the ground line, so it never covers your
@@ -454,8 +469,9 @@ Like a classic platformer hero, your mascot can do more than walk and jump
   up your mascot glows gold with little suns circling it — one fewer as each
   third of the time runs out, flickering in the last 3 seconds — and a
   little **countdown dial** by its head shows the seconds left (a gold ring
-  that empties, red for the last 5); another sunflower refills it. Getting hit costs you the sun power
-  instead of a power pip. Sun power is kept in your save.
+  that empties, red for the last 5); another sunflower refills it. While it
+  lasts you're **invincible**: running into an enemy defeats it, and no hit
+  costs power or XP. Sun power is kept in your save.
 
 ## Power, enemies and stomping
 
@@ -721,6 +737,7 @@ Press Enter on the stage-clear card and the stage wraps up in three steps
    sunflower (items go to your item box).
 
 The checkpoint is saved again afterwards, so the bonus and prizes are kept.
+Then it's on to **Kobito Town** (below) before the next stage.
 
 ### How long is a stage?
 
@@ -794,6 +811,97 @@ level; answer most wrong (≤40%) and it steps down; anything in between
 holds steady, clamped to N5..N1. Score carries over between levels;
 `main.py` loops, building a fresh `Game` for each level with the
 adjusted JLPT level until you quit or run out of lives.
+
+## Sound and music
+
+Every stage has its own tune, and everything you do makes a sound
+(`kobito/audio.py`). All of it is **generated from code** by
+`tools/make_audio.py` — square/pulse/triangle oscillators, a plucked
+"koto", a music-box bell and noise drums — so there are no samples or
+licences involved; the files are in `assets/audio/` (26 music loops, 31
+sound effects, about 3 MB of .ogg).
+
+- **Music** — one looping chiptune per world, each in a fitting scale:
+  Japanese *yo* for the forest and Nagano, *miyako-bushi* (in) for Kyoto
+  on a koto, the Ryukyu scale for Okinawa, hijaz for the desert and
+  Arabian night, city-pop chords for Tokyo, a swing blues for New York, a
+  waltz for the fairy tale and Korea, … Each secret stage (subway, sewer,
+  mine, rainbow, thunder, moon) has its own track, as do the title, the
+  stage review, the town, the konbini and your house. Music dips while a
+  quiz box is open.
+- **Sound effects** — jump, flap, coins, items, sun power, stomps, hits,
+  question boxes, right/wrong answers, skips, springs, falls, secret-room
+  warps, the castle gate, stage clear, game over, level up, the lucky draw's
+  ticks, menus, and the konbini (door chime, register, "not enough money").
+
+Music and sound effects can each be switched off in **Settings**. With no
+sound device the game simply runs silent. To change or add a track, edit
+its `TrackSpec` in `tools/make_audio.py` (key, tempo, scale, chords, lead
+instrument, rhythm, drums) and run `python tools/make_audio.py tokyo`
+(or no argument for everything; needs numpy and ffmpeg).
+
+## Ability level, costumes and Kobito Town
+
+Besides a run's score and XP, you have a long-term **ability level (Lv)**
+that grows with your studying, plus **円 (yen)** to spend — both kept even
+when you start a New Game (`kobito/profile.py`).
+
+| Study EXP (→ Lv) | 円 |
+| --- | --- |
+| right answer **+10**, Stage Test right answer +5 | right answer **+20** |
+| any item picked up **+3** | coin **+10** (gift-box coins too) |
+| stage clear +30, with its badge +40 more | stage clear +200, with its badge +100 more |
+| study books from the konbini (+60 to +550) | lucky-draw coins |
+
+Lv 2 needs 100 EXP, Lv 3 300, Lv 4 600, … each level asking 100 more than
+the last (up to Lv 20) — roughly one level per stage early on. Levelling up
+mid-stage shows a **LEVEL UP!** banner, and the companion names whatever
+it unlocked. The HUD's LV row shows the level, the bar to the next one and
+your 円.
+
+### Costumes and accessories
+
+Your mascot wears one **head** item and one **back** item, drawn on the
+sprite in every stage, the town and the house (`kobito/gear_art.py` — the
+hat finds the top of the head in each animation frame, so it stays on
+through the run cycle). Each has its Japanese name and reading.
+
+| Unlock | Head (あたま) | Back (せなか) |
+| --- | --- | --- |
+| Lv 2 | Hachimaki はちまき | |
+| Lv 3 | Straw hat 麦わら帽子 | |
+| Lv 4 | | Randoseru ランドセル |
+| Lv 5 | Samurai kabuto 兜 — **blocks the first enemy hit each stage** | |
+| Lv 6 | | Hero cape マント |
+| Lv 7 | Fox mask きつねのお面 | |
+| Lv 9 | | Koinobori こいのぼり |
+| Lv 10 | Graduation cap 角帽 | |
+| Lv 12 | | Tengu wings 天狗の羽 — **one extra flap** |
+| Lv 15 | Crown 王冠 — **+50% 円** | |
+| Konbini | Propeller cap プロペラ帽子 — **fly**: hold jump in mid-air (2 s per jump, refills on landing) | Furoshiki 風呂敷, Taiko drum 太鼓 |
+
+### Kobito Town (こびとまち)
+
+After every stage (and from the title screen's **Town** button) you walk
+down one street with three stops — ←/→ to walk, Enter / A to go in:
+
+- **My House (いえ)** — a tatami room where everything you've unlocked or
+  bought is kept. Pick a piece (←→↑↓) and Enter to put it on or take it off;
+  the info card shows its Japanese name, what it does and, if it's still
+  locked, the Lv it needs or its konbini price. New pieces carry a **NEW!**
+  tag (and the house a NEW! bubble) until you've looked at them.
+- **Konbini (コンビニ)** — こびとマート. The clerk greets you with
+  いらっしゃいませ and thanks you with ありがとうございます. Three shelves:
+
+  | Shelf | Products |
+  | --- | --- |
+  | Study べんきょう — raise your Lv | ノート notebook 200円 (+60 EXP) · 単語カード flashcards 350円 (+110) · 漢字ドリル kanji drill 600円 (+200) · 参考書 study guide 1,500円 (+550) |
+  | Gear どうぐ | プロペラ帽子 propeller cap 1,500円 · 風呂敷 furoshiki 400円 · 太鼓 taiko drum 900円 |
+  | Next stage つぎのステージ — used up at the start of the next stage | お守り omamori 400円 (+1 life) · ひまわりの種 sunflower seeds 500円 (start with sun power) · 栄養ドリンク energy drink 250円 (15 s speed boost) |
+
+- **Next stage (つぎへ)** — the signpost onward.
+
+Everything is saved as you leave each shop.
 
 ## Adding real sprite art
 

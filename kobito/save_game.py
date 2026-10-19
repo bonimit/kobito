@@ -13,7 +13,8 @@ One save slot, stored as a small JSON document:
         "tutor": {...} or null       # the AI tutor's learner model (adaptive mode)
       },
       "level": {...} or null,       # mid-level spot (see Game.snapshot)
-      "settings": {"furigana": bool, "translation": bool}
+      "settings": {"furigana": bool, "translation": bool, "music": bool, "sfx": bool},
+      "profile": {...}              # ability level, yen, costumes (kobito/profile.py)
     }
 
 "level" is null for a checkpoint at the start of a level (the autosave
@@ -154,13 +155,30 @@ def load_run():
     return {"run": run, "level": level, "saved_at": doc.get("saved_at", "")}
 
 
-def save_run(run, level=None):
-    """Writes the run (and optionally a mid-level spot). Returns True on
-    success. Settings already in the save are kept."""
+def save_run(run, level=None, profile=None):
+    """Writes the run (and optionally a mid-level spot and the profile).
+    Returns True on success. Settings already in the save are kept."""
     doc = _read_doc()
     doc["run"] = run
     doc["level"] = level
+    if profile is not None:
+        doc["profile"] = profile.to_dict()
     doc["saved_at"] = time.strftime("%Y-%m-%d %H:%M")
+    doc.setdefault("settings", current_settings())
+    return _write_doc(doc)
+
+
+# -- Profile --------------------------------------------------------------------
+
+def load_profile():
+    """The player's ability level, 円 and wardrobe (kept across runs)."""
+    from kobito.profile import Profile
+    return Profile.from_dict(_read_doc().get("profile"))
+
+
+def save_profile(profile):
+    doc = _read_doc()
+    doc["profile"] = profile.to_dict()
     doc.setdefault("settings", current_settings())
     return _write_doc(doc)
 
@@ -175,7 +193,9 @@ def clear_run():
 # -- Settings -------------------------------------------------------------------
 
 def current_settings():
-    return {"furigana": furigana.is_enabled(), "translation": furigana.is_translation_visible()}
+    from kobito import audio
+    return {"furigana": furigana.is_enabled(), "translation": furigana.is_translation_visible(),
+            "music": audio.music_enabled(), "sfx": audio.sfx_enabled()}
 
 
 def save_settings():
@@ -185,10 +205,15 @@ def save_settings():
 
 
 def apply_saved_settings():
-    """Restores the furigana / translation toggles from the last session."""
+    """Restores the furigana / translation / sound toggles from the last session."""
+    from kobito import audio
     settings = _read_doc().get("settings")
     if not isinstance(settings, dict):
         return
+    if "music" in settings:
+        audio.set_music(bool(settings["music"]))
+    if "sfx" in settings:
+        audio.set_sfx(bool(settings["sfx"]))
     if "furigana" in settings and bool(settings["furigana"]) != furigana.is_enabled():
         furigana.toggle()
     if "translation" in settings and bool(settings["translation"]) != furigana.is_translation_visible():

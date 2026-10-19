@@ -4,6 +4,7 @@ import random
 
 import pygame
 
+from kobito import audio
 from kobito import input as game_input
 from kobito.background import Background
 from kobito.characters import get_character
@@ -59,6 +60,8 @@ from kobito.levels import sky as sky_levels
 from kobito.levels import underground as underground_levels
 from kobito.levels.sky import build_sky
 from kobito.levels.underground import build_underground
+from kobito.profile import (EXP_BADGE, EXP_CLEAR, EXP_CORRECT, EXP_ITEM, EXP_TEST, YEN_BADGE, YEN_CLEAR,
+                            YEN_COIN, YEN_CORRECT)
 from kobito.questions import QuestionBank, shuffled
 from kobito.quiz_screen import QuizScreen
 from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
@@ -66,6 +69,7 @@ from kobito.sky_background import SkyBackground
 from kobito.stage_end_screens import LuckyDrawScreen, ResultsScreen, ReviewScreen, TileScreen, roll_prize
 from kobito.stage_test import build_test, learned_words, word_from_item, word_from_place
 from kobito.underground_background import UndergroundBackground
+from kobito.wardrobe import GEAR, HEAD
 from kobito.world import World
 
 OVERLAY = (8, 6, 16, 175)
@@ -77,7 +81,9 @@ SETTINGS_BUTTONS = (game_input.BACK, game_input.START)
 # HUD layout (see _draw_hud). Two cards in the top corners -- the left one
 # is "you" (score, lives, power, XP), the right one is "the lesson" (quiz
 # progress toward the badge) -- with a small tray of icons under it.
-HUD_LEFT_CARD = pygame.Rect(10, 10, 286, 118)
+HUD_LEFT_CARD = pygame.Rect(10, 10, 286, 142)
+EXP_FILL = (255, 196, 110)
+EIYO_BOOST_SECONDS = 15.0     # the konbini's energy drink
 HUD_RIGHT_CARD = pygame.Rect(SCREEN_WIDTH - 10 - 262, 10, 262, 104)
 HUD_TRAY_HEIGHT = 40
 
@@ -162,6 +168,7 @@ class Game:
         difficulty_mode=MODE_CHOOSE,
         tutor=None,
         question_history=None,
+        profile=None,
     ):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -217,7 +224,12 @@ class Game:
         self.level_items = []
         self.pending_stage_end = False   # set when the player continues past the clear card
 
-        self.player = Player(*level.player_start, character_id=character["id"], color=character["color"])
+        # Ability level, 円 and wardrobe -- kept across runs (kobito/profile.py).
+        self.profile = profile if profile is not None else save_game.load_profile()
+        self.player = Player(*level.player_start, character_id=character["id"], color=character["color"],
+                             worn=self.profile.worn(),
+                             perks={GEAR[g].perk for g in self.profile.worn() if GEAR[g].perk})
+        self.guard_left = 1 if self.profile.perk("guard") else 0   # kabuto: one blocked hit per stage
         # A "sprite group" is pygame's container for a batch of sprites; the
         # world's group holds everything drawn in that room (the goal is in
         # it but deliberately not in `platforms`, so it's visible without
@@ -281,6 +293,8 @@ class Game:
         self._gear_rect = None
         if resume_state:
             self._restore(resume_state)
+        else:
+            self._use_boosts()
 
     # The room the player is in right now. Everything that handles
     # collisions, pickups and drawing goes through these.
@@ -293,7 +307,13 @@ class Game:
     background = property(lambda self: self.world.background)
     all_sprites = property(lambda self: self.world.all_sprites)
 
+    def _track(self):
+        """The music for the room the player is in: each world and each
+        secret-room style has its own tune (kobito/audio.py)."""
+        return self.world.style if self.world.hidden else self.theme_id
+
     async def run(self):
+        audio.music(self._track())
         while self.running:
             # dt = seconds since last frame. Using it to scale movement
             # (instead of moving a fixed number of pixels/frame) keeps
@@ -330,7 +350,8 @@ class Game:
             elif event.type == pygame.KEYDOWN:
                 if self.game_over and event.key in CONTINUE_KEYS + SETTINGS_KEYS:
                     self.running = False
-                elif event.key in SETTINGS_KEYS:
+                elif event.key in SETTINGS_KEYS and not self.pending_settings:
+                    audio.play("pause")
                     self.pending_settings = PAGE_MENU
                 elif self.level_complete and event.key in CONTINUE_KEYS:
                     self.pending_stage_end = True
@@ -342,7 +363,8 @@ class Game:
                     self.running = False
                 elif self.level_complete and event.button in game_input.CONFIRM_BUTTONS:
                     self.pending_stage_end = True
-                elif event.button in SETTINGS_BUTTONS:
+                elif event.button in SETTINGS_BUTTONS and not self.pending_settings:
+                    audio.play("pause")
                     self.pending_settings = PAGE_MENU
 
             tap = game_input.touch_tap_pos(event)
@@ -365,12 +387,52 @@ class Game:
         self.pending_settings = None
         self._draw()
         result = await SettingsScreen(self.screen, self.screen.copy(), self.item_box, start_page=page,
-                                      on_save=self.save_progress).run()
+                                      on_save=self.save_progress, lesson_log=self._lesson_log).run()
         if result == RESULT_QUIT:
             self.running = False
         # Same reason as after a quiz: the menu's time shouldn't arrive as
         # one huge dt on the next frame.
         self.clock.tick(FPS)
+
+    # -- Ability level, 円 and konbini boosts ------------------------------------
+
+    def _gain_exp(self, amount):
+        """Study EXP toward the ability level; a level-up gets a banner and
+        names whatever costume it unlocked."""
+        before = self.profile.level
+        unlocked = self.profile.add_exp(amount)
+        level = self.profile.level
+        if level == before:
+            return
+        audio.play("levelup")
+        if unlocked:
+            gear = unlocked[-1]
+            sub = f"NEW {('COSTUME' if gear.slot == HEAD else 'ACCESSORY')}: {gear.name.upper()} ({gear.jp})"
+            self.coach.say(f"Level {level}! New: {gear.name} -- {gear.jp} ({gear.reading}). "
+                           f"Try it on at home!", "happy", seconds=6.0)
+        else:
+            sub = "YOUR STUDY IS PAYING OFF"
+        self.banner = (f"LEVEL UP!  Lv {level}", sub, BANNER_SECONDS)
+
+    def _use_boosts(self):
+        """Konbini boosts bought before this stage kick in now."""
+        boosts = self.profile.take_boosts()
+        where = (self.player.rect.centerx, self.player.rect.top)
+        if "omamori" in boosts:
+            self.lives = min(MAX_LIVES, self.lives + 1)
+            self._add_effect_text("お守り +1 Life", where, (255, 150, 150))
+        if "sun_seeds" in boosts:
+            self._gain_sun_power(where)
+        if "eiyo_drink" in boosts:
+            self.boost_timer = EIYO_BOOST_SECONDS
+            self._add_effect_text("BOOST!", (where[0], where[1] - 24), (170, 255, 190))
+
+    def _lesson_log(self):
+        """What the pause menu's lesson log shows: this level's questions so
+        far and the words met (items picked up, secret places found)."""
+        entries = list(self.quiz_log.values())
+        items = [get_item(item_id) for item_id in dict.fromkeys(self.level_items)]
+        return self.level_number, entries, learned_words(entries, items, self._places_found())
 
     # -- Saving ----------------------------------------------------------------
 
@@ -464,7 +526,7 @@ class Game:
         True if it was written."""
         if self.game_over or self.level_complete:
             return False
-        return save_game.save_run(self._run_record(), level=self.snapshot())
+        return save_game.save_run(self._run_record(), level=self.snapshot(), profile=self.profile)
 
     async def _update(self, dt):
         if self.game_over or self.level_complete:
@@ -524,6 +586,7 @@ class Game:
         if player.fire_requested and self.sun_power and len(self.shots) < MAX_SHOTS:
             direction = 1 if player.facing_right else -1
             self.shots.add(SunShot(player.rect.centerx + direction * 18, player.rect.centery - 4, direction))
+            audio.play("throw")
             self.sun_throws += 1
         self.shots.update(dt, self.platforms)
         for shot in list(self.shots):
@@ -537,6 +600,7 @@ class Game:
     def _zap(self, enemy):
         where = (enemy.rect.centerx, enemy.rect.top)
         enemy.kill()
+        audio.play("zap")
         self.stomps += 1
         self.score += STOMP_SCORE
         self._add_xp(STOMP_GAUGE)
@@ -575,9 +639,10 @@ class Game:
 
         self.pits_fallen += 1
         self.lives -= 1
+        audio.play("fall")
         if self.lives <= 0:
             self.fell_in_pit_flag = True
-            self.game_over = True
+            self._game_over()
             return
         self._start_transition(self._respawn_after_fall)
 
@@ -599,6 +664,8 @@ class Game:
         self.world = world
         self.all_sprites.add(self.player)
         self.effects = []
+        audio.play("warp")
+        audio.music(self._track())
 
     def _underground_world(self, pit):
         index = pit["index"]
@@ -638,6 +705,7 @@ class Game:
                 player.velocity_y = -SPRING_SPEED
                 player.on_ground = False
                 spring.boing()
+                audio.play("spring")
                 self.launch = (spring.link, LAUNCH_SECONDS)
                 self._add_effect_puff((spring.rect.centerx, spring.rect.top))
                 break
@@ -775,12 +843,15 @@ class Game:
             self._finish_warned = need     # and the map marks the open ? boxes
             if self.clock_time - self._gate_said_at > 2.0:
                 self._gate_said_at = self.clock_time
+                audio.play("gate")
                 self.coach.say(self._finish_line(need, at_gate=True), "sympathetic", seconds=6.0)
                 self._add_effect_text(f"{need} more to answer!", (self.goal.rect.left, self.goal.rect.top - 10),
                                       (255, 206, 70))
             return
 
         self.level_complete = True
+        audio.stop_music()
+        audio.play("clear")
         self.next_jlpt_level, self.level_accuracy = next_jlpt_level(
             self.jlpt_level, self.correct_count, self.wrong_count
         )
@@ -789,9 +860,12 @@ class Game:
         self.badge_earned = self._badge_earned()
         if self.badge_earned and self.badge.id not in self.badges:
             self.badges.append(self.badge.id)
+        self.profile.add_yen(YEN_CLEAR + (YEN_BADGE if self.badge_earned else 0))
+        self._gain_exp(EXP_CLEAR + (EXP_BADGE if self.badge_earned else 0))
         # Autosave: a checkpoint at the start of the next level, so closing
         # the game on the "stage clear" card loses nothing.
-        save_game.save_run(self._run_record(level_number=self.level_number + 1, jlpt_level=self.next_jlpt_level))
+        save_game.save_run(self._run_record(level_number=self.level_number + 1, jlpt_level=self.next_jlpt_level),
+                           profile=self.profile)
 
     def _badge_earned(self):
         """The level's badge needs a decent sample answered *and* most of
@@ -813,11 +887,14 @@ class Game:
             if pickup.item is not None:
                 self._collect_item(pickup.item, where)
             elif pickup.kind == "shiitake":
+                audio.play("oneup")
                 self.lives = min(MAX_LIVES, self.lives + 1)
                 self._add_effect_text("+1 Life", where, (255, 150, 150))
             else:
+                audio.play("coin")
                 self.score += pickup.value
                 self._add_xp(pickup.value)
+                self.profile.add_yen(YEN_COIN)
 
     def _collect_item(self, item, where, from_gift=False):
         """Applies one item: score, power, life, speed boost -- then has the
@@ -825,6 +902,7 @@ class Game:
         was_sleepy = self.drowsy
         self.item_box[item.id] = self.item_box.get(item.id, 0) + 1
         self.level_items.append(item.id)
+        self._gain_exp(EXP_ITEM)
         self.score += item.score
         self._add_xp(item.score)
 
@@ -854,6 +932,7 @@ class Game:
         self._add_effect_text(label, where, color)
         if from_gift:
             self._add_effect_icon(item.id, where)
+        audio.play("powerup" if item.group == "power" else "item")
         if item.group == "power":
             self.coach.power_up(item, first_time=self._gain_sun_power(where))
         else:
@@ -869,11 +948,13 @@ class Game:
 
     def _open_gift(self, box):
         box.mark_used()
+        audio.play("gift")
         self.gifts_opened += 1
         top = (box.rect.centerx, box.rect.top)
         gift = roll_gift(self.rng, self.character["favorites"], sleepy=self.drowsy)
         if gift["kind"] == "coins":
             earned = gift["coins"] * 5
+            self.profile.add_yen(gift["coins"] * YEN_COIN)
             self.score += earned
             self._add_xp(earned)
             self._add_effect_text(f"+{gift['coins']} coins!", top, (255, 226, 120))
@@ -890,6 +971,7 @@ class Game:
         while self.xp >= self.next_life_xp:
             self.next_life_xp += XP_PER_LIFE
             self.lives = min(MAX_LIVES, self.lives + 1)
+            audio.play("oneup")
             self._add_effect_text("1UP!", (self.player.rect.centerx, self.player.rect.top), (255, 150, 150))
 
     def _lose_xp(self, amount):
@@ -930,6 +1012,7 @@ class Game:
 
     async def _trigger_question(self, block):
         block.mark_used()
+        audio.play("block")
         # A box that was skipped earlier asks the same question again.
         # Choices are shuffled every time a question is asked, so the right
         # answer isn't always in the same slot.
@@ -966,7 +1049,9 @@ class Game:
             points=points,
             penalty=penalty,
         )
+        audio.duck(True)
         correct = await quiz.run()
+        audio.duck(False)
         self._log_answer(question, quiz.selected, correct)
 
         if correct is None:
@@ -984,6 +1069,8 @@ class Game:
             self.score += points
             self._add_xp(points)
             self.correct_count += 1
+            self.profile.add_yen(YEN_CORRECT)
+            self._gain_exp(EXP_CORRECT)
         else:
             # Costs XP but not a life -- the badge only asks for 70%
             # accuracy, so getting a few wrong has to be survivable.
@@ -1033,6 +1120,7 @@ class Game:
         self._draw()
         self.level_complete = True
         background = self.screen.copy()
+        audio.music(audio.STAGE_END_TRACK)
 
         entries = list(self.quiz_log.values())
         items = [get_item(item_id) for item_id in dict.fromkeys(self.level_items)]
@@ -1059,6 +1147,7 @@ class Game:
                         correct = None
                 results.append((item["kind"], correct))
             bonus = TEST_BONUS_XP * sum(1 for _, correct in results if correct)
+            self.profile.add_exp(EXP_TEST * sum(1 for _, correct in results if correct))
             self.score += bonus
             self._add_xp(bonus)
             if self.tutor is not None:
@@ -1071,6 +1160,7 @@ class Game:
         prize = await LuckyDrawScreen(self.screen, background, self.character, prize, self.rng).run()
         if prize["kind"] == "coins":
             self.score += prize["amount"]
+            self.profile.add_yen(prize["amount"])
         elif prize["kind"] == "xp":
             self._add_xp(prize["amount"])
         else:
@@ -1078,7 +1168,8 @@ class Game:
 
         # The checkpoint saved at the castle didn't have the test's XP or the
         # prizes yet.
-        save_game.save_run(self._run_record(level_number=self.level_number + 1, jlpt_level=self.next_jlpt_level))
+        save_game.save_run(self._run_record(level_number=self.level_number + 1, jlpt_level=self.next_jlpt_level),
+                           profile=self.profile)
         self.outcome = OUTCOME_ADVANCE
         self.running = False
         self.clock.tick(FPS)
@@ -1086,6 +1177,13 @@ class Game:
     def _check_enemy_contact(self, dt):
         hit_enemies = pygame.sprite.spritecollide(self.player, self.enemies, dokill=False)
         if not hit_enemies:
+            return
+
+        # Sun power makes the mascot invincible: anything it touches is
+        # defeated, and nothing costs power or XP.
+        if self.sun_power:
+            for enemy in hit_enemies:
+                self._zap(enemy)
             return
 
         # Jumping on an enemy's head defeats it: the player has to be
@@ -1100,7 +1198,13 @@ class Game:
         if self.invulnerable_timer > 0:
             return
 
-        self._take_hit()
+        if self.guard_left:
+            # The kabuto takes this one: no power or XP lost.
+            self.guard_left -= 1
+            audio.play("block")
+            self._add_effect_text("兜 blocked it!", (self.player.rect.centerx, self.player.rect.top), (170, 200, 255))
+        else:
+            self._take_hit()
         self.invulnerable_timer = INVULNERABILITY_SECONDS
 
         # Knock the player up and away from whichever enemy they hit,
@@ -1116,6 +1220,7 @@ class Game:
         where = (enemy.rect.centerx, enemy.rect.top)
         ground_enemy = not isinstance(enemy, FlyingEnemy)
         enemy.kill()
+        audio.play("stomp")
         self.stomps += 1
         self.score += STOMP_SCORE
         self._add_xp(STOMP_GAUGE)
@@ -1135,12 +1240,8 @@ class Game:
         """An enemy hit costs 1 power (ten hits drain a full gauge) and
         takes a little XP off. Running out of power means falling
         asleep: that costs a life, and the player wakes up groggy.
-        With sun power, the hit just takes the sun power away instead
-        (like losing Mario's fire flower)."""
-        if self.sun_power:
-            self.sun_power = False
-            self._add_effect_text("Sun power lost", (self.player.rect.centerx, self.player.rect.top), (255, 190, 120))
-            return
+        (Never called with sun power -- see _check_enemy_contact.)"""
+        audio.play("hit")
         self._lose_xp(GAUGE_DAMAGE)
         self._set_power(self.power - 1)
         if self.power > 0:
@@ -1151,11 +1252,16 @@ class Game:
         self._add_effect_text("Zzz...", (self.player.rect.centerx, self.player.rect.top), (190, 200, 255))
         if self.lives <= 0:
             self.fell_asleep_flag = True
-            self.game_over = True
+            self._game_over()
             return
         self._set_power(POWER_WAKE)
         self.drowsy_warned = False
         self.invulnerable_timer = WAKE_INVULNERABILITY_SECONDS
+
+    def _game_over(self):
+        self.game_over = True
+        audio.stop_music()
+        audio.play("gameover")
 
     # -- Floating effects (world-space text, icons, puffs) -------------------
 
@@ -1493,6 +1599,16 @@ class Game:
         bar_x = max(value.right + 10, x + 120)
         into_life = self.xp - (self.next_life_xp - XP_PER_LIFE)
         ui.bar(self.screen, (bar_x, row + 5, next_up.x - 10 - bar_x, 7), into_life / XP_PER_LIFE, XP_FILL, radius=3)
+
+        # Ability level: Lv, a bar to the next level, and the 円 to spend.
+        row = card.y + 118
+        ui.text(self.screen, "LV", label, (x, row), color=ui.GOLD)
+        value = ui.text(self.screen, str(self.profile.level), label, (x + 66, row))
+        yen = ui.text(self.screen, f"{self.profile.yen:,}円", ui.body_font(15), (right, row + 8), color=ui.CREAM,
+                      anchor="midright", thickness=1)
+        bar_x = max(value.right + 10, x + 120)
+        into, needed = self.profile.level_progress()
+        ui.bar(self.screen, (bar_x, row + 5, yen.x - 10 - bar_x, 7), into / needed, EXP_FILL, radius=3)
 
         # Temporary states get their own tag under the card, so they're
         # noticed without crowding the numbers above.

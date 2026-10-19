@@ -5,6 +5,7 @@ import threading
 
 import pygame
 
+from kobito import audio
 from kobito import furigana
 from kobito import input as game_input
 from kobito import ui
@@ -313,6 +314,7 @@ class QuizScreen:
 
     def move_cursor(self, step):
         self.cursor = (self.cursor + step) % len(self.question["choices"])
+        audio.play("select")
 
     async def run(self):
         phase = PHASE_ANSWERING
@@ -352,6 +354,7 @@ class QuizScreen:
                             self.selected = selected
                             phase = PHASE_REVEAL
                     elif phase == PHASE_ANSWERING and event.key in SKIP_KEYS:
+                        audio.play("skip")
                         return None  # passed: the question goes unanswered
                     elif phase == PHASE_HINT and event.key in CONTINUE_KEYS:
                         return False
@@ -370,6 +373,7 @@ class QuizScreen:
                     # A answers with it. Once the companion's hint is
                     # showing, any face button continues.
                     if phase == PHASE_ANSWERING and event.button in game_input.SKIP_BUTTONS:
+                        audio.play("skip")
                         return None
                     if phase == PHASE_ANSWERING and event.button in game_input.CONFIRM_BUTTONS:
                         if can_confirm:
@@ -398,6 +402,7 @@ class QuizScreen:
                     self.show_details = not self.show_details
                 elif tap_pos is not None:
                     if phase == PHASE_ANSWERING and self._skip_rect and self._skip_rect.collidepoint(tap_pos):
+                        audio.play("skip")
                         return None
                     if phase == PHASE_ANSWERING:
                         tapped_choice = self._choice_at(tap_pos)
@@ -409,8 +414,10 @@ class QuizScreen:
                         return False
 
             if phase == PHASE_REVEAL:
-                reveal_timer += dt
                 correct = selected == self.question["answer"]
+                if reveal_timer == 0.0:
+                    audio.play("correct" if correct else "wrong")
+                reveal_timer += dt
                 if correct and reveal_timer >= RESULT_DISPLAY_SECONDS:
                     return True
                 if not correct and reveal_timer >= REVEAL_BEFORE_HINT_SECONDS:

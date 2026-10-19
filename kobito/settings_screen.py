@@ -2,15 +2,19 @@
 Start button, or a tap on the HUD's gear or item-box icon.
 
 Two pages:
-  * MENU  -- Resume, Save game, Item Box, Furigana ON/OFF, Translation
-             ON/OFF, Save & quit.
+  * MENU  -- Resume, Save game, Lesson log, Item Box, Music ON/OFF, Sound
+             effects ON/OFF, Furigana ON/OFF, Translation ON/OFF, Save & quit.
   * ITEMS -- the item box: every item picked up this run, with its
              Japanese word, reading and how many were found.
 
 The HUD only shows a small crate icon with a count; this is where the
 player comes to actually look inside it. Furigana / translation live here
 too (instead of a tab on the quiz screen) so all player options are in one
-place. The two toggles are remembered between sessions (kobito/save_game.py).
+place. The toggles are remembered between sessions (kobito/save_game.py).
+
+Lesson log (or one press of L / the gamepad's Y anywhere in the menu)
+opens every question asked so far this level -- your answer, the right
+one and why -- in the same read-only cards as the end-of-stage review.
 
 Works with keyboard, mouse, touch and gamepad. run() returns "resume" or
 "quit".
@@ -20,12 +24,13 @@ import asyncio
 
 import pygame
 
-from kobito import furigana, save_game
+from kobito import audio, furigana, save_game
 from kobito import input as game_input
 from kobito import ui
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.item_art import get_icon
 from kobito.items import get_item
+from kobito.stage_end_screens import ReviewScreen
 
 RESULT_RESUME = "resume"
 RESULT_QUIT = "quit"
@@ -34,6 +39,9 @@ PAGE_MENU = "menu"
 PAGE_ITEMS = "items"
 
 BACK_KEYS = (pygame.K_ESCAPE, pygame.K_p, pygame.K_BACKSPACE)
+LOG_KEYS = (pygame.K_l,)
+LOG_BUTTONS = (game_input.Y,)
+TOGGLES = ("music", "sfx", "furigana", "translation")
 CONFIRM_KEYS = (pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER)
 UP_KEYS = (pygame.K_UP, pygame.K_w)
 DOWN_KEYS = (pygame.K_DOWN, pygame.K_s)
@@ -42,9 +50,9 @@ RIGHT_KEYS = (pygame.K_RIGHT, pygame.K_d)
 START_BUTTONS = (game_input.BACK, game_input.START)
 STICK_Y_AXIS = 1
 
-MENU_PANEL = pygame.Rect(0, 0, 460, 444)
+MENU_PANEL = pygame.Rect(0, 0, 470, 516)
 MENU_PANEL.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-ROW_HEIGHT = 50
+ROW_HEIGHT = 41
 TOAST_SECONDS = 2.2
 ITEMS_PANEL = pygame.Rect(0, 0, 860, 470)
 ITEMS_PANEL.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
@@ -58,7 +66,7 @@ ITEM_GROUP_COLORS = {"konbini": ui.SKY, "favorite": (255, 170, 210), "rare": ui.
 
 
 class SettingsScreen:
-    def __init__(self, screen, background, item_box, start_page=PAGE_MENU, on_save=None):
+    def __init__(self, screen, background, item_box, start_page=PAGE_MENU, on_save=None, lesson_log=None):
         self.screen = screen
         self.background = background.copy()
         self.dim = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -73,6 +81,10 @@ class SettingsScreen:
         # on_save() writes the game and returns True on success; without it
         # (e.g. nothing to save yet) the save rows simply aren't offered.
         self.on_save = on_save
+        # lesson_log() -> (level_number, entries, words) for the log page;
+        # without it the row isn't offered.
+        self.lesson_log = lesson_log
+        self.pending_log = False
         self.toast = None       # (message, color, seconds left)
         self._stick_y = 0       # last stick direction, so a held stick moves once
         self._row_rects = []
@@ -84,8 +96,12 @@ class SettingsScreen:
         rows = [("resume", "Resume", None)]
         if self.on_save:
             rows.append(("save", "Save game", None))
+        if self.lesson_log:
+            rows.append(("log", "Lesson log", None))
         rows += [
             ("items", "Item Box", f"{sum(self.item_box.values())}"),
+            ("music", "Music", audio.music_enabled()),
+            ("sfx", "Sound effects", audio.sfx_enabled()),
             ("furigana", "Furigana", furigana.is_enabled()),
             ("translation", "Translation", furigana.is_translation_visible()),
             ("quit", "Save & quit" if self.on_save else "Quit game", None),
@@ -93,10 +109,19 @@ class SettingsScreen:
         return rows
 
     def _activate(self, key):
+        audio.play("back" if key == "resume" else "confirm")
         if key == "resume":
             self.result = RESULT_RESUME
         elif key == "items":
             self.page, self.scroll = PAGE_ITEMS, 0
+        elif key == "log":
+            self.pending_log = True
+        elif key == "music":
+            audio.toggle_music()
+            save_game.save_settings()
+        elif key == "sfx":
+            audio.toggle_sfx()
+            save_game.save_settings()
         elif key == "save":
             if self.on_save():
                 self.toast = ("Game saved!", ui.GREEN, TOAST_SECONDS)
@@ -121,6 +146,7 @@ class SettingsScreen:
 
     def _move(self, step):
         if self.page == PAGE_MENU:
+            audio.play("select")
             self.selected = (self.selected + step) % len(self._rows())
         else:
             self._scroll_by(step)
@@ -140,15 +166,28 @@ class SettingsScreen:
                 self.toast = (message, color, left - dt) if left > dt else None
             for event in game_input.events():
                 self._handle(event)
+            if self.pending_log:
+                await self._show_log()
+                continue
             self._draw()
             await asyncio.sleep(0)
         return self.result
+
+    async def _show_log(self):
+        self.pending_log = False
+        level_number, entries, words = self.lesson_log()
+        await ReviewScreen(self.screen, self.background, level_number, entries, words, 0, log=True).run()
+        self.clock.tick(FPS)
 
     def _handle(self, event):
         if event.type == pygame.QUIT:
             self.result = RESULT_QUIT
             return
         game_input.handle_hotplug(event)
+        if self.lesson_log and ((event.type == pygame.KEYDOWN and event.key in LOG_KEYS)
+                                or (event.type == pygame.JOYBUTTONDOWN and event.button in LOG_BUTTONS)):
+            self.pending_log = True
+            return
 
         if event.type == pygame.KEYDOWN:
             if event.key in BACK_KEYS:
@@ -161,7 +200,7 @@ class SettingsScreen:
                 self._activate(self._rows()[self.selected][0])
             elif self.page == PAGE_MENU and event.key in LEFT_KEYS + RIGHT_KEYS:
                 key = self._rows()[self.selected][0]
-                if key in ("furigana", "translation"):
+                if key in TOGGLES:
                     self._activate(key)
             elif self.page == PAGE_ITEMS and event.key in CONFIRM_KEYS:
                 self._back()
@@ -238,10 +277,10 @@ class SettingsScreen:
         self._back_button(rect, "RESUME")
 
         self._row_rects = []
-        y += 14
+        y += 10
         body = ui.body_font(20)
         for i, (key, label, value) in enumerate(self._rows()):
-            row = pygame.Rect(rect.x + 20, y, rect.width - 40, ROW_HEIGHT - 8)
+            row = pygame.Rect(rect.x + 20, y, rect.width - 40, ROW_HEIGHT - 6)
             self._row_rects.append(row)
             active = i == self.selected
             if active:
@@ -254,6 +293,11 @@ class SettingsScreen:
             if key == "save":
                 ui.text(self.screen, "keeps your exact spot", ui.label_font(16), (row.right - 14, row.centery),
                         color=ui.MUTED, anchor="midright", thickness=1)
+            elif key == "log":
+                ui.text(self.screen, game_input.prompt("L", "Y"), ui.label_font(16), (row.right - 30, row.centery),
+                        color=ui.GOLD, anchor="midright", thickness=1)
+                ui.text(self.screen, "›", body, (row.right - 14, row.centery), color=ui.MUTED,
+                        anchor="midright", thickness=1)
             elif key == "items":
                 ui.item_box_icon(self.screen, (row.right - 58, row.centery + 1), 26)
                 if value != "0":
@@ -261,7 +305,7 @@ class SettingsScreen:
                 ui.text(self.screen, "›", body, (row.right - 14, row.centery), color=ui.MUTED,
                         anchor="midright", thickness=1)
             elif isinstance(value, bool):
-                self._switch(pygame.Rect(row.right - 84, row.centery - 13, 70, 26), value)
+                self._switch(pygame.Rect(row.right - 84, row.centery - 12, 70, 24), value)
             y += ROW_HEIGHT
 
         if self.toast:
@@ -269,7 +313,8 @@ class SettingsScreen:
             ui.text(self.screen, message, ui.label_font(16), (rect.centerx, rect.bottom - 22), color=color,
                     anchor="center")
         else:
-            hint = game_input.prompt("↑↓ choose    Enter select    Esc resume", "D-pad choose    A select    B resume")
+            hint = game_input.prompt("↑↓ choose   Enter select   L lesson log   Esc resume",
+                                     "D-pad choose   A select   Y lesson log   B resume")
             ui.text(self.screen, hint, ui.label_font(16), (rect.centerx, rect.bottom - 22), color=ui.MUTED,
                     anchor="center", thickness=1)
 

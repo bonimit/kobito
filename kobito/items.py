@@ -101,7 +101,8 @@ ITEMS = {item.id: item for item in [
          power=10, score=100, life=1, full_power=True),
 
     # Power-up: eat it and the run button throws bouncing sunballs that
-    # defeat enemies (like Mario's fire flower) -- until you get hit.
+    # defeat enemies, and touching an enemy defeats it too -- no hit costs
+    # power or XP while it lasts.
     Item("sunflower", "Sunflower", "ひまわり", "himawari", "sunflower",
          "ひまわりは太陽が好きです。", "Sunflowers love the sun.", "power",
          power=2, score=50),
