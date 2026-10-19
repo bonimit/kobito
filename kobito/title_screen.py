@@ -15,7 +15,7 @@ import math
 
 import pygame
 
-from kobito import audio
+from kobito import audio, display
 from kobito import input as game_input
 from kobito import ui
 from kobito.assets import load_character_animations
@@ -41,7 +41,7 @@ BUTTON_SIZE = (200, 52)
 class TitleScreen:
     def __init__(self, saved, profile=None, player_name=None):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito")
         self.clock = pygame.time.Clock()
         self.saved = saved

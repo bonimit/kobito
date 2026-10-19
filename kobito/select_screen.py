@@ -3,12 +3,12 @@ import math
 
 import pygame
 
-from kobito import audio
+from kobito import audio, display
 from kobito import input as game_input
 from kobito import setup_ui, ui
 from kobito.assets import load_character_animations
 from kobito.characters import CHARACTERS
-from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS
 from kobito.item_art import get_icon
 from kobito.items import get_item
 
@@ -34,7 +34,7 @@ class SelectScreen:
 
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito - Choose your mascot")
         self.clock = pygame.time.Clock()
         self.index = 0

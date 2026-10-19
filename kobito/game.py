@@ -4,7 +4,7 @@ import random
 
 import pygame
 
-from kobito import audio, progress
+from kobito import audio, display, progress
 from kobito import input as game_input
 from kobito.background import Background
 from kobito.characters import get_character
@@ -175,7 +175,7 @@ class Game:
         profile=None,
     ):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito")
         self.clock = pygame.time.Clock()
         self.running = True

@@ -17,7 +17,7 @@ import math
 
 import pygame
 
-from kobito import audio, progress, save_game, setup_ui, town_ui, ui
+from kobito import audio, display, progress, save_game, setup_ui, town_ui, ui
 from kobito import input as game_input
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.board_screen import BoardScreen
@@ -37,7 +37,7 @@ SKY_TOP, SKY_BOTTOM = (70, 92, 170), (250, 170, 140)
 class TownScreen:
     def __init__(self, profile, character_id, leave_label="NEXT STAGE", leave_jp="つぎへ"):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito - Town")
         self.profile = profile
         self.character_id = character_id

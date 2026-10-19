@@ -3,12 +3,12 @@ import math
 
 import pygame
 
-from kobito import audio
+from kobito import audio, display
 from kobito import input as game_input
 from kobito import setup_ui, ui
 from kobito.companion_art import draw_companion
 from kobito.companions import COMPANIONS
-from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS
 
 TYPE_SPEED = 42.0        # greeting characters per second
 HAPPY_PERIOD = 2.6       # a quick happy face every so often once it's done talking
@@ -42,7 +42,7 @@ class CompanionSelectScreen:
 
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito - Choose your companion")
         self.clock = pygame.time.Clock()
         self.index = 0

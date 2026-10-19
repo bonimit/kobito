@@ -117,10 +117,18 @@ def handle_hotplug(event):
 def events():
     """pygame.event.get(), with joystick buttons translated to the logical
     layout (and the web d-pad's buttons turned into hat motion). Also
-    notes whether the player is on the keyboard or a gamepad, for prompt()."""
+    notes whether the player is on the keyboard or a gamepad, for prompt().
+    F11 / Alt+Enter switch full screen here, on every screen, and are
+    swallowed so no screen also reads them as Enter."""
+    from kobito import display
     out = []
     for event in pygame.event.get():
         _note_device(event)
+        if display.is_fullscreen_key(event):
+            display.toggle_fullscreen()
+            from kobito import save_game
+            save_game.save_settings()
+            continue
         out.extend(translate(event))
     return out
 

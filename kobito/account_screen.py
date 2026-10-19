@@ -20,11 +20,11 @@ import math
 
 import pygame
 
-from kobito import audio, gear_art, progress, save_game, setup_ui, town_ui, ui
+from kobito import audio, display, gear_art, progress, save_game, setup_ui, town_ui, ui
 from kobito import input as game_input
 from kobito.assets import load_character_animations
 from kobito.characters import get_character
-from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS, SCREEN_WIDTH
 
 CARD = (176, 236)
 CARD_GAP = 16
@@ -61,7 +61,7 @@ def draw_padlock(surface, center, size=12, color=ui.GOLD):
 class _Base:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito")
         self.clock = pygame.time.Clock()
         self.nav = town_ui.Nav()

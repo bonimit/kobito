@@ -3,12 +3,12 @@ import math
 
 import pygame
 
-from kobito import audio
+from kobito import audio, display
 from kobito import input as game_input
 from kobito import setup_ui, ui
 from kobito.companion_art import draw_companion
 from kobito.companions import get_companion
-from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS
 from kobito.difficulty import JLPT_DESCRIPTIONS, JLPT_LEVELS, MODE_ADAPTIVE, MODE_CHOOSE, MODE_RANDOM
 from kobito.word_data import WORDS
 
@@ -62,7 +62,7 @@ class DifficultySelectScreen:
 
     def __init__(self, companion_id="kobito"):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito - Choose your level")
         self.clock = pygame.time.Clock()
         self.companion = get_companion(companion_id)

@@ -3,7 +3,8 @@ Start button, or a tap on the HUD's gear or item-box icon.
 
 Two pages:
   * MENU  -- Resume, Save game, Lesson log, Item Box, Music ON/OFF, Sound
-             effects ON/OFF, Furigana ON/OFF, Translation ON/OFF, Save & quit.
+             effects ON/OFF, Full screen ON/OFF, Furigana ON/OFF, Translation
+             ON/OFF, Save & quit.
   * ITEMS -- the item box: every item picked up this run, with its
              Japanese word, reading and how many were found.
 
@@ -24,10 +25,10 @@ import asyncio
 
 import pygame
 
-from kobito import audio, furigana, save_game
+from kobito import audio, display, furigana, save_game
 from kobito import input as game_input
 from kobito import ui
-from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from kobito.constants import FPS, IS_WEB, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.item_art import get_icon
 from kobito.items import get_item
 from kobito.stage_end_screens import ReviewScreen
@@ -41,7 +42,7 @@ PAGE_ITEMS = "items"
 BACK_KEYS = (pygame.K_ESCAPE, pygame.K_p, pygame.K_BACKSPACE)
 LOG_KEYS = (pygame.K_l,)
 LOG_BUTTONS = (game_input.Y,)
-TOGGLES = ("music", "sfx", "furigana", "translation")
+TOGGLES = ("music", "sfx", "fullscreen", "furigana", "translation")
 CONFIRM_KEYS = (pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER)
 UP_KEYS = (pygame.K_UP, pygame.K_w)
 DOWN_KEYS = (pygame.K_DOWN, pygame.K_s)
@@ -50,9 +51,9 @@ RIGHT_KEYS = (pygame.K_RIGHT, pygame.K_d)
 START_BUTTONS = (game_input.BACK, game_input.START)
 STICK_Y_AXIS = 1
 
-MENU_PANEL = pygame.Rect(0, 0, 470, 516)
+MENU_PANEL = pygame.Rect(0, 0, 470, 528)
 MENU_PANEL.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-ROW_HEIGHT = 41
+ROW_HEIGHT = 38
 TOAST_SECONDS = 2.2
 ITEMS_PANEL = pygame.Rect(0, 0, 860, 470)
 ITEMS_PANEL.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
@@ -102,6 +103,10 @@ class SettingsScreen:
             ("items", "Item Box", f"{sum(self.item_box.values())}"),
             ("music", "Music", audio.music_enabled()),
             ("sfx", "Sound effects", audio.sfx_enabled()),
+        ]
+        if not IS_WEB:   # the browser has its own full-screen button
+            rows.append(("fullscreen", "Full screen", display.is_fullscreen()))
+        rows += [
             ("furigana", "Furigana", furigana.is_enabled()),
             ("translation", "Translation", furigana.is_translation_visible()),
             ("quit", "Save & quit" if self.on_save else "Quit game", None),
@@ -121,6 +126,9 @@ class SettingsScreen:
             save_game.save_settings()
         elif key == "sfx":
             audio.toggle_sfx()
+            save_game.save_settings()
+        elif key == "fullscreen":
+            display.toggle_fullscreen()
             save_game.save_settings()
         elif key == "save":
             if self.on_save():

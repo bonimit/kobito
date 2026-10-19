@@ -48,6 +48,13 @@ category-based canned hint instead of an AI-generated one.
 - **Esc / P** — pause and open **Settings** (save, lesson log, item box, music, sound effects, furigana,
   translation, save & quit); **L** in the pause menu opens the **lesson log** straight away
 - With the **propeller cap** on: **hold jump in mid-air** to fly up
+- **F11** (or **Alt+Enter**, or Settings → Full screen) — full screen on/off
+
+**Window size:** the game draws a 960×540 picture and shows it scaled up
+(`kobito/display.py`): the window opens at about 85% of your screen —
+an exact 2× or 3× when that fits, so pixels stay even — and you can drag
+its edge to resize it (the picture keeps its shape). Full screen is
+remembered for next time.
 
 A gamepad works everywhere alongside the keyboard — plug one in before or
 during play, it's picked up automatically (hot-plug supported):

@@ -2,7 +2,7 @@ import asyncio
 
 import pygame
 
-from kobito import audio
+from kobito import audio, display
 from kobito import input as game_input
 from kobito import setup_ui
 from kobito.background import Background
@@ -31,7 +31,7 @@ class WorldSelectScreen:
 
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.screen = display.screen()
         pygame.display.set_caption("Kobito - Choose your world")
         self.clock = pygame.time.Clock()
 

@@ -13,7 +13,7 @@ One save slot, stored as a small JSON document:
         "tutor": {...} or null       # the AI tutor's learner model (adaptive mode)
       },
       "level": {...} or null,       # mid-level spot (see Game.snapshot)
-      "settings": {"furigana": bool, "translation": bool, "music": bool, "sfx": bool},
+      "settings": {"furigana": bool, "translation": bool, "music": bool, "sfx": bool, "fullscreen": bool},
       "profile": {...}              # ability level, yen, costumes (kobito/profile.py)
     }
 
@@ -330,9 +330,9 @@ def clear_run():
 # -- Settings -------------------------------------------------------------------
 
 def current_settings():
-    from kobito import audio
+    from kobito import audio, display
     return {"furigana": furigana.is_enabled(), "translation": furigana.is_translation_visible(),
-            "music": audio.music_enabled(), "sfx": audio.sfx_enabled()}
+            "music": audio.music_enabled(), "sfx": audio.sfx_enabled(), "fullscreen": display.is_fullscreen()}
 
 
 def save_settings():
@@ -351,6 +351,9 @@ def apply_saved_settings():
         audio.set_music(bool(settings["music"]))
     if "sfx" in settings:
         audio.set_sfx(bool(settings["sfx"]))
+    if "fullscreen" in settings:
+        from kobito import display
+        display.set_fullscreen(bool(settings["fullscreen"]))
     if "furigana" in settings and bool(settings["furigana"]) != furigana.is_enabled():
         furigana.toggle()
     if "translation" in settings and bool(settings["translation"]) != furigana.is_translation_visible():
