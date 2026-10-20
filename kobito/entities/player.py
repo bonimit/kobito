@@ -24,6 +24,10 @@ WALL_KICK_SECONDS = 0.18   # steering is ignored briefly so the kick carries
 COPTER_SECONDS = 2.0       # propeller cap: this much flying per jump (refills on landing)...
 COPTER_RISE = 220.0        # ...rising at this speed while jump is held
 COPTER_SOUND_EVERY = 0.16
+PARACHUTE_FALL_SPEED = 120.0   # coming down from a sky room: this slow...
+PARACHUTE_STEER = 0.7          # ...steering at this x RUN_SPEED
+ROPE_CLIMB_SPEED = 190.0       # underground: up / jump climbs the rope out, down slides
+ROPE_REACH = 22                # grab it with your middle this close to it
 RUN_KEYS = (pygame.K_LSHIFT, pygame.K_RSHIFT, pygame.K_x, pygame.K_j)
 FIRE_ONLY_KEYS = (pygame.K_f,)   # throw without running
 
@@ -77,6 +81,14 @@ class Player(pygame.sprite.Sprite):
         self._run_was_held = False
         self._fire_sources = set()
 
+        # Leaving the secret rooms. Game opens a parachute when the player
+        # comes down from the sky (it folds on landing and chute_landed
+        # tells Game so, once), and hands over the rope's rect underground.
+        self.parachute = False
+        self.chute_landed = False
+        self.rope = None
+        self.on_rope = False
+
         # Game sets these every frame: below 1.0 when the player is
         # drowsy (low power), above 1.0 during a golden-can speed boost.
         self.run_scale = 1.0
@@ -125,6 +137,14 @@ class Player(pygame.sprite.Sprite):
         self._fire_sources = sources
         self._jump_was_held, self._run_was_held = jump_held, run_held
         self.running = run_held
+        self.gliding = self.flying = self.climbing = self.wall_sliding = False
+
+        if self.parachute:
+            # Floating down: steer gently, no jumping or flapping.
+            self.velocity_x = direction * RUN_SPEED * PARACHUTE_STEER
+            return
+        if self._climb_rope(direction, jump_held, keys):
+            return
 
         if self.on_ground:
             self.flaps_left = self.flaps_per_jump
@@ -141,8 +161,6 @@ class Player(pygame.sprite.Sprite):
         # Wall climb: in the air, pushing into a wall -> climb it (for a
         # while), then slide. Jump while on the wall -> kick off it.
         on_wall = not self.on_ground and self.wall_dir != 0 and direction == self.wall_dir
-        self.climbing = False
-        self.wall_sliding = False
         if on_wall and jump_pressed:
             audio.play("jump")
             self.velocity_y = -JUMP_SPEED * self.jump_scale
@@ -182,10 +200,38 @@ class Player(pygame.sprite.Sprite):
                 audio.play("copter")
         self.gliding = jump_held and not self.on_ground and not self.climbing and self.velocity_y > 0
 
+    def _climb_rope(self, direction, jump_held, keys):
+        """The rope out of an underground room: with your middle at it, up /
+        jump grabs it and climbs, down slides, nothing hangs on, and left /
+        right (without up or down) lets go. True while on the rope."""
+        rope = self.rope
+        near = (rope is not None and abs(self.rect.centerx - rope.centerx) <= ROPE_REACH
+                and self.rect.bottom > rope.top and self.rect.top < rope.bottom)
+        axis = game_input.climb_axis()
+        up = jump_held or axis < 0
+        down = keys[pygame.K_DOWN] or keys[pygame.K_s] or axis > 0
+        if not near or (self.on_rope and direction and not (up or down)) or (down and self.on_ground):
+            self.on_rope = False
+            return False
+        if not (self.on_rope or up):
+            return False
+        if not self.on_rope:
+            audio.play("jump")
+        self.on_rope = True
+        self.on_ground = False
+        self.velocity_x = 0.0
+        self.rect.centerx += max(-4, min(4, rope.centerx - self.rect.centerx))
+        self.velocity_y = -ROPE_CLIMB_SPEED if up else ROPE_CLIMB_SPEED if down else 0.0
+        self.flaps_left = self.flaps_per_jump
+        self.copter_left = COPTER_SECONDS
+        return True
+
     def apply_gravity(self, dt):
-        if self.climbing:
-            return  # climbing holds its own steady speed up the wall
+        if self.climbing or self.on_rope:
+            return  # climbing holds its own steady speed up the wall / rope
         self.velocity_y += GRAVITY * dt
+        if self.parachute:
+            self.velocity_y = min(self.velocity_y, PARACHUTE_FALL_SPEED)
         if self.gliding:
             self.velocity_y = min(self.velocity_y, GLIDE_FALL_SPEED)
         if self.wall_sliding:
@@ -199,6 +245,9 @@ class Player(pygame.sprite.Sprite):
         self.apply_gravity(dt)
         self._move_and_collide_x(dt, platforms)
         self._move_and_collide_y(dt, platforms)
+        if self.parachute and self.on_ground:
+            self.parachute = False
+            self.chute_landed = True
         self._update_animation(dt)
 
     def _move_and_collide_x(self, dt, platforms):

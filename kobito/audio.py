@@ -117,6 +117,11 @@ def music(track):
         pass
 
 
+def pick(track, fallback):
+    """`track` if its file is there, else `fallback`."""
+    return track if (AUDIO_DIR / "music" / f"{track}.ogg").exists() else fallback
+
+
 def stop_music(keep_track=False):
     if not keep_track:
         _state["track"] = None

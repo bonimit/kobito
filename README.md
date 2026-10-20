@@ -637,15 +637,19 @@ Falling into a gap is no longer endless:
   coins, two gift boxes, a snack, a favourite and the treasure. **Falling
   in a secret stage never costs a life** — it just takes you back up to
   the main stage. Your companion teaches the place's
-  Japanese word when you arrive. Walk to the **出口 (EXIT)** at the far end —
-  stairs, a manhole ladder or a mine lift — and you come back up just past
-  the gap. Which room is behind which gap changes from level to level, and
+  Japanese word when you arrive. **The way out is the way in:** a rope (a
+  steel ladder in the subway, a rusty ladder in the sewer, a knotted rope in
+  the mine) hangs down through the hole you fell through, with a 出口 ↑ のぼる
+  ("exit — climb") plate on it. Explore to the far end, come back, and hold
+  **Up / Jump** at the rope to climb (Down slides, Left/Right lets go). Climb
+  out of the top and you hop up out of the pit onto the ground just past it —
+  and the rope stays tied there on the surface. Which room is behind which gap changes from level to level, and
   the stage-clear card shows how many secrets you found.
 
 Saving underground keeps everything you picked up down there; you continue
 on the surface just past that pit and can drop back in for the rest.
 Code: `kobito/levels/underground.py` (layout + styles),
-`kobito/underground_background.py` (backdrops), `kobito/entities/exit.py`,
+`kobito/underground_background.py` (backdrops), `kobito/entities/rope.py`,
 `kobito/world.py` (switching between the surface and a room).
 
 ## Hidden sky stages (the way up)
@@ -668,7 +672,10 @@ straight off the top of the screen into a hidden sky stage:
 Sky stages are built from **one-way clouds**: jump up through them from
 below, land on top. There's no floor — **fall through a gap and you drift
 back down to the surface, with no life lost** — so the way down is always
-open, and the 出口 (EXIT) at the far end takes you down too. Like the
+open, and the 出口 (EXIT) at the far end takes you down too. Either way you
+come down **under a red-and-white parachute** (パラシュート), floating in from
+the top of the screen just before the spring: steer left and right as you
+drift, and it folds away when you land (着地 chakuchi, "landing"). Like the
 underground, each has coins, two gift boxes, a snack, a favourite and a
 glowing treasure, and your companion teaches the sky word when you arrive.
 
@@ -835,7 +842,8 @@ answered to pass), enemies and six secrets, a real playthrough is more like
 
 A minimal **progress line** under the level pill shows how close you are:
 it fills in gold from start to the ゴール flag, with a dot for where you are
-now. In a secret room it tracks the way to that room's exit (green flag).
+now. In a sky room it tracks the way to the exit (green flag); underground
+the line is the whole room, with the green flag at the rope back up.
 Once the companion has warned you that you're short of answers, small
 **gold markers** above the line show where the open ? boxes are.
 
@@ -905,10 +913,14 @@ Every stage has its own tune, and everything you do makes a sound
 (`kobito/audio.py`). All of it is **generated from code** by
 `tools/make_audio.py` — square/pulse/triangle oscillators, a plucked
 "koto", a music-box bell and noise drums — so there are no samples or
-licences involved; the files are in `assets/audio/` (30 music loops, 31
-sound effects, about 3 MB of .ogg).
+licences involved; the files are in `assets/audio/` (68 music loops, 31
+sound effects, about 7.5 MB of .ogg).
 
-- **Music** — one looping chiptune per world, each in a fitting scale:
+- **Music** — **three tunes per world, so every stage sounds different**:
+  stage 1 plays the world's main tune, stage 2 and stage 3 play variations
+  (`<world>_2`, `<world>_3`) that keep its scale and drums but change the
+  key, tempo, lead instrument, rhythm and melody; stage 4 goes round again.
+  Each world's tunes are in a fitting scale:
   Japanese *yo* for the forest and Nagano, *miyako-bushi* (in) for Kyoto
   on a koto, the Ryukyu scale for Okinawa (and a faster one for the island
   drive), a koto folk tune for the Aomori harvest, a calm flute over

@@ -24,7 +24,7 @@ import subprocess
 import sys
 import tempfile
 import wave
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -132,6 +132,33 @@ TRACKS = {
     "moon": TrackSpec(80, 80, "lydian", P((0, MAJ), (2, MAJ), (0, MAJ), (7, MAJ)),
                       P((4, MIN), (2, MAJ), (9, MIN), (0, MAJ)), "bell", "calm", "none", seed=46),
 }
+
+# Every world has three tunes, one per stage in turn (kobito/game.py,
+# Game._track): the original, then two variations on it that keep the
+# world's scale and drums (its "sound") but change key, tempo, lead
+# instrument, rhythm feel and melody -- "<world>_2" and "<world>_3".
+WORLDS = ["forest", "desert", "arabian_night", "underwater", "sky", "tokyo", "nagano", "okinawa", "hokkaido",
+          "kyoto", "island", "fairy_tale", "london", "new_york", "korea", "okinawa_drive", "aomori", "shizuoka",
+          "hokkaido_farm"]
+LEAD_SWAP = {"square": ("pulse", "flute"), "pulse": ("square", "bell"), "tri": ("flute", "pulse"),
+             "flute": ("koto", "pulse"), "koto": ("flute", "bell"), "bell": ("tri", "koto"), "saw": ("pulse", "square")}
+FEEL_SWAP = {"bouncy": ("driving", "calm"), "calm": ("bouncy", "swing"), "driving": ("bouncy", "swing"),
+             "swing": ("bouncy", "calm"), "waltz": ("waltz", "waltz")}
+
+
+def stage_variants(spec):
+    """The 2nd and 3rd stage tunes of a world."""
+    leads, feels = LEAD_SWAP[spec.lead], FEEL_SWAP[spec.feel]
+    second = replace(spec, key=spec.key + 2, bpm=spec.bpm + 10, prog_a=spec.prog_b, prog_b=spec.prog_a,
+                     lead=leads[0], feel=feels[0], seed=spec.seed + 100)
+    third = replace(spec, key=spec.key - 3, bpm=max(80, spec.bpm - 12), lead=leads[1], feel=feels[1],
+                    arp=not spec.arp, seed=spec.seed + 200,
+                    drums=spec.drums if spec.drums in ("taiko", "darbuka", "waltz", "none") else "light")
+    return second, third
+
+
+for _world in WORLDS:
+    TRACKS[f"{_world}_2"], TRACKS[f"{_world}_3"] = stage_variants(TRACKS[_world])
 
 FEELS = {   # note lengths in 16th steps, and how likely each is
     "bouncy": ([2, 2, 2, 4, 1, 3], [5, 5, 5, 3, 1, 1], 0.12),

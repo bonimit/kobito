@@ -153,10 +153,11 @@ class ItemCoach:
     def fell(self, power):
         self._say([self._local_line("fell", None, power)], "sympathetic", seconds=4.0)
 
-    def secret(self, place, lesson):
-        """Found a hidden stage: a line in character, then the place's
-        Japanese word as a mini lesson."""
-        self._say([self._local_line("secret", None, 10, place=place), lesson], "happy", seconds=7.0)
+    def secret(self, place, lesson, tip=None):
+        """Found a hidden stage: a line in character, the place's Japanese
+        word as a mini lesson, then how to get back out."""
+        lines = [self._local_line("secret", None, 10, place=place), lesson] + ([tip] if tip else [])
+        self._say(lines, "happy", seconds=9.0 if tip else 7.0)
 
     def surface(self):
         self._say([self._local_line("surface", None, 10)], "happy", seconds=3.5)

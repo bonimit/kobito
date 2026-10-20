@@ -3,8 +3,9 @@
 Three of each level's gaps are secret (kobito/levels/level1.py,
 SECRET_GAP_SEGMENTS): drop into one and you land in one of these instead of
 losing a life. They're bonus rooms -- no quiz boxes, lots of coins and gift
-boxes, a few enemies, and one treasure you can only find down here -- with
-an exit at the far end that brings you back up just past the gap.
+boxes, a few enemies, and one treasure you can only find down here. The
+way out is the way in: a rope (or ladder) hangs down through the hole you
+fell through -- climb it to come back up out of the gap.
 
   * subway -- an NYC subway station (treasure: 駅弁 ekiben)
   * sewer  -- sewer tunnels and water pipes, turtle-hideout style
@@ -13,7 +14,7 @@ an exit at the far end that brings you back up just past the gap.
 
 Every room shares one layout (so it's tested once) but each style skins
 it differently: platforms, enemies, backdrop (kobito/underground_background.py)
-and exit (kobito/entities/exit.py). Entering also teaches the place's
+and climb-out rope (kobito/entities/rope.py). Entering also teaches the place's
 Japanese word (地下鉄 / 下水道 / 鉱山).
 """
 
@@ -21,13 +22,12 @@ import random
 from types import SimpleNamespace
 
 from kobito.constants import TILE_SIZE
-from kobito.entities.exit import Exit
+from kobito.entities.rope import ClimbRope
 from kobito.items import KONBINI_IDS
 from kobito.levels.level1 import GROUND_ROW, Level, _LevelBuilder
 
 ROOM_WIDTH_TILES = 64
 ENTRY_COL = 3
-EXIT_COL = 59
 
 STYLES = {
     "subway": {
@@ -68,7 +68,7 @@ def place_lesson(style):
 
 def build_underground(style, level_number=1, pit_index=0, favorites=()):
     """Builds one hidden room. Returns (level, entry_x): a Level whose
-    `goal` is the Exit, and the x where the player drops in."""
+    `goal` is the rope back up, and the x where the player drops in."""
     spec = STYLES[style]
     theme = SimpleNamespace(
         id=f"underground_{style}", name=spec["name"],
@@ -120,7 +120,7 @@ def build_underground(style, level_number=1, pit_index=0, favorites=()):
         b._add_flying_enemy(43, top_row=5, bottom_row=10)
         b._add_flying_enemy(52, top_row=6, bottom_row=11)
 
-    # D: a last arc of coins, a snack and a favourite before the exit.
+    # D: a last arc of coins, a snack and a favourite at the far end.
     for col, row in ((51, 12), (52, 11), (53, 10), (54, 10), (55, 11), (56, 12)):
         b._add_collectible(col, row, kind="coin")
     b._add_collectible(53, 13, kind=KONBINI_IDS[b.rng.randrange(len(KONBINI_IDS))])
@@ -128,11 +128,12 @@ def build_underground(style, level_number=1, pit_index=0, favorites=()):
         b._add_collectible(55, 13, kind=b.favorites[pit_index % len(b.favorites)])
     b._add_enemy(spawn_col=50, row=GROUND_ROW - 1, patrol_start_col=50, patrol_end_col=57)
 
-    exit_sprite = Exit(EXIT_COL * TILE_SIZE, GROUND_ROW * TILE_SIZE, style)
+    entry_x = ENTRY_COL * TILE_SIZE + TILE_SIZE // 2
+    rope = ClimbRope(entry_x, GROUND_ROW * TILE_SIZE, style)
     level = Level(
         platforms=b.platforms, question_blocks=b.question_blocks, gift_boxes=b.gift_boxes,
-        enemies=b.enemies, collectibles=b.collectibles, goal=exit_sprite,
+        enemies=b.enemies, collectibles=b.collectibles, goal=rope,
         player_start=(ENTRY_COL * TILE_SIZE, 0), width_px=W * TILE_SIZE,
         ground_y=GROUND_ROW * TILE_SIZE, theme=theme, ground_segments_px=b.ground_segments_px,
     )
-    return level, ENTRY_COL * TILE_SIZE + TILE_SIZE // 2
+    return level, entry_x

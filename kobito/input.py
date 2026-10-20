@@ -26,6 +26,7 @@ from kobito.constants import IS_WEB
 
 AXIS_DEADZONE = 0.5
 LEFT_STICK_X_AXIS = 0
+LEFT_STICK_Y_AXIS = 1
 
 # Logical buttons (XInput numbering).
 A, B, X, Y, LB, RB, BACK, START = range(8)
@@ -216,6 +217,32 @@ def move_axis():
             if abs(value) >= AXIS_DEADZONE:
                 return value
     return 0.0
+
+
+def _hat_y(joystick):
+    layout = _layouts.get(joystick.get_instance_id(), "xinput")
+    if layout == "standard":
+        n = joystick.get_numbuttons()
+        up = n > 12 and joystick.get_button(12)
+        down = n > 13 and joystick.get_button(13)
+        return (1 if up else 0) - (1 if down else 0)
+    if joystick.get_numhats() > 0:
+        return joystick.get_hat(0)[1]
+    return 0
+
+
+def climb_axis():
+    """-1 (up) / +1 (down) / 0 from the first joystick's d-pad or left
+    stick -- for climbing ropes (screen direction: down is positive)."""
+    for joystick in get_joysticks():
+        hat_y = _hat_y(joystick)
+        if hat_y != 0:
+            return -hat_y
+        if joystick.get_numaxes() > LEFT_STICK_Y_AXIS:
+            value = joystick.get_axis(LEFT_STICK_Y_AXIS)
+            if abs(value) >= AXIS_DEADZONE:
+                return 1 if value > 0 else -1
+    return 0
 
 
 def jump_held():

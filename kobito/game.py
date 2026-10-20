@@ -103,12 +103,18 @@ BOOST_SPEED_SCALE = 1.25
 SPEECH_BOX = pygame.Rect(196 if IS_WEB else 10, SCREEN_HEIGHT - 60, 420, 56)
 SPEECH_FONT_SIZES = (19, 17, 15)   # largest that fits in two lines wins
 
+STAGE_TUNES = 3            # each world's music comes in this many versions, one per stage
 FADE_SECONDS = 0.35        # each half of a room change / respawn fade
 BANNER_SECONDS = 3.0       # "SECRET AREA!" title when entering one
 FALL_LIMIT_Y = SCREEN_HEIGHT + 24   # below this, the player has fallen out of the world
 SPRING_SPEED = 1450.0      # a cloud spring's launch -- well off the top of the screen
 SKY_ENTRY_SPEED = 950.0    # shooting up into a sky room from below
 LAUNCH_SECONDS = 1.6       # how long a launch can take to clear the top before it fizzles
+PARACHUTE_START_Y = -10    # down from the sky: the chute opens just above the screen (feet y)
+ROPE_TOP_EXIT = 40         # underground: climb the rope until your feet are this high -- out!
+CLIMB_OUT_SECONDS = 0.7    # back on the surface: the hop up out of the pit...
+CLIMB_OUT_DEPTH = 70       # ...from this far down in it...
+CLIMB_OUT_HOP = 90         # ...arcing this high over the edge
 
 SPRING_RAINBOW = [(232, 72, 72), (250, 200, 60), (110, 200, 100), (80, 160, 230), (170, 110, 210), (255, 150, 200)]
 
@@ -220,6 +226,7 @@ class Game:
         self._sky_states = {}
         self.sky_found = set()
         self.launch = None              # (spring link, seconds left) while flying up off a spring
+        self.climb_out = None           # the hop up out of a pit after climbing a rope, see _leave_hidden
         self._finish_warned = None      # the shortfall last reminded about near the finish
         self._gate_said_at = -10.0      # when the castle last turned the player back
         # For the end-of-stage review: every question asked this level, in
@@ -314,9 +321,14 @@ class Game:
     all_sprites = property(lambda self: self.world.all_sprites)
 
     def _track(self):
-        """The music for the room the player is in: each world and each
-        secret-room style has its own tune (kobito/audio.py)."""
-        return self.world.style if self.world.hidden else self.theme_id
+        """The music for the room the player is in: each secret-room style
+        has its own tune, and each world three -- stage 1 plays the first,
+        stage 2 the second, stage 3 the third, then round again
+        (tools/make_audio.py, stage_variants)."""
+        if self.world.hidden:
+            return self.world.style
+        variant = (self.level_number - 1) % STAGE_TUNES
+        return self.theme_id if variant == 0 else audio.pick(f"{self.theme_id}_{variant + 1}", self.theme_id)
 
     async def run(self):
         audio.music(self._track())
@@ -464,6 +476,8 @@ class Game:
         if self.world.hidden:
             link = self.world.link
             spot = [link["return_x"] - self.player.rect.width // 2, self.surface.ground_y - self.player.rect.height]
+        elif self.climb_out:
+            spot = [self.climb_out["to"] - self.player.rect.width // 2, self.surface.ground_y - self.player.rect.height]
         else:
             spot = [self.player.rect.x, self.player.rect.y]
         state = {
@@ -543,11 +557,19 @@ class Game:
             return
 
         self.clock_time += dt
+        if self.climb_out:
+            self._update_climb_out(dt)
+            self.background.update(dt)
+            self.coach.update(dt)
+            self._update_effects(dt)
+            return
         if self.banner:
             title, sub, left = self.banner
             self.banner = (title, sub, left - dt) if left > dt else None
         self._apply_power_effects(dt)
         self.player.update(dt, self.platforms)
+        if self.player.chute_landed:
+            self._chute_landed()
         self.enemies.update(dt, self.platforms)
         self._update_sun(dt)
         for spring in self.world.springs:
@@ -672,6 +694,10 @@ class Game:
         self.all_sprites.remove(self.player)
         self.world = world
         self.all_sprites.add(self.player)
+        # Underground, the room's goal is the rope back up (kobito/entities/rope.py).
+        self.player.rope = world.goal.rect if world.underground else None
+        self.player.on_rope = self.player.parachute = False
+        self.climb_out = None
         self.effects = []
         audio.play("warp")
         audio.music(self._track())
@@ -697,7 +723,8 @@ class Game:
         first_visit = pit["index"] not in self.secrets_found
         self.secrets_found.add(pit["index"])
         if first_visit:
-            self.coach.secret(spec["name"], underground_levels.place_lesson(pit["style"]))
+            self.coach.secret(spec["name"], underground_levels.place_lesson(pit["style"]),
+                              tip="The way out is the way in: climb the rope back up! のぼる (noboru) = to climb.")
             progress.record(self.profile, "secrets")
 
     # -- The way up: cloud springs and sky rooms --------------------------------
@@ -750,26 +777,65 @@ class Game:
         first_visit = link["index"] not in self.sky_found
         self.sky_found.add(link["index"])
         if first_visit:
-            self.coach.secret(spec["name"], sky_levels.place_lesson(link["style"]))
+            self.coach.secret(spec["name"], sky_levels.place_lesson(link["style"]),
+                              tip="Fall off a cloud or take the 出口 sign -- a パラシュート (parachute) brings you down.")
             progress.record(self.profile, "secrets")
 
     # -- Leaving a hidden room ---------------------------------------------------
 
     def _check_exit(self):
-        if self.player.rect.colliderect(self.goal.rect.inflate(-60, 0)):
+        """Sky: walk into the way-down sign. Underground: climb the rope you
+        fell in by, right up through the hole in the ceiling."""
+        if self.world.underground:
+            if self.player.on_rope and self.player.rect.bottom < ROPE_TOP_EXIT:
+                self._start_transition(self._leave_hidden)
+        elif self.player.rect.colliderect(self.goal.rect.inflate(-60, 0)):
             self._start_transition(self._leave_hidden)
 
     def _leave_hidden(self):
-        """Back to the surface, just past the pit or spring that led in."""
+        """Back to the main stage. From the sky you float down under a
+        parachute just before the spring; from underground you climb up out
+        of the pit you fell into and hop onto the far edge."""
         came_from_sky = self.world.kind == "sky"
         link = self.world.link
         self._switch_world(self.surface)
-        self._place_player(link["return_x"], self.surface.ground_y)
-        self.invulnerable_timer = 1.0
         if came_from_sky:
-            self.coach.landed()
+            self._place_player(link["return_x"], PARACHUTE_START_Y)
+            self.player.parachute = True
+            self.invulnerable_timer = 1.0
+            audio.play("flap")
         else:
+            pit_x = (link["x0"] + link["x1"]) / 2
+            self._place_player(pit_x, self.surface.ground_y + CLIMB_OUT_DEPTH)
+            self.climb_out = {"t": 0.0, "from": pit_x, "to": link["return_x"]}
+            self.invulnerable_timer = CLIMB_OUT_SECONDS + 1.0
             self.coach.surface()
+
+    def _update_climb_out(self, dt):
+        """Scripted hop up out of the pit onto the ground past it."""
+        c = self.climb_out
+        c["t"] += dt
+        k = min(1.0, c["t"] / CLIMB_OUT_SECONDS)
+        ground = self.surface.ground_y
+        x = c["from"] + (c["to"] - c["from"]) * k
+        # Straight up out of the hole first, then an arc over the edge.
+        bottom = ground + CLIMB_OUT_DEPTH * (1 - k) - CLIMB_OUT_HOP * 4 * k * (1 - k)
+        self._place_player(x, bottom)
+        self.player.on_ground = False
+        self.player.velocity_x = 1 if c["to"] >= c["from"] else -1   # faces the way it hops
+        self.player._update_animation(dt)
+        if k >= 1.0:
+            self.climb_out = None
+            self._add_effect_puff((round(x), ground))
+            audio.play("stomp", 0.6)
+
+    def _chute_landed(self):
+        player = self.player
+        player.chute_landed = False
+        self.invulnerable_timer = max(self.invulnerable_timer, 1.0)
+        self._add_effect_puff(player.rect.midbottom)
+        audio.play("stomp", 0.6)
+        self.coach.say("パラシュート (parachute)... 着地 (ちゃくち, chakuchi) = landing!", "happy", seconds=4.0)
 
     def _start_transition(self, action):
         """Fades to black, runs `action` (move rooms / respawn) while the
@@ -1366,6 +1432,8 @@ class Game:
             self.screen.blit(shot.image, (rect.x - self.camera_x, rect.y))
         if self.sun_power:
             self._draw_sun_aura()
+        if self.player.parachute:
+            self._draw_parachute()
 
         self._draw_effects()
         if self.drowsy and not self.game_over:
@@ -1391,6 +1459,39 @@ class Game:
             self.touch_controls.draw(self.screen)
 
         pygame.display.flip()
+
+    def _draw_parachute(self):
+        """A red-and-white canopy over the player, swaying as it drifts."""
+        player = self.player
+        cx = player.rect.centerx - self.camera_x + math.sin(self.clock_time * 2.2) * 4
+        top = player.rect.top - 78
+        half, height = 54, 40
+        ink = (24, 18, 20)
+        # Strings from the canopy's rim to the shoulders.
+        shoulders = [(player.rect.left + 6 - self.camera_x, player.rect.top + 14),
+                     (player.rect.right - 6 - self.camera_x, player.rect.top + 14)]
+        rim = [(cx - half + 2, top + height), (cx - half / 3, top + height), (cx + half / 3, top + height),
+               (cx + half - 2, top + height)]
+        for i, point in enumerate(rim):
+            pygame.draw.line(self.screen, (60, 50, 50), point, shoulders[0 if i < 2 else 1], 2)
+        # The dome, as six panels.
+        panels = 6
+        dome = [(cx - math.cos(math.pi * k / 24) * (half + 3), top + height + 1 - math.sin(math.pi * k / 24) * (height + 3))
+                for k in range(25)]
+        pygame.draw.polygon(self.screen, ink, dome)
+        for i in range(panels):
+            a0, a1 = math.pi * i / panels, math.pi * (i + 1) / panels
+            points = [(cx, top + height)]
+            for k in range(7):
+                a = a0 + (a1 - a0) * k / 6
+                points.append((cx - math.cos(a) * half, top + height - math.sin(a) * height))
+            pygame.draw.polygon(self.screen, (226, 64, 64) if i % 2 == 0 else (250, 244, 232), points)
+        # A scalloped hem.
+        for i in range(panels):
+            x = cx - half + (i + 0.5) * half * 2 / panels
+            pygame.draw.circle(self.screen, ink, (x, top + height), half / panels + 1, width=2,
+                               draw_bottom_left=True, draw_bottom_right=True)
+        pygame.draw.line(self.screen, ink, (cx - half, top + height), (cx + half, top + height), 2)
 
     def _glow_surface(self, color, radius, strength):
         """A cached soft round glow (concentric circles, brightest inside)."""
@@ -1525,6 +1626,15 @@ class Game:
             if hint == "glow":
                 pygame.draw.ellipse(layer, (120, 255, 150, 50), (30, base - 40, width + 20, 60))
             self.screen.blit(layer, (x0 - 40, self.surface.ground_y + 70 - base))
+            if pit["index"] in self.secrets_found:
+                # The rope you climbed out on, tied to a stake at the far edge.
+                stake = (round(x1) - 6, ground)
+                pygame.draw.rect(self.screen, (24, 18, 20), (stake[0] - 4, ground - 18, 8, 20))
+                pygame.draw.rect(self.screen, (150, 104, 60), (stake[0] - 3, ground - 17, 6, 18))
+                sway = math.sin(self.clock_time * 1.4 + pit["index"]) * 6
+                end = (round(x1 - 22 + sway), SCREEN_HEIGHT)
+                pygame.draw.line(self.screen, (24, 18, 20), (stake[0], ground - 12), end, 5)
+                pygame.draw.line(self.screen, (206, 170, 112), (stake[0], ground - 12), end, 3)
 
     def _draw_spring_hints(self):
         """A cloud spring gives itself away with a little updraft rising off
@@ -1672,9 +1782,11 @@ class Game:
     def _draw_minimap(self):
         """A thin line under the level pill: it fills in gold as the hero
         heads for the finish (the ゴール flag -- or a secret room's exit),
-        with a dot for where they are now."""
+        with a dot for where they are now. Underground the line is the whole
+        room, and the flag is the rope back up, at the start."""
         y, left, right = MINIMAP_Y, MINIMAP_X, MINIMAP_X + MINIMAP_W
-        progress = max(0.0, min(1.0, self.player.rect.centerx / max(1, self.goal.rect.centerx)))
+        end = self.world.width_px if self.world.underground else self.goal.rect.centerx
+        progress = max(0.0, min(1.0, self.player.rect.centerx / max(1, end)))
         x = left + round(progress * MINIMAP_W)
         pygame.draw.line(self.screen, (0, 0, 0), (left, y + 1), (right, y + 1), 3)      # shadow
         pygame.draw.line(self.screen, (110, 100, 135), (left, y), (right, y), 3)
@@ -1688,9 +1800,10 @@ class Game:
                     pygame.draw.line(self.screen, ui.OUTLINE, (bx, y - 7), (bx, y - 2), 4)
                     pygame.draw.line(self.screen, (255, 206, 70), (bx, y - 6), (bx, y - 3), 2)
         # The finish: a tiny flag (green for a secret room's exit).
-        pygame.draw.line(self.screen, ui.CREAM, (right, y - 8), (right, y + 1), 2)
+        fx = left + round(self.goal.rect.centerx / end * MINIMAP_W) if self.world.underground else right
+        pygame.draw.line(self.screen, ui.CREAM, (fx, y - 8), (fx, y + 1), 2)
         flag = ui.GREEN if self.world.hidden else (240, 96, 96)
-        pygame.draw.polygon(self.screen, flag, [(right + 1, y - 8), (right + 7, y - 6), (right + 1, y - 4)])
+        pygame.draw.polygon(self.screen, flag, [(fx + 1, y - 8), (fx + 7, y - 6), (fx + 1, y - 4)])
         # The hero.
         pygame.draw.circle(self.screen, ui.OUTLINE, (x, y), 6)
         pygame.draw.circle(self.screen, ui.CREAM, (x, y), 4)
