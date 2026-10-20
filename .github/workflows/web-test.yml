@@ -22,7 +22,7 @@ jobs:
       - name: Build the web version
         run: bash packaging/build_web.sh
       - name: Open it in a browser
-        run: python tools/web_smoke.py build/web 150
+        run: python tools/web_smoke.py build/web 60
       - uses: actions/upload-artifact@v4
         if: always()
         with:

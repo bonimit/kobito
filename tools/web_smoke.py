@@ -29,6 +29,31 @@ server = http.server.ThreadingHTTPServer(("127.0.0.1", 8123), handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 
 
+def dump_text(page, label):
+    """Everything written in the page: Pygbag prints Python's output and
+    error messages in a terminal area, which is where a crash shows up."""
+    texts = page.evaluate("""() => {
+        const out = [document.body.innerText];
+        for (const el of document.querySelectorAll('.xterm-rows, .xterm-accessibility, #terminal, pre, textarea')) {
+            out.push(el.innerText || el.value || '');
+        }
+        try { if (window.term && window.term.buffer) {
+            const b = window.term.buffer.active, lines = [];
+            for (let i = 0; i < b.length; i++) lines.push(b.getLine(i).translateToString(true));
+            out.push(lines.join('\\n'));
+        } } catch (e) { out.push('term read failed: ' + e); }
+        return out;
+    }""")
+    seen = set()
+    print(f"----- PAGE TEXT ({label}) -----")
+    for t in texts:
+        t = "\n".join(line.rstrip() for line in t.splitlines() if line.strip())
+        if t and t not in seen:
+            seen.add(t)
+            print(t[-6000:])
+            print("-----")
+
+
 def stats(png):
     from PIL import Image
     img = Image.open(io.BytesIO(png)).convert("RGB")
@@ -54,6 +79,8 @@ with sync_playwright() as p:
         shot = page.screenshot()
         now = stats(shot)
         print(f"[{time.time() - t0:5.1f}s] canvas={size}  screen: {now}", flush=True)
+        if step == 2:
+            dump_text(page, "30s")
         if step == 1 and not clicked:
             page.mouse.click(550, 350)
             clicked = True
@@ -61,5 +88,5 @@ with sync_playwright() as p:
         if step in (5, 12):
             page.screenshot(path=f"web_shot_{step}.png")
     page.screenshot(path="web_shot_final.png")
-    print("TEXT ON PAGE:", page.inner_text("body")[:400].replace("\n", " | "))
+    dump_text(page, "FINAL")
     browser.close()
