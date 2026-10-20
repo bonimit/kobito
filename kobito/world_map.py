@@ -24,7 +24,7 @@ import pygame
 from kobito.assets import ASSETS_DIR
 
 SCALE = 2                       # the map is drawn at half size and scaled up
-MAP_W, MAP_H = 1440, 810        # map pixels (the world is 2880 x 1620 screen pixels)
+MAP_W, MAP_H = 1440, 1020       # map pixels (the world is 2880 x 2040 screen pixels)
 ROAD_HALF = 11                  # half the width of a road
 ISLAND_R = 46                   # the usual island radius
 INK = (30, 24, 38)
@@ -51,16 +51,22 @@ PLACES = {
     "london": ("Foggy London", "ロンドン", "rondon"),
     "new_york": ("Empire City", "ニューヨーク", "nyūyōku"),
     "korea": ("Seoul Palace", "韓国", "kankoku"),
+    "hawaii": ("Aloha Hawaii", "ハワイ", "hawai"),
+    "north_pole": ("North Pole", "北極", "hokkyoku"),
+    "greenland": ("Greenland Fjord", "グリーンランド", "guriinrando"),
+    "galapagos": ("Galapagos Islands", "ガラパゴス", "garapagosu"),
 }
 
 # Map positions. The hero starts at the forest; the west is the wide world,
 # the middle the deserts and seas, the east Japan from Hokkaido down to Okinawa.
 NODES = {
-    "forest": (170, 610), "london": (110, 410), "new_york": (170, 200), "fairy_tale": (370, 130),
-    "sky": (610, 110), "island": (860, 140), "desert": (400, 570), "arabian_night": (620, 660),
-    "underwater": (560, 390), "korea": (880, 400), "kyoto": (1000, 650), "nagano": (1110, 450),
-    "aomori": (1270, 350), "hokkaido_farm": (1190, 220), "hokkaido": (1300, 100), "tokyo": (1300, 520),
-    "shizuoka": (1180, 630), "okinawa_drive": (1190, 740), "okinawa": (1350, 715),
+    "forest": (170, 720), "london": (110, 520), "new_york": (170, 310), "fairy_tale": (370, 240),
+    "sky": (610, 220), "island": (860, 250), "desert": (400, 680), "arabian_night": (620, 770),
+    "underwater": (560, 500), "korea": (880, 510), "kyoto": (1000, 760), "nagano": (1110, 560),
+    "aomori": (1270, 460), "hokkaido_farm": (1190, 330), "hokkaido": (1300, 210), "tokyo": (1300, 630),
+    "shizuoka": (1180, 740), "okinawa_drive": (1190, 850), "okinawa": (1350, 825),
+    # The far islands: the arctic in the north, the tropics in the south.
+    "north_pole": (330, 80), "greenland": (720, 70), "hawaii": (250, 940), "galapagos": (720, 950),
 }
 EDGES = [
     ("forest", "london"), ("london", "new_york"), ("new_york", "fairy_tale"), ("fairy_tale", "sky"),
@@ -69,6 +75,8 @@ EDGES = [
     ("korea", "nagano"), ("korea", "kyoto"), ("kyoto", "shizuoka"), ("shizuoka", "tokyo"),
     ("tokyo", "nagano"), ("nagano", "aomori"), ("tokyo", "aomori"), ("aomori", "hokkaido_farm"),
     ("hokkaido_farm", "hokkaido"), ("shizuoka", "okinawa_drive"), ("okinawa_drive", "okinawa"),
+    ("fairy_tale", "north_pole"), ("north_pole", "greenland"), ("greenland", "sky"),
+    ("forest", "hawaii"), ("hawaii", "galapagos"), ("galapagos", "arabian_night"),
 ]
 
 # Island ground colour, the scatter on it (kind, weight), how much of it, and a
@@ -93,7 +101,14 @@ BIOMES = {
     "london": dict(color=(136, 144, 152), scatter=[("house", 5), ("lamp", 3), ("oak", 2)], n=11),
     "new_york": dict(color=(112, 120, 136), scatter=[("tower", 7), ("lamp", 3)], n=11),
     "korea": dict(color=(152, 198, 114), scatter=[("pine", 5), ("house", 3), ("maple", 2)], n=12),
+    "hawaii": dict(color=(96, 158, 78), scatter=[("palm", 6), ("hibiscus", 4), ("lava", 3), ("flower", 2)], n=14),
+    "north_pole": dict(color=(238, 246, 254), scatter=[("xmas", 6), ("candy", 3), ("snowpine", 2), ("iceblock", 2)], n=14),
+    "greenland": dict(color=(206, 226, 242), scatter=[("iceblock", 6), ("rock", 3), ("snowpine", 1)], n=11),
+    "galapagos": dict(color=(176, 164, 128), scatter=[("cactus", 4), ("rock", 5), ("shell", 2), ("dune", 2)], n=11),
 }
+# Roads across open sea: narrow plank bridges, so the far islands stay islands.
+BRIDGES = {("fairy_tale", "north_pole"), ("north_pole", "greenland"), ("greenland", "sky"),
+           ("forest", "hawaii"), ("hawaii", "galapagos"), ("galapagos", "arabian_night")}
 ROAD = (206, 172, 112)
 ROAD_EDGE = (150, 112, 70)
 GRASS = (104, 176, 90)
@@ -293,12 +308,37 @@ def _hibiscus(s, x, y):
     _flower(s, x + 2, y - 1, (255, 120, 140))
 
 
+def _lava(s, x, y):
+    _rock(s, x, y, (84, 74, 80))
+    pygame.draw.line(s, (255, 130, 50), (x - 2, y - 3), (x + 1, y - 5))
+
+
+def _xmas(s, x, y):
+    _pine(s, x, y, (30, 100, 62))
+    for dx, dy, c in ((-2, -5, (255, 90, 90)), (2, -9, (255, 220, 90)), (-1, -12, (110, 190, 255))):
+        s.set_at((x + dx, y + dy), c)
+    pygame.draw.circle(s, (255, 226, 110), (x, y - 18), 1)
+
+
+def _candy(s, x, y):
+    pygame.draw.line(s, (252, 250, 250), (x, y), (x, y - 8), 2)
+    pygame.draw.arc(s, (252, 250, 250), (x, y - 11, 5, 5), 0, math.pi, 2)
+    for k in (1, 4, 7):
+        pygame.draw.line(s, (236, 60, 70), (x - 1, y - k), (x + 1, y - k - 1))
+
+
+def _iceblock(s, x, y):
+    _shadow(s, x, y, 5)
+    _poly(s, (204, 232, 248), [(x - 5, y), (x - 4, y - 7), (x, y - 10), (x + 4, y - 6), (x + 5, y)])
+    pygame.draw.line(s, (250, 254, 255), (x - 3, y - 6), (x - 1, y - 8))
+
+
 PROPS = {
     "mountain": _mountain, "oak": _tree, "pine": _pine, "snowpine": lambda s, x, y: _pine(s, x, y, (70, 128, 100), snow=True),
     "palm": _palm, "cactus": _cactus, "rock": _rock, "dune": _dune, "mushroom": _mushroom, "flower": _flower,
     "coral": _coral, "shell": _shell, "bubbles": _bubbles, "puff": _puff, "star": _star, "tower": _tower,
     "lamp": _lamp, "maple": _maple, "apple": _apple, "cow": _cow, "fence": _fence, "hay": _hay,
-    "pinktree": _pinktree, "house": _house, "hibiscus": _hibiscus,
+    "pinktree": _pinktree, "lava": _lava, "xmas": _xmas, "candy": _candy, "iceblock": _iceblock, "house": _house, "hibiscus": _hibiscus,
 }
 
 
@@ -485,6 +525,60 @@ def _lm_korea(s, x, y):
     pygame.draw.line(s, (255, 214, 80), (x - 20, y - 17), (x + 20, y - 17))
 
 
+def _lm_hawaii(s, x, y):
+    _poly(s, (108, 88, 92), [(x - 26, y), (x - 6, y - 26), (x + 6, y - 26), (x + 26, y)])
+    _poly(s, (84, 68, 74), [(x + 6, y - 26), (x + 26, y), (x + 8, y)], False)
+    pygame.draw.ellipse(s, (255, 150, 50), (x - 7, y - 29, 14, 6))
+    for dx, d in ((-3, 12), (3, 9)):
+        pygame.draw.line(s, (255, 120, 40), (x + dx, y - 25), (x + dx * 2, y - 25 + d), 2)
+    for k, (r, a) in enumerate(((4, 160), (6, 130), (8, 100))):
+        pygame.draw.circle(s, (150 - k * 10, 140 - k * 10, 150 - k * 10), (x + 2 + k * 3, y - 34 - k * 6), r)
+    _palm(s, x - 22, y + 2, 1.2)
+    pygame.draw.polygon(s, INK, [(x + 17, y + 2), (x + 15, y - 12), (x + 20, y - 22), (x + 22, y - 12), (x + 21, y + 2)])
+    pygame.draw.polygon(s, (250, 120, 90), [(x + 17, y + 1), (x + 16, y - 11), (x + 20, y - 20), (x + 21, y - 11), (x + 20, y + 1)])
+
+
+def _lm_north_pole(s, x, y):
+    _rect(s, (196, 54, 60), (x - 14, y - 14, 28, 14))
+    _poly(s, (250, 252, 255), [(x - 17, y - 14), (x, y - 28), (x + 17, y - 14)])
+    _rect(s, (150, 70, 60), (x + 7, y - 28, 5, 10))
+    for k, r in enumerate((2, 3, 4)):
+        pygame.draw.circle(s, (240, 240, 250), (x + 10 + k * 3, y - 31 - k * 5), r)
+    _rect(s, (110, 70, 44), (x - 3, y - 8, 6, 8))
+    for wx in (x - 11, x + 6):
+        _rect(s, (255, 226, 130), (wx, y - 11, 5, 5))
+    pygame.draw.line(s, (252, 250, 250), (x + 20, y), (x + 20, y - 24), 3)       # the pole
+    for k in range(0, 24, 6):
+        pygame.draw.line(s, (236, 60, 70), (x + 19, y - k), (x + 21, y - k - 3), 2)
+    _ball(s, (255, 226, 110), (x + 20, y - 27), 3)
+
+
+def _lm_greenland(s, x, y):
+    _poly(s, (206, 232, 248), [(x - 24, y - 2), (x - 14, y - 22), (x - 6, y - 14), (x + 2, y - 30), (x + 12, y - 12), (x + 22, y - 2)])
+    _poly(s, (160, 196, 224), [(x + 2, y - 30), (x + 12, y - 12), (x + 22, y - 2), (x + 4, y - 2)], False)
+    for k, c in enumerate(((200, 60, 56), (240, 200, 70), (70, 120, 200), (70, 160, 110))):
+        hx = x - 17 + k * 10
+        _rect(s, c, (hx, y - 8, 8, 8))
+        _poly(s, (70, 62, 76), [(hx - 1, y - 8), (hx + 4, y - 13), (hx + 9, y - 8)])
+        s.set_at((hx + 3, y - 5), (255, 236, 150))
+
+
+def _lm_galapagos(s, x, y):
+    pygame.draw.ellipse(s, INK, (x - 19, y - 18, 38, 20))
+    pygame.draw.ellipse(s, (128, 118, 86), (x - 18, y - 17, 36, 18))
+    pygame.draw.ellipse(s, (160, 150, 112), (x - 12, y - 16, 20, 7))
+    for dx in (-9, 0, 9):
+        pygame.draw.line(s, (92, 84, 62), (x + dx, y - 16), (x + dx, y - 2))
+    pygame.draw.line(s, (92, 84, 62), (x - 17, y - 9), (x + 17, y - 9))
+    pygame.draw.line(s, INK, (x + 17, y - 6), (x + 24, y - 14), 5)
+    pygame.draw.line(s, (150, 140, 104), (x + 17, y - 6), (x + 24, y - 14), 3)
+    _ball(s, (150, 140, 104), (x + 25, y - 16), 4)
+    pygame.draw.circle(s, INK, (x + 26, y - 17), 1)
+    for dx in (-12, 8):
+        _rect(s, (96, 88, 66), (x + dx, y - 1, 5, 4))
+    _cactus(s, x - 27, y + 3)
+
+
 LANDMARKS = {name[4:]: fn for name, fn in globals().items() if name.startswith("_lm_")}
 
 
@@ -548,10 +642,10 @@ LAND_LOOPS = [
     ("korea", "nagano", "tokyo", "shizuoka", "kyoto"),
     ("nagano", "aomori", "tokyo"),
 ]
-LAKES = [(250, 460, 34, 22), (305, 320, 26, 18), (780, 560, 40, 22), (1050, 540, 30, 18), (470, 600, 24, 14)]
-ISLETS = [(70, 90, 14), (60, 700, 12), (330, 750, 11), (760, 770, 14), (950, 40, 10), (1110, 780, 9), (1410, 420, 12),
-          (500, 30, 9), (1400, 250, 10), (1000, 300, 8)]
-NO_MOUNTAINS = {"sky", "underwater", "new_york", "tokyo", "okinawa", "island", "okinawa_drive", "london"}
+LAKES = [(250, 570, 34, 22), (305, 430, 26, 18), (780, 670, 40, 22), (1050, 650, 30, 18), (470, 710, 24, 14)]
+ISLETS = [(70, 200, 14), (60, 810, 12), (330, 860, 11), (930, 960, 14), (950, 150, 10), (1110, 890, 9), (1410, 530, 12),
+          (500, 140, 9), (1400, 360, 10), (1000, 410, 8)]
+NO_MOUNTAINS = {"hawaii", "galapagos", "north_pole", "greenland", "sky", "underwater", "new_york", "tokyo", "okinawa", "island", "okinawa_drive", "london"}
 
 
 MAP_DIR = ASSETS_DIR / "map"
@@ -579,6 +673,7 @@ class Overworld:
             self.neighbors[a].append(b)
             self.neighbors[b].append(a)
         self.segments = [(a, b) for pts in self.roads.values() for a, b in zip(pts, pts[1:])]
+        self.bridges = [self.roads[e] for e in self.roads if e in BRIDGES]
 
         if not paint and (MAP_DIR / PICTURE).exists() and (MAP_DIR / WALKABLE).exists():
             self.native = pygame.image.load(str(MAP_DIR / PICTURE)).convert()
@@ -619,11 +714,12 @@ class Overworld:
         white = (255, 255, 255, 255)
         for x, y in NODES.values():
             pygame.draw.polygon(sil, white, _blob((x, y), 64, rng))
-        for pts in self.roads.values():
+        for edge, pts in self.roads.items():
+            width = 26 if edge in BRIDGES else 62
             for a, b in zip(pts, pts[1:]):
-                pygame.draw.line(sil, white, a, b, 62)
+                pygame.draw.line(sil, white, a, b, width)
             for p in pts[1:-1]:
-                pygame.draw.circle(sil, white, p, 31)
+                pygame.draw.circle(sil, white, p, width // 2)
         for loop in LAND_LOOPS:
             pygame.draw.polygon(sil, white, [NODES[n] for n in loop])
         # A ragged coast: lumps grow out of it and coves bite into it (never near a road or a town).
@@ -658,7 +754,7 @@ class Overworld:
             pygame.draw.polygon(native, SAND, _blob((x, y), r + 1, rng))
             pygame.draw.polygon(native, (98, 172, 88), _blob((x, y), r - 3, rng))
             _palm(native, x, y + 2)
-        for x, y in ((250, 40), (700, 560), (30, 330), (1380, 620), (840, 700), (1050, 150)):   # sailboats
+        for x, y in ((250, 150), (700, 670), (30, 440), (1380, 730), (840, 810), (1050, 260), (520, 990), (1150, 960)):   # sailboats
             pygame.draw.polygon(native, INK, [(x - 5, y), (x + 5, y), (x + 3, y + 3), (x - 3, y + 3)])
             pygame.draw.polygon(native, (250, 250, 250), [(x, y - 9), (x, y - 1), (x + 5, y - 1)])
             pygame.draw.line(native, INK, (x, y - 10), (x, y))
@@ -741,12 +837,29 @@ class Overworld:
                         self.mask.set_at((lx, ly), 0)
 
     def _paint_roads(self, native):
-        for pts in self.roads.values():
+        for edge, pts in self.roads.items():
+            if edge in BRIDGES:
+                self._paint_bridge(native, pts)
+                continue
             for width, color in ((ROAD_HALF * 2 - 4, ROAD_EDGE), (ROAD_HALF * 2 - 7, ROAD)):
                 for a, b in zip(pts, pts[1:]):
                     pygame.draw.line(native, color, a, b, width)
                 for p in pts[1:-1]:
                     pygame.draw.circle(native, color, p, width // 2)
+
+    def _paint_bridge(self, native, pts):
+        """Planks between two rails."""
+        for a, b in zip(pts, pts[1:]):
+            pygame.draw.line(native, (92, 62, 40), a, b, ROAD_HALF * 2 - 2)
+            pygame.draw.line(native, (184, 136, 84), a, b, ROAD_HALF * 2 - 6)
+            length = math.hypot(b[0] - a[0], b[1] - a[1]) or 1
+            ux, uy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+            for k in range(0, int(length), 5):
+                cx, cy = a[0] + ux * k, a[1] + uy * k
+                pygame.draw.line(native, (136, 94, 56), (cx - uy * (ROAD_HALF - 4), cy + ux * (ROAD_HALF - 4)),
+                                 (cx + uy * (ROAD_HALF - 4), cy - ux * (ROAD_HALF - 4)))
+        for p in pts[1:-1]:
+            pygame.draw.circle(native, (184, 136, 84), p, ROAD_HALF - 3)
 
     def _paint_things(self, native, rng):
         """Scatter, hills, plazas and landmarks, back to front."""

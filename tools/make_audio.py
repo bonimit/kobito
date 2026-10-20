@@ -121,6 +121,15 @@ TRACKS = {
                           P((2, MIN), (7, MAJ), (5, MAJ), (0, MAJ)), "flute", "calm", "light", seed=38),
     "hokkaido_farm": TrackSpec(72, 116, "major", P((0, MAJ), (5, MAJ), (0, MAJ), (7, MAJ)),
                                P((5, MAJ), (0, MAJ), (7, MAJ), (0, MAJ)), "koto", "swing", "swing", seed=39),
+    # The far islands
+    "hawaii": TrackSpec(76, 108, "pent", P((0, MAJ), (5, MAJ), (7, MAJ), (0, MAJ)),
+                        P((9, MIN), (5, MAJ), (2, MIN), (7, MAJ)), "koto", "swing", "swing", seed=47),
+    "north_pole": TrackSpec(72, 132, "major", P((0, MAJ), (5, MAJ), (7, MAJ), (0, MAJ)),
+                            P((9, MIN), (2, MIN), (7, MAJ), (0, MAJ)), "bell", "bouncy", "march", seed=48),
+    "greenland": TrackSpec(70, 84, "yo", P((0, MIN), (8, MAJ), (10, MAJ), (0, MIN)),
+                           P((5, MIN), (3, MAJ), (10, MAJ), (7, MIN)), "tri", "calm", "light", seed=49),
+    "galapagos": TrackSpec(74, 100, "lydian", P((0, MAJ), (2, MAJ), (7, MAJ), (0, MAJ)),
+                           P((4, MIN), (2, MAJ), (9, MIN), (0, MAJ)), "pulse", "bouncy", "light", seed=50),
     # Secret stages
     "subway": TrackSpec(69, 132, "minor", P((0, MIN), (8, MAJ), (10, MAJ), (0, MIN)),
                         P((5, MIN), (3, MAJ), (10, MAJ), (7, MIN)), "pulse", "driving", "drive", seed=41),
@@ -142,7 +151,7 @@ TRACKS = {
 # instrument, rhythm feel and melody -- "<world>_2" and "<world>_3".
 WORLDS = ["forest", "desert", "arabian_night", "underwater", "sky", "tokyo", "nagano", "okinawa", "hokkaido",
           "kyoto", "island", "fairy_tale", "london", "new_york", "korea", "okinawa_drive", "aomori", "shizuoka",
-          "hokkaido_farm"]
+          "hokkaido_farm", "hawaii", "north_pole", "greenland", "galapagos"]
 LEAD_SWAP = {"square": ("pulse", "flute"), "pulse": ("square", "bell"), "tri": ("flute", "pulse"),
              "flute": ("koto", "pulse"), "koto": ("flute", "bell"), "bell": ("tri", "koto"), "saw": ("pulse", "square")}
 FEEL_SWAP = {"bouncy": ("driving", "calm"), "calm": ("bouncy", "swing"), "driving": ("bouncy", "swing"),

@@ -25,6 +25,7 @@ WORLD_ORDER = [
     "tokyo", "nagano", "okinawa", "hokkaido", "kyoto",
     "okinawa_drive", "aomori", "shizuoka", "hokkaido_farm",
     "island", "fairy_tale", "london", "new_york", "korea",
+    "hawaii", "north_pole", "greenland", "galapagos",
 ]
 
 WALK_SPEED = 210.0          # world pixels a second

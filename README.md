@@ -452,7 +452,7 @@ look at it, then click it again, press Enter / Space / A, or hit
   `kobito/world_map.py`) — an RPG-style **overworld**. Your mascot, in
   whatever it's wearing, walks around a big map with the **arrow keys /
   WASD / d-pad / stick** (or tap a town and it walks there along the roads).
-  The 19 worlds are towns on one continent and its islands, each with its
+  The 23 worlds are towns on one continent and its islands, each with its
   own patch of country and a landmark — Mt Fuji in Shizuoka, a pagoda in
   Kyoto, Tokyo Tower, Big Ben, the Statue of Liberty, the pyramids, a
   fairy-tale castle, a whale in Coral Deep, a red barn on the dairy farm …
@@ -735,9 +735,11 @@ while the box is still showing — gameplay never waits on the network.
 ## Worlds
 
 Before a level starts, a world-select screen (mirroring the mascot
-select screen) lets you pick from 19 themed worlds — 5 fantasy, 9 built
-on real places in Japan, and 5 more from around the world (Tropical
-Island, Fairy Tale, London, New York, Korea):
+select screen) lets you pick from 23 themed worlds — 5 fantasy, 9 built
+on real places in Japan, 5 more from around the world (Tropical
+Island, Fairy Tale, London, New York, Korea) and 4 **far islands** (Hawaii,
+the North Pole, Greenland and the Galápagos — each its own island on the
+map, reached by a plank bridge):
 
 | Fantasy | Real places |
 | --- | --- |
@@ -755,6 +757,10 @@ More of the Japanese countryside:
 | **Aomori Apple Orchard** | giant apple trees along the path, crowns touching, and rows of them all the way back to the hills — planted like a real orchard, in blocks of one variety with grass lanes between: red Fuji, golden Kinsei, crimson Jonagold, green-yellow Orin and pink Toki, harvest crates, kakashi scarecrows, Mt Iwaki ("Tsugaru Fuji") with its first snow, falling autumn leaves and red dragonflies (aka-tombo) |
 | **Shizuoka Tea Fields** | a misty morning, Mt Fuji filling the sky, every hillside stepped with green tea terraces on Shizuoka's red earth, clipped tea hedges along the path, frost fans (防霜ファン) on tall poles — and the Shinkansen gliding along its viaduct |
 | **Hokkaido Dairy Farm** | big red gambrel barns and tall silos all along the path, white ranch fences, wrapped hay bales, milk churns waiting for collection, tractors, white birches (shirakaba), the snowy Daisetsuzan peaks — and Holstein cows and a flock of sheep wandering the pasture |
+| **Aloha Hawaii** | a sunset sky over a glowing volcano with a lava crater and a plume of smoke, palms and tiki totems, hibiscus, surfboards stuck in the golden sand over black lava rock, turtles and crabs — lava blobs, wild boar and crabs to dodge |
+| **North Pole** | an aurora over a starry polar night, Santa's workshop with a puffing chimney, snowy Christmas trees with lights, candy canes, igloos, penguins and arctic foxes — and Santa's sleigh and reindeer flying by; polar bears, snowmen and snow hares to dodge |
+| **Greenland Fjord** | a deep blue fjord with icebergs, glaciers and green northern lights, rows of little painted wooden houses as in Nuuk, igloos, whales and arctic foxes — seals, white wolves and penguins to dodge |
+| **Galapagos Islands** | grey volcanic rock and turquoise water, giant tortoises, prickly-pear cacti, starfish, marine iguanas, bright red crabs, frigatebirds and boobies overhead — iguanas, crabs and penguins to dodge |
 
 Each world has its own sky gradient, ground/platform colors and layered
 scenery, but the same gameplay layout underneath (platforms, question
@@ -937,7 +943,7 @@ Every stage has its own tune, and everything you do makes a sound
 (`kobito/audio.py`). All of it is **generated from code** by
 `tools/make_audio.py` — square/pulse/triangle oscillators, a plucked
 "koto", a music-box bell and noise drums — so there are no samples or
-licences involved; the files are in `assets/audio/` (69 music loops, 31
+licences involved; the files are in `assets/audio/` (81 music loops, 31
 sound effects, about 7.5 MB of .ogg).
 
 - **Music** — **three tunes per world, so every stage sounds different**:

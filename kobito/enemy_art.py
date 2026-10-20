@@ -621,13 +621,45 @@ def _rabbit(s, frame, colors):
     pygame.draw.ellipse(s, INK, (body.centerx - 6, h - 8, 9, 5))
 
 
+def _seal(s, frame, colors):
+    w, h = s.get_size()
+    fur = colors.get("body") or (120, 128, 140)
+    lift = 2 if frame else 0
+    body = pygame.Rect(3, 12, w - 12, h - 18)
+    _outlined_ellipse(s, fur, body)
+    pygame.draw.ellipse(s, _mix(fur, WHITE, 0.45), body.inflate(-10, -9).move(0, 4))
+    head = pygame.Rect(w - 17, 8 - lift, 14, 12)
+    _outlined_ellipse(s, fur, head)
+    pygame.draw.circle(s, INK, (head.right - 2, head.centery + 1), 2)
+    _eye(s, (head.centerx + 1, head.y + 4), r=2, angry=True)
+    for k in (-1, 1):                                                       # whiskers
+        pygame.draw.line(s, WHITE, (head.right - 3, head.centery + 2), (head.right + 3, head.centery + 2 + k), 1)
+    pygame.draw.polygon(s, INK, [(3, 22), (-1, 17), (1, 26)])               # tail flippers
+    pygame.draw.ellipse(s, INK, (body.centerx - 5, h - 9, 10, 4))           # front flipper
+
+
+def _penguin(s, frame, colors):
+    w, h = s.get_size()
+    coat = colors.get("body") or (40, 44, 62)
+    waddle = 2 if frame else -2
+    body = pygame.Rect(7 + waddle // 2, 4, w - 14, h - 9)
+    _outlined_ellipse(s, coat, body)
+    pygame.draw.ellipse(s, (250, 250, 252), body.inflate(-12, -10).move(2, 4))
+    for side in (-1, 1):
+        pygame.draw.ellipse(s, INK, (body.centerx + side * (body.width // 2 - 1) - 2, body.y + 12, 4, 12))   # flippers
+    pygame.draw.polygon(s, (250, 160, 50), [(body.right - 7, body.y + 9), (body.right + 3, body.y + 12), (body.right - 7, body.y + 15)])
+    _eye(s, (body.right - 11, body.y + 9), r=2, angry=True)
+    for fx in (body.centerx - 5, body.centerx + 4):
+        pygame.draw.ellipse(s, (250, 160, 50), (fx + waddle * (1 if fx > body.centerx else -1) // 2 - 3, h - 6, 8, 4))
+
+
 GROUND_DRAWERS = {"slime": _slime, "oni": _oni, "daruma": _daruma, "kappa": _kappa, "critter": _critter,
                   "crab": _crab, "squid": _squid, "snake": _snake, "scorpion": _scorpion, "tanuki": _tanuki,
                   "mushroom": _mushroom, "snowman": _snowman, "beetle": _beetle, "caterpillar": _caterpillar,
                   "snail": _snail, "bull": _bull, "rat": _rat, "boar": _boar, "mummy": _mummy,
                   "robot": _robot, "monkey": _monkey, "fox": _fox, "bear": _bear, "frog": _frog, "wolf": _wolf,
                   "soldier": _soldier, "raccoon": _raccoon, "tiger": _tiger, "gator": _gator, "mole": _mole,
-                  "sheep": _sheep, "rabbit": _rabbit}
+                  "sheep": _sheep, "rabbit": _rabbit, "seal": _seal, "penguin": _penguin}
 
 
 def render_ground(species, frame, colors=None):

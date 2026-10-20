@@ -1636,3 +1636,188 @@ def draw_tractor(screen, x, ground_y, size, color=(200, 50, 46)):
     for wx, r in ((body.x + size * 0.2, size * 0.36), (body.right - size * 0.12, size * 0.2)):
         pygame.draw.circle(screen, (40, 40, 44), (wx, ground_y - r), r)
         pygame.draw.circle(screen, (240, 200, 60), (wx, ground_y - r), r * 0.45)
+
+
+# --- Island worlds: Hawaii, the North Pole, Greenland, the Galapagos -------------
+
+
+def draw_igloo(screen, x, ground_y, size, color=(236, 244, 252)):
+    """A snow-block dome with a low tunnel door."""
+    w, h = int(size * 1.7), int(size * 0.95)
+    dome = pygame.Surface((w, h), pygame.SRCALPHA)
+    pygame.draw.ellipse(dome, (*color, 255), (0, 0, w, h * 2))
+    seam = tuple(max(0, c - 40) for c in color)
+    for k in range(1, 4):
+        pygame.draw.line(dome, seam, (0, h * k // 4), (w, h * k // 4), 1)
+    for k in range(-2, 3):
+        pygame.draw.line(dome, seam, (w // 2 + k * w // 6, 0), (w // 2 + k * w // 5, h), 1)
+    pygame.draw.ellipse(dome, (*seam, 255), (0, 0, w, h * 2), 2)
+    screen.blit(dome, (x - w // 2, ground_y - h))
+    door = pygame.Rect(0, 0, int(size * 0.5), int(size * 0.42))
+    door.midbottom = (x + int(size * 0.55), ground_y)
+    pygame.draw.rect(screen, (60, 80, 110), door, border_top_left_radius=door.width // 2,
+                     border_top_right_radius=door.width // 2)
+
+
+def draw_iceberg(screen, x, ground_y, size, color=(200, 230, 246)):
+    """A jagged chunk of ice, lit on the left, shaded on the right."""
+    pts = [(x - size * 0.75, ground_y), (x - size * 0.5, ground_y - size * 0.5), (x - size * 0.2, ground_y - size * 0.4),
+           (x + size * 0.05, ground_y - size * 1.0), (x + size * 0.35, ground_y - size * 0.55), (x + size * 0.75, ground_y)]
+    pygame.draw.polygon(screen, color, pts)
+    shade = tuple(max(0, c - 40) for c in color)
+    pygame.draw.polygon(screen, shade, [pts[3], pts[4], pts[5], (x + size * 0.1, ground_y)])
+    light = tuple(min(255, c + 24) for c in color)
+    pygame.draw.polygon(screen, light, [pts[1], pts[2], pts[3], (x - size * 0.1, ground_y - size * 0.5)])
+
+
+def draw_volcano(screen, x, y, size, color=(98, 80, 84)):
+    """A glowing volcano with its peak at (x, y): a lava crater, lava running
+    down the slopes and a plume of smoke."""
+    base = y + size * 2.2
+    half, flat = size * 2.1, size * 0.4
+    pygame.draw.polygon(screen, color, [(x - flat, y), (x + flat, y), (x + half, base), (x - half, base)])
+    shade = tuple(max(0, c - 22) for c in color)
+    pygame.draw.polygon(screen, shade, [(x + flat, y), (x + half, base), (x + half * 0.3, base)])
+    pygame.draw.ellipse(screen, (255, 150, 50), (x - flat, y - size * 0.1, flat * 2, size * 0.25))
+    for dx, depth in ((-0.2, 0.9), (0.25, 0.7), (0.05, 1.3)):
+        pygame.draw.line(screen, (255, 120, 40), (x + dx * flat * 2, y + size * 0.05),
+                         (x + dx * flat * 4.5, y + size * depth), 3)
+    smoke = pygame.Surface((int(size * 3), int(size * 2)), pygame.SRCALPHA)
+    for k, (dx, dy, r) in enumerate(((0, 0.9, 0.5), (0.3, 0.55, 0.55), (0.1, 0.2, 0.6))):
+        pygame.draw.circle(smoke, (90, 84, 92, 140 - k * 30), (int(size * 1.4 + dx * size), int(size * dy)), int(size * r))
+    screen.blit(smoke, (x - size * 1.4, y - size * 1.9))
+
+
+def draw_candy_cane(screen, x, ground_y, size, color=(236, 60, 70)):
+    top = ground_y - size
+    r = size * 0.22
+    pygame.draw.line(screen, (252, 250, 250), (x, ground_y), (x, top + r), 5)
+    pygame.draw.arc(screen, (252, 250, 250), (x, top, r * 2, r * 2), 0, math.pi, 5)
+    for k in range(0, int(size - r), 9):
+        pygame.draw.line(screen, color, (x - 2, ground_y - k), (x + 3, ground_y - k - 5), 3)
+
+
+def draw_xmas_tree(screen, x, ground_y, size, color=(30, 100, 60)):
+    """A snowy fir with coloured lights and a star."""
+    draw_pine_tree(screen, x, ground_y, size, color)
+    rng = ((-0.3, 0.2), (0.25, 0.3), (-0.12, 0.55), (0.18, 0.7), (0.0, 0.95), (-0.28, 0.08), (0.32, 0.1))
+    for k, (dx, dy) in enumerate(rng):
+        pygame.draw.circle(screen, ((255, 90, 90), (255, 220, 90), (110, 190, 255))[k % 3],
+                           (x + dx * size, ground_y - 18 - dy * size), 3)
+    star = (x, ground_y - 16 - 1.17 * size)
+    pygame.draw.circle(screen, (255, 226, 110), star, 5)
+
+
+def draw_workshop(screen, x, ground_y, size, color=(196, 56, 60)):
+    """Santa's workshop: a red house under a snowy roof, a chimney puffing."""
+    w, h = size * 1.5, size * 0.8
+    body = pygame.Rect(0, 0, w, h)
+    body.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, color, body)
+    pygame.draw.rect(screen, (252, 250, 250), body, 3)
+    chimney = pygame.Rect(0, 0, size * 0.22, size * 0.5)
+    chimney.midbottom = (x + w * 0.28, body.top - size * 0.1)
+    pygame.draw.rect(screen, (150, 70, 60), chimney)
+    for k, r in enumerate((4, 6, 8)):
+        pygame.draw.circle(screen, (240, 240, 250), (chimney.centerx + k * 5, chimney.top - 6 - k * 9), r)
+    roof = [(body.left - 6, body.top), (x, body.top - size * 0.6), (body.right + 6, body.top)]
+    pygame.draw.polygon(screen, (250, 252, 255), roof)
+    pygame.draw.polygon(screen, (150, 190, 220), roof, 2)
+    door = pygame.Rect(0, 0, size * 0.32, size * 0.5)
+    door.midbottom = (x, ground_y)
+    pygame.draw.rect(screen, (110, 70, 44), door, border_top_left_radius=8, border_top_right_radius=8)
+    for dx in (-0.5, 0.5):
+        win = pygame.Rect(0, 0, size * 0.26, size * 0.26)
+        win.center = (x + dx * w * 0.6, body.centery - size * 0.05)
+        pygame.draw.rect(screen, (255, 226, 130), win)
+        pygame.draw.rect(screen, (252, 250, 250), win, 2)
+
+
+def draw_nuuk_houses(screen, x, ground_y, size, color=None):
+    """A row of little painted wooden houses, as in Nuuk."""
+    paints = ((200, 60, 56), (240, 200, 70), (70, 120, 200), (70, 160, 110), (230, 230, 236))
+    w, h = size * 0.5, size * 0.55
+    for k in range(4):
+        hx = x + (k - 1.5) * (w + 3)
+        body = pygame.Rect(0, 0, w, h * (0.9 + 0.12 * (k % 2)))
+        body.midbottom = (hx, ground_y)
+        pygame.draw.rect(screen, paints[(k + int(x) // 7) % len(paints)], body)
+        pygame.draw.polygon(screen, (70, 62, 76), [(body.left - 2, body.top), (hx, body.top - h * 0.45),
+                                                   (body.right + 2, body.top)])
+        win = pygame.Rect(0, 0, 6, 6)
+        win.center = (hx, body.centery)
+        pygame.draw.rect(screen, (255, 236, 150), win)
+
+
+def draw_aurora(screen, x, y, size, color=(110, 255, 170)):
+    """Curtains of northern lights, swaying, centred at (x, y)."""
+    width, height = int(size * 5), int(size * 2.2)
+    surf = pygame.Surface((width, height), pygame.SRCALPHA)
+    for i in range(0, width, 3):
+        top = height * 0.15 + math.sin(i * 0.045 + x * 0.01) * height * 0.18
+        for j in range(10):
+            a = max(0, min(255, round(80 * (1 - j / 10) * (0.7 + 0.3 * math.sin(i * 0.2)))))
+            tint = tuple(max(0, min(255, c)) for c in (color[0] - j * 5, color[1] - j * 4 + 20, color[2] + j * 4))
+            pygame.draw.line(surf, (*tint, a), (i, top + j * height * 0.06), (i, top + (j + 1) * height * 0.06), 3)
+    screen.blit(surf, (x - width / 2, y - height / 2))
+
+
+def draw_surfboard(screen, x, ground_y, size, color=(250, 120, 90)):
+    """A surfboard stuck upright in the sand."""
+    tip = (x + size * 0.18, ground_y - size)
+    half = size * 0.17
+    board = [(x, ground_y), (x - half, ground_y - size * 0.45), tip, (x + half * 1.3, ground_y - size * 0.45)]
+    pygame.draw.polygon(screen, color, board)
+    pygame.draw.line(screen, (252, 250, 240), (x + size * 0.04, ground_y - 2), (tip[0] - 1, tip[1] + 3), 2)
+    pygame.draw.polygon(screen, (40, 40, 50), board, 1)
+
+
+def draw_penguin(screen, x, ground_y, size, color=(40, 44, 62), facing=1):
+    body = pygame.Rect(0, 0, size * 0.7, size * 1.1)
+    body.midbottom = (x, ground_y - 2)
+    pygame.draw.ellipse(screen, color, body)
+    pygame.draw.ellipse(screen, (250, 250, 252), body.inflate(-size * 0.3, -size * 0.35).move(facing * size * 0.05, size * 0.08))
+    pygame.draw.polygon(screen, (250, 160, 50), [(x + facing * size * 0.3, body.top + size * 0.25),
+                                                 (x + facing * size * 0.55, body.top + size * 0.32),
+                                                 (x + facing * size * 0.3, body.top + size * 0.4)])
+    pygame.draw.circle(screen, (250, 250, 252), (int(x + facing * size * 0.16), int(body.top + size * 0.24)), 3)
+    pygame.draw.circle(screen, (20, 20, 20), (int(x + facing * size * 0.18), int(body.top + size * 0.24)), 1)
+    for side in (-1, 1):
+        pygame.draw.ellipse(screen, (250, 160, 50), (x + side * size * 0.15 - 4, ground_y - 4, 9, 4))
+
+
+def draw_tortoise(screen, x, ground_y, size, color=(128, 118, 86), facing=1):
+    """A giant tortoise: a high domed shell, a long neck and stumpy legs."""
+    shell = pygame.Surface((int(size * 1.5), int(size * 0.8)), pygame.SRCALPHA)
+    pygame.draw.ellipse(shell, color, (0, 0, size * 1.5, size * 1.6))
+    dark = tuple(max(0, c - 34) for c in color)
+    for k in range(1, 4):
+        pygame.draw.line(shell, dark, (size * 0.375 * k, 2), (size * 0.375 * k, size * 0.8), 1)
+    pygame.draw.line(shell, dark, (0, size * 0.4), (size * 1.5, size * 0.4), 1)
+    shell_rect = shell.get_rect(midbottom=(x, ground_y - size * 0.18))
+    screen.blit(shell, shell_rect)
+    for side in (-1, 1):
+        pygame.draw.rect(screen, dark, (x + side * size * 0.45 - 4, ground_y - size * 0.22, 8, size * 0.22))
+    head = (x + facing * size * 0.9, ground_y - size * 0.55)
+    pygame.draw.line(screen, tuple(min(255, c + 20) for c in color), (x + facing * size * 0.6, ground_y - size * 0.3), head, 7)
+    pygame.draw.circle(screen, tuple(min(255, c + 20) for c in color), (int(head[0]), int(head[1])), 6)
+    pygame.draw.circle(screen, (20, 20, 20), (int(head[0] + facing * 2), int(head[1] - 1)), 1)
+
+
+def draw_sleigh(screen, x, y, size, color=(204, 52, 56), facing=1):
+    """Santa's sleigh with a reindeer ahead, red nose first."""
+    d = facing if facing else 1
+    pygame.draw.polygon(screen, color, [(x - d * size * 0.5, y - size * 0.3), (x + d * size * 0.35, y - size * 0.3),
+                                        (x + d * size * 0.25, y + size * 0.15), (x - d * size * 0.45, y + size * 0.15)])
+    pygame.draw.line(screen, (230, 190, 70), (x - d * size * 0.6, y + size * 0.3), (x + d * size * 0.4, y + size * 0.3), 3)
+    pygame.draw.line(screen, (230, 190, 70), (x - d * size * 0.3, y + size * 0.15), (x - d * size * 0.3, y + size * 0.3), 2)
+    pygame.draw.circle(screen, (252, 250, 250), (int(x - d * size * 0.05), int(y - size * 0.4)), int(size * 0.14))
+    pygame.draw.circle(screen, color, (int(x - d * size * 0.05), int(y - size * 0.46)), int(size * 0.1))
+    pygame.draw.line(screen, (150, 110, 70), (x + d * size * 0.35, y - size * 0.1), (x + d * size * 0.95, y - size * 0.05), 2)
+    rx = x + d * size * 1.1
+    pygame.draw.ellipse(screen, (150, 100, 64), (rx - size * 0.3, y - size * 0.22, size * 0.6, size * 0.3))
+    pygame.draw.circle(screen, (150, 100, 64), (int(rx + d * size * 0.3), int(y - size * 0.28)), int(size * 0.12))
+    pygame.draw.circle(screen, (250, 60, 60), (int(rx + d * size * 0.42), int(y - size * 0.26)), 3)
+    for side in (-1, 1):
+        pygame.draw.line(screen, (110, 76, 50), (rx + d * size * 0.28 + side * 2, y - size * 0.38),
+                         (rx + d * size * 0.28 + side * 7, y - size * 0.55), 2)

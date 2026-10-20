@@ -928,6 +928,180 @@ HOKKAIDO_FARM = Theme(
 )
 
 
+HAWAII = Theme(
+    id="hawaii",
+    name="Aloha Hawaii",
+    sky_top=(250, 150, 110),
+    sky_bottom=(254, 224, 170),
+    # Black lava sand under a bright cap of golden beach.
+    ground_color=(86, 74, 78),
+    platform_color=(96, 84, 88),
+    cap_color=(250, 226, 160),
+    shade_color=(60, 52, 56),
+    far_layers=[
+        FloatyLayer(shapes.draw_sea_band, [(36, 168, 200)], lambda w: 1, (372, 372), (2000, 2000), 0.0),
+        FloatyLayer(shapes.draw_volcano, [(112, 90, 92), (104, 84, 90)], lambda w: 2, (228, 252), (40, 54), 0.04,
+                    screen_x=(120, 800)),
+    ],
+    bump_layers=[
+        BumpLayer((70, 150, 96), spacing=(220, 300), radius=(80, 120), parallax=0.12, base_offset=50,
+                  highlight=(96, 176, 110)),
+        BumpLayer((56, 138, 82), spacing=(165, 235), radius=(50, 80), parallax=0.26, base_offset=26,
+                  highlight=(80, 166, 98)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 196, 120)], lambda w: 1, (110, 110), (96, 96), 0.05),
+        FloatyLayer(shapes.draw_sun, [(255, 214, 110)], lambda w: 1, (110, 110), (38, 38), 0.05),
+        FloatyLayer(shapes.draw_cloud, [(255, 236, 220)], lambda w: w // 320, (30, 130), (20, 34), 0.2),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_palm_tree, [(64, 156, 88), (80, 172, 98)], (54, 80), (110, 190), 35),
+        GroundProp(shapes.draw_surfboard, [(250, 110, 90), (90, 200, 220), (250, 210, 80)], (34, 46), (260, 400), 40),
+        GroundProp(shapes.draw_tiki_totem, [(150, 100, 60), (136, 88, 52)], (58, 80), (400, 560), 45),
+        GroundProp(shapes.draw_hibiscus, [(240, 70, 110), (252, 150, 90), (255, 255, 255)], (16, 22), (80, 140), 22),
+        GroundProp(shapes.draw_rock, [(70, 62, 68)], (16, 26), (150, 240), 25),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_bird, [(252, 252, 252)], lambda w: 4, (40, 140), (11, 15), (30, 55), 0.32),
+        FlyingCreature(shapes.draw_butterfly, [(255, 130, 110), (255, 210, 90)], lambda w: 3, (170, 270), (7, 10),
+                       (16, 30), 0.5, bob_amplitude=10, bob_period=1.4),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_crab, [(226, 104, 78)], lambda w: 3, (14, 20), (14, 24), (50, 95)),
+        GroundCreature(shapes.draw_turtle, [(90, 150, 110)], lambda w: 2, (14, 18), (8, 14), (40, 80)),
+    ],
+)
+
+NORTH_POLE = Theme(
+    id="north_pole",
+    name="North Pole",
+    sky_top=(24, 34, 84),
+    sky_bottom=(120, 160, 214),
+    ground_color=(206, 222, 240),
+    platform_color=(206, 222, 240),
+    cap_color=(255, 255, 255),
+    shade_color=(150, 176, 210),
+    bump_layers=[
+        BumpLayer((120, 150, 200), spacing=(210, 290), radius=(95, 145), parallax=0.09, base_offset=62,
+                  highlight=(150, 178, 220)),
+        BumpLayer((170, 196, 230), spacing=(165, 235), radius=(60, 92), parallax=0.22, base_offset=32,
+                  highlight=(200, 220, 244)),
+        BumpLayer((222, 234, 248), spacing=(125, 190), radius=(38, 60), parallax=0.42, base_offset=16,
+                  highlight=(246, 250, 255)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_aurora, [(110, 255, 170), (150, 190, 255)], lambda w: w // 500 + 2, (60, 150),
+                    (60, 90), 0.08),
+        FloatyLayer(shapes.draw_star, [(255, 255, 255), (220, 236, 255)], lambda w: w // 120, (14, 200), (2, 4), 0.1),
+        FloatyLayer(shapes.draw_snowflake, [(255, 255, 255)], lambda w: w // 60, (20, 330), (3, 6), 0.5),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_workshop, [(196, 56, 60)], (70, 90), (900, 1300), 90),
+        GroundProp(shapes.draw_xmas_tree, [(30, 100, 60), (34, 112, 70)], (50, 74), (150, 250), 30),
+        GroundProp(shapes.draw_candy_cane, [(236, 60, 70)], (30, 44), (180, 300), 25),
+        GroundProp(shapes.draw_igloo, [(236, 244, 252)], (44, 56), (500, 700), 50),
+        GroundProp(shapes.draw_rock, [(186, 206, 230)], (14, 24), (140, 220), 25),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_sleigh, [(204, 52, 56)], lambda w: w // 1400 + 1, (50, 130), (26, 32), (60, 90),
+                       0.28, bob_amplitude=8, bob_period=2.2),
+        FlyingCreature(shapes.draw_bird, [(240, 246, 252)], lambda w: 3, (60, 150), (10, 14), (30, 50), 0.3),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_penguin, [(40, 44, 62)], lambda w: 3, (20, 26), (12, 20), (50, 100)),
+        GroundCreature(shapes.draw_fox, [(240, 246, 252)], lambda w: 2, (16, 22), (12, 20), (70, 130)),
+    ],
+)
+
+GREENLAND = Theme(
+    id="greenland",
+    name="Greenland Fjord",
+    sky_top=(40, 92, 150),
+    sky_bottom=(190, 226, 244),
+    ground_color=(110, 118, 126),
+    platform_color=(120, 128, 136),
+    cap_color=(236, 244, 250),
+    shade_color=(80, 88, 98),
+    far_layers=[
+        FloatyLayer(shapes.draw_sea_band, [(40, 120, 170)], lambda w: 1, (384, 384), (2000, 2000), 0.0),
+        FloatyLayer(shapes.draw_iceberg, [(206, 232, 248), (190, 224, 244)], lambda w: w // 500 + 1, (402, 402),
+                    (34, 56), 0.08),
+    ],
+    bump_layers=[
+        # Glaciers and bare grey mountains, streaked with snow.
+        BumpLayer((150, 170, 196), spacing=(220, 300), radius=(100, 150), parallax=0.1, base_offset=66,
+                  highlight=(214, 228, 244)),
+        BumpLayer((120, 132, 150), spacing=(170, 240), radius=(60, 95), parallax=0.24, base_offset=32,
+                  highlight=(196, 208, 226)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_aurora, [(120, 255, 190)], lambda w: w // 900 + 1, (50, 110), (60, 80), 0.07),
+        FloatyLayer(shapes.draw_glow, [(255, 250, 224)], lambda w: 1, (90, 90), (60, 60), 0.04),
+        FloatyLayer(shapes.draw_cloud, [(250, 252, 255)], lambda w: w // 340, (30, 130), (20, 32), 0.2),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_nuuk_houses, [(200, 60, 56)], (64, 84), (700, 1000), 70),
+        GroundProp(shapes.draw_iceberg, [(210, 234, 248), (196, 226, 244)], (30, 52), (240, 400), 40),
+        GroundProp(shapes.draw_igloo, [(240, 246, 252)], (42, 54), (480, 700), 50),
+        GroundProp(shapes.draw_rock, [(98, 104, 116), (126, 134, 146)], (16, 28), (110, 190), 25),
+        GroundProp(shapes.draw_grass_tuft, [(130, 150, 96)], (9, 13), (90, 160), 15),
+    ],
+    flying_creatures=[
+        FlyingCreature(shapes.draw_bird, [(250, 250, 252)], lambda w: 5, (50, 150), (11, 16), (30, 55), 0.32),
+        FlyingCreature(shapes.draw_whale, [(70, 96, 130)], lambda w: 1, (420, 450), (16, 22), (12, 22), 0.06,
+                       bob_amplitude=4, bob_period=3.4),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_fox, [(240, 246, 252)], lambda w: 3, (16, 22), (12, 20), (70, 130)),
+        GroundCreature(shapes.draw_penguin, [(60, 60, 76)], lambda w: 1, (18, 22), (10, 16), (40, 80)),
+    ],
+)
+
+GALAPAGOS = Theme(
+    id="galapagos",
+    name="Galapagos Islands",
+    sky_top=(70, 160, 220),
+    sky_bottom=(206, 236, 238),
+    ground_color=(112, 100, 88),
+    platform_color=(122, 110, 96),
+    cap_color=(196, 186, 150),
+    shade_color=(78, 68, 60),
+    far_layers=[
+        FloatyLayer(shapes.draw_sea_band, [(40, 150, 176)], lambda w: 1, (372, 372), (2000, 2000), 0.0),
+        FloatyLayer(shapes.draw_far_island, [(116, 106, 94), (130, 118, 102)], lambda w: w // 700 + 1, (380, 380),
+                    (26, 44), 0.06),
+    ],
+    bump_layers=[
+        BumpLayer((138, 126, 110), spacing=(220, 300), radius=(80, 120), parallax=0.12, base_offset=50,
+                  highlight=(160, 148, 130)),
+        BumpLayer((110, 100, 88), spacing=(165, 235), radius=(48, 76), parallax=0.26, base_offset=24,
+                  highlight=(136, 124, 106)),
+    ],
+    floaty_layers=[
+        FloatyLayer(shapes.draw_glow, [(255, 246, 210)], lambda w: 1, (60, 60), (70, 70), 0.05),
+        FloatyLayer(shapes.draw_sun, [(255, 236, 150)], lambda w: 1, (60, 60), (30, 30), 0.05),
+        FloatyLayer(shapes.draw_cloud, [(255, 255, 255)], lambda w: w // 320, (28, 120), (20, 32), 0.2),
+    ],
+    ground_props=[
+        GroundProp(shapes.draw_cactus, [(110, 150, 84), (96, 140, 76)], (36, 60), (130, 220), 30),
+        GroundProp(shapes.draw_rock, [(70, 64, 62), (92, 84, 78)], (18, 34), (110, 190), 25),
+        GroundProp(shapes.draw_tortoise, [(128, 118, 86)], (34, 44), (500, 760), 50),
+        GroundProp(shapes.draw_starfish, [(240, 120, 90), (240, 170, 90)], (12, 17), (200, 320), 25),
+        GroundProp(shapes.draw_bush, [(150, 150, 96)], (8, 11), (60, 110), 20),
+    ],
+    flying_creatures=[
+        # Blue-footed boobies and frigatebirds.
+        FlyingCreature(shapes.draw_bird, [(250, 250, 250)], lambda w: 4, (50, 150), (12, 17), (30, 55), 0.32),
+        FlyingCreature(shapes.draw_bird, [(36, 34, 44)], lambda w: 3, (40, 120), (14, 19), (34, 60), 0.3),
+    ],
+    ground_creatures=[
+        GroundCreature(shapes.draw_lizard, [(70, 70, 74), (92, 84, 70)], lambda w: 4, (16, 24), (10, 18), (50, 100)),
+        GroundCreature(shapes.draw_crab, [(230, 70, 60)], lambda w: 3, (14, 20), (14, 24), (50, 95)),
+        GroundCreature(shapes.draw_penguin, [(40, 44, 62)], lambda w: 1, (18, 22), (10, 16), (40, 80)),
+    ],
+)
+
+
 THEMES = {
     theme.id: theme
     for theme in (
@@ -935,6 +1109,7 @@ THEMES = {
         TOKYO, NAGANO, OKINAWA, HOKKAIDO, KYOTO,
         ISLAND, FAIRY_TALE, LONDON, NEW_YORK, KOREA,
         OKINAWA_DRIVE, AOMORI, SHIZUOKA, HOKKAIDO_FARM,
+        HAWAII, NORTH_POLE, GREENLAND, GALAPAGOS,
     )
 }
 
@@ -972,6 +1147,12 @@ WORLD_ENEMIES = {
     "fairy_tale": (("wolf", "mushroom"), ("ghost", "bat")),
     "london": (("soldier", "rat"), (PIGEON, "ghost")),
     "new_york": (("raccoon", "rat"), (PIGEON, "drone")),
+    "hawaii": ((("slime", {"body": (255, 120, 50)}), "crab", "boar"), ("seagull", "flying_fish", "bee")),   # lava blobs
+    "north_pole": ((("bear", {"body": (246, 248, 252)}), "snowman", ("rabbit", {"body": (246, 248, 252)})),
+                   (("seagull", {"body": (240, 246, 252), "wing": (200, 220, 240)}), "ghost")),
+    "greenland": (("seal", ("wolf", {"body": (236, 240, 246)}), "penguin"), ("seagull", "crow")),
+    "galapagos": ((("gator", {"body": (70, 74, 82)}), ("crab", {"body": (232, 70, 60)}), "penguin"),         # marine iguanas
+                  (("crow", {"body": (36, 34, 44), "wing": (60, 56, 70)}), "seagull")),                       # frigatebirds
     "korea": ((("oni", {"body": (70, 120, 220)}), "tiger"),                                              # dokkaebi
               (("crow", {"body": (30, 30, 40), "wing": (245, 245, 250)}), "chochin")),                  # magpies
 }
@@ -1000,6 +1181,10 @@ ENEMY_PALETTES = {
     "london": ((110, 110, 118), (74, 74, 82)),
     "new_york": ((120, 108, 100), (80, 70, 64)),
     "korea": ((200, 66, 60), (150, 42, 40)),
+    "hawaii": ((226, 100, 70), (170, 70, 48)),
+    "north_pole": ((236, 242, 250), (170, 190, 214)),
+    "greenland": ((140, 150, 166), (100, 110, 126)),
+    "galapagos": ((150, 120, 84), (106, 84, 58)),
     "okinawa_drive": ((230, 120, 70), (176, 84, 48)),
     "aomori": ((180, 60, 60), (126, 40, 40)),
     "shizuoka": ((120, 120, 70), (82, 84, 46)),
