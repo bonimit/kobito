@@ -203,7 +203,7 @@ block, above it if there's room or below otherwise, rest of the level
 still visible, with a tooltip-style tail that touches the block itself
 (no floating gap) so the box clearly reads as popping up *from* it —
 with a multiple-choice Japanese question at the level's current JLPT
-level (see Difficulty below), from a bank of **1,408 questions**:
+level (see Difficulty below), from a bank of over **1,500 questions** (counts below are the older 1,408):
 
 | JLPT | N5 | N4 | N3 | N2 | N1 |
 | --- | --- | --- | --- | --- | --- |
@@ -219,6 +219,20 @@ nai-form, potential, passive, …) conjugated by rule
 and level, near-miss readings (a dropped long vowel, a missing ゛, a stray
 っ) and the classic conjugation slips (書きて, 帰ます). The bank is built
 the same way every time, so saves can refer to any question.
+
+**JLPT-style questions** (`kobito/jlpt_style.py`, about 185 across N5–N1)
+follow the formats of the official sample papers — the Japan Foundation's
+*sample questions* — with our own sentences and words: **how is the marked
+word read**, **how is it written** (kanji, and katakana look-alikes),
+**which word fits the blank**, **which form fits** (grammar), **which is
+closest in meaning**, **which sentence uses the word correctly** (N4–N1),
+**the ★ puzzle** (put four pieces in order; the ★ is the third blank, and the
+answer is the piece that goes there), **which connecting word fits** a short
+text, and **a short passage with a question**. Reading and writing questions
+switch furigana off (it would give the answer away); the N3–N1 ones carry none,
+as on the real paper. Items with spare wrong choices draw a different three on
+every ask. (Listening and the long reading passages of the real paper aren't
+in the game.)
 
 **You can't learn it by heart — it never runs out.** Two things keep the quiz
 fresh, so remembering the options teaches nothing:

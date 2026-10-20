@@ -13,9 +13,10 @@ _cache = {}
 def _load(path):
     """The hand-written questions plus the generated ones (built once)."""
     if path not in _cache:
+        from kobito import jlpt_style
         from kobito.question_gen import generate, teach_furigana
         with open(path, encoding="utf-8") as f:
-            written = json.load(f)
+            written = json.load(f) + jlpt_style.build()
         taught = {m.group(1) for q in written if q["category"] == "vocabulary"
                   for m in [_WORD_IN_PROMPT.search(q["prompt"])] if m}
         _cache[path] = written + generate(skip_words=taught)

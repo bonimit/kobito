@@ -268,6 +268,14 @@ def reroll(question, variant):
     different wording, so remembering the options teaches nothing -- `variant` is any
     number; the same one always gives the same roll. Hand-written questions come back as they are."""
     qid = question.get("id", "")
+    pool = question.get("wrongs")
+    if pool and len(pool) > 3 and not question.get("dynamic"):       # JLPT-style items: draw three of the wrong choices
+        right = question["choices"][question["answer"]]
+        rng = random.Random(f"{qid}#{variant}")
+        order = [right] + rng.sample([w for w in pool if w != right], 3)
+        rng.shuffle(order)
+        fresh = dict(question, choices=order, answer=order.index(right), variant=variant)
+        return fresh
     if not question.get("generated") or question.get("dynamic") or not qid.startswith("gen_"):
         return question
     try:
@@ -337,6 +345,9 @@ def teach_furigana(questions):
             for form in FORMS:
                 for wrong, wrong_kana in zip(mistakes(verb, kind, form), mistakes(kana, kind, form)):
                     furigana.add_word(wrong, wrong_kana)
+    from kobito import jlpt_style
+    for written, kana in jlpt_style.READINGS:
+        furigana.add_word(written, kana)
     for item in ITEMS.values():
         if not has_katakana(item.jp):
             kana = romaji_to_hiragana(item.reading)

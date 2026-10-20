@@ -17,7 +17,9 @@ the next one is new. Families:
   opposites  -- the opposite of 大きい                     (N5-N3)
   loanwords  -- コーヒー = coffee, both ways               (N5-N3)
   context    -- the word that fits （　）を食べます         (N5-N4, a JLPT "contextual usage" question)
-  ordering   -- the ★ sentence puzzle: put the pieces in order (N4-N3, a JLPT "sentence composition" question)
+
+(The real-paper formats with fixed content -- the ★ puzzle, reading and writing the marked word,
+closest meaning, usage, cloze and short passages -- are in kobito/jlpt_style.py.)
 
 Every question is rebuilt exactly from its id (dyn_<family>_<level>_<seed>),
 so a save can bring one back (rebuild(id)), and every answer is right by
@@ -550,37 +552,6 @@ def make_context(rng, level, seed):
                      "Read the verb, then ask which thing you can actually do it to.", rng), {"words": words}
 
 
-# Sentences cut into four pieces whose order is forced by grammar (a describing clause comes before
-# its noun, the topic comes first ...): (pieces in the right order, the English meaning, the rule).
-ORDERING = [
-    (["これは", "母が", "作った", "ケーキです。"], "This is a cake my mother made.", "A describing phrase (母が作った) comes right before the noun (ケーキ)."),
-    (["私は", "昨日", "買った", "本を読みます。"], "I read the book I bought yesterday.", "昨日買った describes 本, so it sits just before it."),
-    (["先生が", "話した", "ことを", "忘れました。"], "I forgot what the teacher said.", "話した describes こと; を marks it as the thing forgotten."),
-    (["あの", "背が高い", "人は", "私の兄です。"], "That tall person is my older brother.", "背が高い describes 人, so it comes before it, after あの."),
-    (["毎日", "日本語を", "勉強して", "います。"], "I study Japanese every day.", "勉強して + います makes the 'ongoing' form; the object comes before the verb."),
-    (["雨が", "降って", "いる", "ので、 行きません。"], "It's raining, so I won't go.", "Reason + ので comes before the result; 降っている is built from 降って + いる."),
-    (["駅まで", "歩いて", "行く", "つもりです。"], "I plan to walk to the station.", "つもりです follows the dictionary form 行く."),
-    (["友達に", "借りた", "傘を", "なくしました。"], "I lost the umbrella I borrowed from a friend.", "借りた describes 傘; 友達に says who it was borrowed from."),
-]
-BLANK = "＿"
-
-
-def make_ordering(rng, level, seed):
-    pieces, english, rule = rng.choice(ORDERING)
-    star = rng.randint(1, 2)                       # which piece sits on the ★ (the 2nd or 3rd)
-    shown = [BLANK] * 4
-    shown[star] = "★"
-    answer = pieces[star]
-    others = [p for i, p in enumerate(pieces) if i != star]
-    sentence = " ".join(shown)
-    scrambled = pieces[:]
-    rng.shuffle(scrambled)
-    prompt = f"Put the pieces in order. Which goes on the ★?  {sentence}   [{' / '.join(scrambled)}]"
-    return _question(f"dyn_ordering_{level}_{seed}", "sentence", level, prompt, answer, others,
-                     f"The sentence is 「{''.join(pieces)}」 ({english}) {rule}", "Build the sentence from the ends: what must come first, and what must come last?",
-                     rng), {"words": []}
-
-
 # ---- the registry ---------------------------------------------------------------------
 
 FAMILIES = {
@@ -595,7 +566,6 @@ FAMILIES = {
     "opposites": (make_opposites, ("N5", "N4", "N3")),
     "loanwords": (make_loanwords, ("N5", "N4", "N3")),
     "context": (make_context, ("N5", "N4")),
-    "ordering": (make_ordering, ("N4", "N3")),
 }
 
 
