@@ -24,10 +24,10 @@ from kobito.town_screen import TownScreen  # noqa: E402
 from kobito.world_select_screen import WorldSelectScreen  # noqa: E402
 
 
-async def new_run():
+async def new_run(profile):
     character_id = await SelectScreen().run()
     companion_id = await CompanionSelectScreen().run()
-    theme_id = await WorldSelectScreen().run()
+    theme_id = await WorldSelectScreen(character_id, profile.worn()).run()
     difficulty_mode, jlpt_level = await DifficultySelectScreen(companion_id).run()
     run = {
         "character_id": character_id, "companion_id": companion_id, "theme_id": theme_id,
@@ -76,7 +76,7 @@ async def main():
     if choice == RESULT_CONTINUE:
         run, resume_state = saved["run"], saved["level"]
     else:
-        run, resume_state = await new_run(), None
+        run, resume_state = await new_run(profile), None
     save_game.touch_account(character_id=run["character_id"])   # their portrait on the player cards
     online.submit(account, profile, run["character_id"])
 

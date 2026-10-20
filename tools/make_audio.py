@@ -79,6 +79,9 @@ TRACKS = {
                          P((9, MIN), (5, MAJ), (2, MIN), (7, MAJ)), "bell", "bouncy", "city", seed=14),
     "house": TrackSpec(72, 88, "major", P((0, MAJ), (4, MIN), (5, MAJ), (7, MAJ)),
                        P((9, MIN), (5, MAJ), (0, MAJ), (7, MAJ)), "tri", "calm", "light", seed=15),
+    # The overworld map: a travelling-song, flute over a gentle march.
+    "map": TrackSpec(74, 104, "major", P((0, MAJ), (7, MAJ), (9, MIN), (5, MAJ)),
+                     P((5, MAJ), (0, MAJ), (2, MIN), (7, MAJ)), "flute", "bouncy", "march", seed=16),
     # Worlds
     "forest": TrackSpec(77, 112, "yo", P((0, MAJ), (5, MAJ), (0, MAJ), (7, MAJ)),
                         P((9, MIN), (5, MAJ), (2, MIN), (7, MAJ)), "flute", "bouncy", "light", seed=21),

@@ -448,6 +448,20 @@ Both have a roster strip of every choice along the bottom: browse with
 look at it, then click it again, press Enter / Space / A, or hit
 **CHOOSE**.
 
+- **Choose your world on the map** (`kobito/world_select_screen.py`,
+  `kobito/world_map.py`) — an RPG-style **overworld**. Your mascot, in
+  whatever it's wearing, walks around a big map with the **arrow keys /
+  WASD / d-pad / stick** (or tap a town and it walks there along the roads).
+  The 19 worlds are towns on one continent and its islands, each with its
+  own patch of country and a landmark — Mt Fuji in Shizuoka, a pagoda in
+  Kyoto, Tokyo Tower, Big Ben, the Statue of Liberty, the pyramids, a
+  fairy-tale castle, a whale in Coral Deep, a red barn on the dairy farm …
+  — with forests, mountains, lakes, a sea to stop you, sparkling waves and a
+  minimap. Stand on a town and a card shows its name (in Japanese too) and
+  a preview of its scenery; press **Enter / Space / A** to play it. The map
+  has its own travelling tune and opens where you last chose. The picture
+  is painted by `python tools/make_world_map.py` into `assets/map/`.
+
 The five companions (`kobito/companions.py`):
 
 | Companion | Style | Ability |
@@ -923,7 +937,7 @@ Every stage has its own tune, and everything you do makes a sound
 (`kobito/audio.py`). All of it is **generated from code** by
 `tools/make_audio.py` — square/pulse/triangle oscillators, a plucked
 "koto", a music-box bell and noise drums — so there are no samples or
-licences involved; the files are in `assets/audio/` (68 music loops, 31
+licences involved; the files are in `assets/audio/` (69 music loops, 31
 sound effects, about 7.5 MB of .ogg).
 
 - **Music** — **three tunes per world, so every stage sounds different**:
