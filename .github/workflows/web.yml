@@ -83,4 +83,9 @@ jobs:
       - name: Upload to itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: butler-bin/butler push web "${{ vars.ITCH_GAME }}:html5" --userversion "build-${{ github.run_number }}"
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+        run: |
+          # Accept "user/game" or the page link "https://user.itch.io/game".
+          target=$(echo "$ITCH_GAME" | sed -E 's#^https?://##; s#^([^./]+)\.itch\.io/([^/]+)/?$#\1/\2#')
+          echo "Uploading to itch.io page: $target"
+          butler-bin/butler push web "$target:html5" --userversion "build-${{ github.run_number }}"
