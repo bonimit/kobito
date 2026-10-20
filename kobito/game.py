@@ -100,8 +100,9 @@ BOOST_SPEED_SCALE = 1.25
 # Bottom-LEFT corner, in the strip under the ground line, so it never covers
 # the player (who's usually mid-screen) or the play area. In the web build it
 # starts just right of the on-screen left/right buttons.
-SPEECH_BOX = pygame.Rect(196 if IS_WEB else 10, SCREEN_HEIGHT - 60, 420, 56)
+SPEECH_BOX = pygame.Rect(196 if IS_WEB else 10, SCREEN_HEIGHT - 60, 560 if IS_WEB else 600, 56)
 SPEECH_FONT_SIZES = (19, 17, 15)   # largest that fits in two lines wins
+SPEECH_LINE_GAP = 2                # (a long lesson takes more lines at the smallest size: the box grows up)
 
 MAX_GUARD = 5              # STRENGTH items stack up to this many blocked hits
 STAGE_TUNES = 3            # each world's music comes in this many versions, one per stage
@@ -1401,6 +1402,9 @@ class Game:
             progress = e["t"] / e["life"]
             x = e["x"] - self.camera_x
             if e["kind"] == "text":
+                # Kept on screen: a pickup at the edge of the view still reads in full.
+                half = ui.label_font(16).size(e["text"])[0] // 2 + 6
+                x = max(half, min(SCREEN_WIDTH - half, x))
                 ui.text(self.screen, e["text"], ui.label_font(16), (x, e["y"] - 46 * progress),
                         color=e["color"], anchor="midbottom")
             elif e["kind"] == "icon":
@@ -1923,30 +1927,40 @@ class Game:
 
     @staticmethod
     def _wrap(text, font, width):
+        """Wraps on spaces, and inside a run with no spaces (Japanese) when it's wider than the line."""
         lines, current = [], ""
         for word in text.replace("  ", " ").split(" "):
             trial = f"{current} {word}".strip()
-            if current and font.size(trial)[0] > width:
-                lines.append(current)
-                current = word
-            else:
+            if font.size(trial)[0] <= width:
                 current = trial
+                continue
+            if current:
+                lines.append(current)
+            current = ""
+            for ch in word:
+                if current and font.size(current + ch)[0] > width:
+                    lines.append(current)
+                    current = ch
+                else:
+                    current += ch
         if current:
             lines.append(current)
         return lines
 
     def _fit_speech(self, text, width):
-        """Wraps `text` at the largest companion font size that fits in two
-        lines; anything still too long is trimmed with an ellipsis."""
+        """Wraps `text` at the largest companion font size that fits in two lines; a long one
+        takes three or four at the smallest size, and anything beyond that is trimmed with an ellipsis."""
         for size in SPEECH_FONT_SIZES:
             font = ui.body_font(size)
-            lines = self._wrap(text, font, width)
+            # A lesson (word = meaning, then an example) has two spaces between them: the example starts a line.
+            lines = [row for part in text.split("  ", 1) for row in self._wrap(part, font, width)]
             if len(lines) <= 2:
                 return font, lines
-        lines = lines[:2]
-        while font.size(lines[1] + "…")[0] > width and len(lines[1]) > 1:
-            lines[1] = lines[1][:-1]
-        lines[1] = lines[1].rstrip() + "…"
+        if len(lines) > 4:
+            lines = lines[:4]
+            while font.size(lines[3] + "…")[0] > width and len(lines[3]) > 1:
+                lines[3] = lines[3][:-1]
+            lines[3] = lines[3].rstrip() + "…"
         return font, lines
 
     def _draw_speech(self):
@@ -1956,12 +1970,22 @@ class Game:
         speech = self.coach.speech
         if speech is None:
             return
-        box = SPEECH_BOX
+        page = speech.page
+        lesson = page == 1
+        text_x = SPEECH_BOX.x + 7 + (SPEECH_BOX.height - 14) + 14
+        right = SPEECH_BOX.right - 22
+        font, lines = self._fit_speech(speech.lines[page], right - text_x)
+        line_h = font.get_height() - SPEECH_LINE_GAP
+        # The box grows upward to fit a third line, keeping its bottom edge.
+        box = SPEECH_BOX.copy()
+        box.height = max(SPEECH_BOX.height, 26 + line_h * len(lines))
+        box.bottom = SPEECH_BOX.bottom
         fade = min(1.0, speech.seconds_left / 0.6)
         ui.panel(self.screen, box, bg=(16, 12, 28, 242), edge=(255, 214, 150, 220), radius=12, alpha=fade)
 
         # Portrait in its own little frame on the left.
-        frame = pygame.Rect(box.x + 7, box.y + 7, box.height - 14, box.height - 14)
+        side = SPEECH_BOX.height - 14
+        frame = pygame.Rect(box.x + 7, box.centery - side // 2, side, side)
         pygame.draw.rect(self.screen, (44, 36, 66), frame, border_radius=9)
         draw_companion(self.screen, self.coach.companion["id"], frame.centerx, frame.centery, 46,
                        expression=speech.expression)
@@ -1973,12 +1997,7 @@ class Game:
         ui.panel(self.screen, plate, bg=(255, 210, 110, 255), edge=(20, 14, 26, 255), radius=6)
         ui.text(self.screen, name, label, plate.center, color=ui.OUTLINE, outline=None, anchor="center")
 
-        page = speech.page
-        lesson = page == 1
-        text_x, right = frame.right + 14, box.right - 22
-        font, lines = self._fit_speech(speech.lines[page], right - text_x)
         color = ui.SKY if lesson else ui.CREAM
-        line_h = font.get_height() - 2
         top = box.y + 12 + (box.height - 18 - line_h * len(lines)) // 2
         for i, line in enumerate(lines):
             ui.text(self.screen, line, font, (text_x, top + i * line_h), color=color, thickness=1)

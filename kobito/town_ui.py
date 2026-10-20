@@ -57,7 +57,11 @@ class Nav:
 def wallet(screen, profile, topright):
     """The Lv badge, a bar to the next level, and the 円 -- top right."""
     label = ui.label_font(16)
-    rect = pygame.Rect(0, 0, 300, 44)
+    yen = f"{profile.yen:,}円"
+    # The chip grows to the left for a big purse (and the number shrinks past that), so the amount
+    # never runs into the EXP bar or the button beside it.
+    yen_font = ui.fit(yen, ui.body_font, 124, (19, 17, 15, 13, 11))
+    rect = pygame.Rect(0, 0, max(300, 204 + yen_font.size(yen)[0] + 12), 44)
     rect.topright = topright
     ui.panel(screen, rect, bg=(20, 16, 36, 230), radius=12)
     lv = pygame.Rect(rect.x + 8, rect.y + 7, 64, 30)
@@ -66,8 +70,7 @@ def wallet(screen, profile, topright):
     into, needed = profile.level_progress()
     ui.bar(screen, (lv.right + 10, rect.y + 27, 110, 7), into / needed, (255, 196, 110), radius=3)
     ui.text(screen, "STUDY EXP", label, (lv.right + 10, rect.y + 6), color=ui.MUTED, thickness=1)
-    ui.text(screen, f"{profile.yen:,}円", ui.body_font(19), (rect.right - 12, rect.centery), anchor="midright",
-            thickness=2)
+    ui.text(screen, yen, yen_font, (rect.right - 12, rect.centery), anchor="midright", thickness=2)
     return rect
 
 

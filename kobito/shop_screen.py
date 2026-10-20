@@ -25,8 +25,8 @@ from kobito.wardrobe import GEAR, PRODUCT_BY_ID, PRODUCTS
 SHELF = pygame.Rect(296, 92, 640, 300)
 COUNTER = pygame.Rect(24, 92, 256, 300)
 INFO = pygame.Rect(24, 404, 912, 82)
-CARD = (142, 68)
-CARD_GAP = 10
+CARD = (148, 68)
+CARD_GAP = 8
 ROW_STEP = 98
 SHELF_ROWS = (("STUDY  ·  べんきょう", "study"), ("GEAR  ·  どうぐ", "gear"), ("NEXT STAGE  ·  つぎのステージ", "boost"))
 CLERK = "ushi"
@@ -249,10 +249,10 @@ class ShopScreen:
         pygame.draw.rect(screen, bg, rect, border_radius=10)
         if selected:
             pygame.draw.rect(screen, ui.GOLD, rect, width=3, border_radius=10)
-        icon = gear_art.product_icon(product.id, 50)
-        screen.blit(icon, icon.get_rect(center=(rect.x + 34, rect.centery)))
-        ui.text(screen, product.jp, ui.body_font(14 if len(product.jp) > 5 else 16),
-                (rect.x + 66, rect.y + 10), color=ui.CREAM, thickness=1)
+        icon = gear_art.product_icon(product.id, 46)
+        screen.blit(icon, icon.get_rect(center=(rect.x + 30, rect.centery)))
+        name_font = ui.fit(product.jp, ui.body_font, rect.right - (rect.x + 58) - 6, (16, 15, 14, 13, 12, 11))
+        ui.text(screen, product.jp, name_font, (rect.x + 58, rect.y + 10), color=ui.CREAM, thickness=1)
         price = {"owned": "OWNED", "ready": "READY"}.get(status, f"{product.price:,}円")
         color = {"owned": ui.GREEN, "ready": ui.GREEN, "short": (200, 120, 130)}.get(status, ui.GOLD)
         ui.text(screen, price, ui.label_font(16), (rect.right - 10, rect.bottom - 10), color=color,

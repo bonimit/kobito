@@ -253,8 +253,11 @@ class AccountScreen(_Base):
             ui.text(screen, "?", ui.title_font(48), well.center, color=ui.MUTED, anchor="center")
         if save_game.has_pin(account):
             draw_padlock(screen, (rect.right - 24, rect.y + 22), 12)
-        ui.text(screen, account["name"], ui.title_font(32) if len(account["name"]) <= 7 else ui.body_font(20),
-                (rect.centerx, rect.y + 146), anchor="center", thickness=2)
+        name = account["name"]
+        fits = [f for f in (ui.title_font(32), ui.body_font(20)) if f.size(name)[0] <= rect.width - 20]
+        name_font = fits[0] if fits and (len(name) <= 7 or fits[0] is not ui.title_font(32)) else \
+            ui.fit(name, ui.body_font, rect.width - 20, (20, 18, 16, 14, 12))
+        ui.text(screen, name, name_font, (rect.centerx, rect.y + 146), anchor="center", thickness=2)
         level = profile.level if profile else 1
         kanji, _, english = progress.rank_for(level)
         ui.text(screen, f"Lv {level}  ·  {english}", ui.label_font(16), (rect.centerx, rect.y + 176),

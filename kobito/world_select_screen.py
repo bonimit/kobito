@@ -33,6 +33,7 @@ AT_TOWN = 34                # this close to a town's centre is "at" the town
 CARD = pygame.Rect(0, 0, 560, 118)
 CARD.midbottom = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 34)
 MINI = pygame.Rect(SCREEN_WIDTH - 176, 50, 160, 90)
+SCREEN = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
 ENTER_SECONDS = 0.55
 START_TOWN = "forest"
 
@@ -236,15 +237,27 @@ class WorldSelectScreen:
         ring = pygame.transform.scale(self.ring, (round(96 * pulse), round(48 * pulse)))
         self.screen.blit(ring, ring.get_rect(center=(x - cx, y + 4 - cy)))
 
+    def _ui_zones(self):
+        """Where the step bar, title, minimap and the card / prompt sit: town names stay out of them."""
+        zones = [pygame.Rect(SCREEN_WIDTH // 2 - 280, 4, 560, 100), MINI.inflate(16, 16)]
+        zones.append(CARD.inflate(8, 8) if self.near else pygame.Rect(0, SCREEN_HEIGHT - 70, SCREEN_WIDTH, 70))
+        return zones
+
     def _draw_labels(self, cx, cy):
-        """Every town's name under its landmark; the one you're at lights up gold."""
+        """Every town's name under its landmark (kept on screen, and clear of the cards and bars);
+        the one you're at lights up gold."""
         font = ui.label_font(16)
+        zones = self._ui_zones()
         for town, (x, y) in self.world.nodes.items():
             sx, sy = x - cx, y - cy
-            if not (-100 < sx < SCREEN_WIDTH + 100 and -40 < sy < SCREEN_HEIGHT + 60):
+            if not (0 <= sx < SCREEN_WIDTH and 0 <= sy < SCREEN_HEIGHT):
                 continue
             here = town == self.near
-            ui.text(self.screen, PLACES[town][0].upper(), font, (sx, sy + 26), anchor="midtop",
+            rect = ui.label_font(16).render(PLACES[town][0].upper(), True, ui.CREAM).get_rect(midtop=(sx, sy + 26))
+            rect.clamp_ip(SCREEN.inflate(-8, -8))
+            if any(rect.inflate(6, 2).colliderect(z) for z in zones):
+                continue
+            ui.text(self.screen, PLACES[town][0].upper(), font, rect.topleft, anchor="topleft",
                     color=ui.GOLD if here else ui.CREAM, thickness=2)
 
     def _draw_hero(self, cx, cy):

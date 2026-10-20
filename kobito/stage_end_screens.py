@@ -45,19 +45,24 @@ def _dim(screen, background, alpha=190):
     screen.blit(shade, (0, 0))
 
 
-def wrap(text, font, width):
-    """Wraps on spaces, and inside long runs with no spaces (Japanese)."""
+def wrap(text, font, width, first_width=None):
+    """Wraps on spaces, and inside long runs with no spaces (Japanese). `first_width` is the
+    room on the first line, when something (a tag) shares it."""
     lines, current = [], ""
+
+    def room():
+        return first_width if first_width and not lines else width
+
     for word in text.split(" "):
         candidate = f"{current} {word}".strip()
-        if font.size(candidate)[0] <= width:
+        if font.size(candidate)[0] <= room():
             current = candidate
             continue
         if current:
             lines.append(current)
         current = ""
         for ch in word:
-            if font.size(current + ch)[0] > width and current:
+            if font.size(current + ch)[0] > room() and current:
                 lines.append(current)
                 current = ch
             else:
@@ -140,7 +145,9 @@ class ReviewScreen(_Screen):
                                           (0, y + 8), color=MUTED, thickness=1))
         for n, e in enumerate(self.entries, 1):
             q, kind = e["question"], e["result"]
-            prompt = wrap(f"{n}. {q['prompt']}", body, width - 60)
+            # The first line shares its row with the "N4 · READING" tag at the card's right edge.
+            tag_width = label.size(f"{q['jlpt']} · {q['category'].upper().replace('_', ' ')}")[0]
+            prompt = wrap(f"{n}. {q['prompt']}", body, width - 60, first_width=width - 44 - tag_width - 28)
             right = q["choices"][q["answer"]]
             lines = [(body, line, ui.CREAM) for line in prompt]
             if kind == "wrong" and e.get("chosen") is not None:

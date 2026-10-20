@@ -971,6 +971,13 @@ its `TrackSpec` in `tools/make_audio.py` (key, tempo, scale, chords, lead
 instrument, rhythm, drums) and run `python tools/make_audio.py tokyo`
 (or no argument for everything; needs numpy and ffmpeg).
 
+### Checking the text fits
+
+`python tools/qa_text_overflow.py` is the design-QA check: it draws every screen with the longest
+realistic strings (10-letter names, 8-digit scores, every world / item / product / trophy / coach
+line) and reports any text that hangs out of its box, runs off the screen or lands on other text
+(it exits 1 if it finds any). Run it after changing a screen's layout or adding long names.
+
 ## Ability level, costumes and Kobito Town
 
 Besides a run's score and XP, you have a long-term **ability level (Lv)**

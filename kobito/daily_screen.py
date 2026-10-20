@@ -84,7 +84,7 @@ class DailyBonusScreen:
         draw_flame(screen, (panel.x + 64, y + 4), 18)
         ui.text(screen, f"{days}-DAY STREAK", ui.title_font(32), (panel.x + 92, y - 14), color=(255, 170, 80))
         ui.text(screen, f"best {self.bonus['best']} days  ·  come back tomorrow for more!", ui.body_font(15),
-                (panel.x + 92, y + 20), color=ui.MUTED, thickness=1)
+                (panel.x + 92, y + 25), color=ui.MUTED, thickness=1)
         ui.text(screen, f"+{self.bonus['bonus']}円", ui.title_font(36), (panel.right - 40, y - 2), color=ui.GOLD,
                 anchor="midright", thickness=3)
 

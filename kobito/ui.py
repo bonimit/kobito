@@ -35,6 +35,25 @@ def body_font(size=18):
     return rounded_font(size)
 
 
+def fit(string, make_font, max_width, sizes):
+    """The largest font in `sizes` (biggest first) whose rendering of `string` fits `max_width`
+    (the smallest if none does): ui.fit(name, ui.body_font, 90, (16, 14, 12))."""
+    for size in sizes:
+        font = make_font(size)
+        if font.size(string)[0] <= max_width:
+            return font
+    return make_font(sizes[-1])
+
+
+def ellipsize(string, font, max_width):
+    """`string` cut with "…" so it fits `max_width` pixels in `font`."""
+    if font.size(string)[0] <= max_width:
+        return string
+    while len(string) > 1 and font.size(string + "…")[0] > max_width:
+        string = string[:-1]
+    return string.rstrip() + "…"
+
+
 def panel(surface, rect, bg=PANEL_BG, edge=PANEL_EDGE, radius=12, alpha=1.0):
     """A translucent rounded card -- the one container style for all UI."""
     rect = pygame.Rect(rect)
