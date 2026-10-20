@@ -1,8 +1,10 @@
 # Builds the web version of Kobito and publishes it on GitHub Pages, so
 # anyone can play it from a link: https://<owner>.github.io/<repo>/
 #
-# One-time setup: repository Settings -> Pages -> Source: "GitHub Actions".
-# After that every push to the default branch rebuilds and republishes.
+# One-time setup: repository Settings -> Pages -> Source: "GitHub Actions"
+# (GitHub Pages needs a public repository, or a paid plan for a private
+# one). After that every push to the default branch rebuilds and
+# republishes. Until Pages is on, the deploy step just reports it.
 # Each run also keeps the built site as a downloadable "kobito-web"
 # artifact (ready to upload to itch.io as an HTML5 game).
 name: Web build
@@ -46,6 +48,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Without Pages turned on this step can't publish; don't fail the whole
+    # run over it -- the build and its kobito-web download still work.
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -107,7 +107,10 @@ publishes it with **GitHub Pages**, so the game lives at
 One-time setup: on GitHub open the repository's **Settings → Pages** and
 set **Source** to **GitHub Actions**. Then push (or run the "Web build"
 workflow from the Actions tab); a couple of minutes later the link works,
-and every later push updates it. Send that link to anyone — it plays in
+and every later push updates it. GitHub Pages is free for **public**
+repositories; a private repository needs a paid GitHub plan for it (and
+the published game is public either way) — otherwise use itch.io or
+Vercel below, which work from a private repository. Send that link to anyone — it plays in
 Chrome, Safari, Edge and Firefox, on computers, tablets and phones.
 
 ### Other places to put it
