@@ -1,4 +1,4 @@
 {
-  "buildCommand": "pip install pygbag && python3 -m pygbag --build .",
+  "buildCommand": "pip install pygbag && bash packaging/build_web.sh",
   "outputDirectory": "build/web"
 }

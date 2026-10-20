@@ -1,0 +1,55 @@
+# Builds the web version of Kobito and publishes it on GitHub Pages, so
+# anyone can play it from a link: https://<owner>.github.io/<repo>/
+#
+# One-time setup: repository Settings -> Pages -> Source: "GitHub Actions".
+# After that every push to the default branch rebuilds and republishes.
+# Each run also keeps the built site as a downloadable "kobito-web"
+# artifact (ready to upload to itch.io as an HTML5 game).
+name: Web build
+
+on:
+  push:
+    branches: [main, claude/japanese-platformer-pygame-w1vgyw]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Pygbag
+        run: pip install pygbag==0.9.3
+      - name: Build the web version
+        run: bash packaging/build_web.sh
+      - name: Keep the site as a download (for itch.io)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kobito-web
+          path: build/web
+      - name: Prepare the site for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish on GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -15,7 +15,6 @@ there it simply reports that online boards aren't available.
 import json
 import os
 import threading
-import urllib.request
 
 from kobito.constants import IS_WEB
 
@@ -32,6 +31,7 @@ def enabled():
 
 
 def _request(method, path, payload=None):
+    import urllib.request   # only here: the web build never makes requests, and may not have it
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
     request = urllib.request.Request(server() + path, data=data, method=method,
                                      headers={"Content-Type": "application/json"})

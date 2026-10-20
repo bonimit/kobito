@@ -93,33 +93,56 @@ desktop build changes.
 ## Playing on the web or a phone
 
 The exact same codebase also builds into a static, no-install web
-version via [Pygbag](https://github.com/pygame-web/pygbag) (Pygame
-compiled to WASM), playable in a desktop or mobile browser with the
-on-screen touch controls above. Build it with:
+version via [Pygbag](https://github.com/pygame-web/pygbag) (Python and
+Pygame compiled to WebAssembly), playable in a desktop or mobile browser
+with the on-screen touch controls above.
+
+### Share a link (GitHub Pages — automatic)
+
+`.github/workflows/web.yml` builds the web version on every push and
+publishes it with **GitHub Pages**, so the game lives at
+
+    https://bonimit.github.io/kobito/
+
+One-time setup: on GitHub open the repository's **Settings → Pages** and
+set **Source** to **GitHub Actions**. Then push (or run the "Web build"
+workflow from the Actions tab); a couple of minutes later the link works,
+and every later push updates it. Send that link to anyone — it plays in
+Chrome, Safari, Edge and Firefox, on computers, tablets and phones.
+
+### Other places to put it
+
+- **itch.io** (a game site with a nice page, comments and a full-screen
+  button): each workflow run keeps the built site as a **kobito-web**
+  artifact — download it from the run's page on the Actions tab, then on
+  itch.io create a project with *Kind of project: HTML*, upload that zip,
+  tick *This file will be played in the browser*, and set the viewport to
+  960 × 540 with full screen allowed.
+- **Vercel / Netlify / any static host**: `vercel.json` makes a
+  git-connected Vercel project run the same build; or build it yourself
+  and upload `build/web/`:
 
 ```
 pip install pygbag
-./packaging/build_web.sh   # (on Windows: python -m pygbag --build .)
+./packaging/build_web.sh                       # leaves the site in build/web/
+python -m http.server -d build/web 8000        # try it at http://localhost:8000
 ```
 
-That leaves a static site in `build/web/` — open `build/web/index.html`
-locally to try it, or deploy the folder as-is to any static host. For
-Vercel specifically:
+The build only packs `main.py`, `kobito/` and `assets/` (about 21 MB,
+mostly the Japanese fonts) — not the docs' videos or the tools.
 
-```
-npx vercel deploy build/web --prod
-```
-
-(A `vercel.json` at the repo root also lets Vercel build it directly
-from a git-connected project, running that same `pygbag --build` step.)
-
-Two things behave differently in the web build:
+A few things behave differently in the web build:
 - **AI hints** (`ANTHROPIC_API_KEY`) don't work in-browser — WASM can't
   make the same kind of network call the desktop build does, so it
   always uses Kobito's local fallback hints there. Gameplay is otherwise
   identical.
+- **Saves, players and trophies** live in that browser (localStorage) —
+  each person's progress stays on their own device. The **leaderboard**
+  shows the players of that browser; the world leaderboard server is a
+  desktop-game feature.
 - The first load is slower than a native launch (the browser is
-  downloading a WASM Python runtime), but it's cached after that.
+  downloading a WASM Python runtime and the game), but it's cached after
+  that. Browsers only allow sound after the first click or key press.
 
 ## Standalone desktop builds
 
