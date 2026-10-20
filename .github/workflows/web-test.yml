@@ -1,0 +1,31 @@
+# Opens the built web version in a real headless browser and prints what
+# happens (console errors, canvas size, whether anything was drawn).
+# Run it by hand from the Actions tab: "Web smoke test" -> Run workflow.
+name: Web smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pygbag==0.9.3 playwright pillow
+      - run: playwright install --with-deps chromium
+      - name: Build the web version
+        run: bash packaging/build_web.sh
+      - name: Open it in a browser
+        run: python tools/web_smoke.py build/web 150
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-screenshots
+          path: web_shot_*.png
+          if-no-files-found: ignore
