@@ -31,6 +31,8 @@ CARD_GAP = 16
 CARDS_VISIBLE = 4
 NAME_ROWS = ("ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ0123", "456789-._ ")
 PIN_KEYS = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "DEL", "0", "OK")
+DIGIT_KEYS = {getattr(pygame, f"K_{d}"): str(d) for d in range(10)}
+DIGIT_KEYS.update({getattr(pygame, f"K_KP{d}"): str(d) for d in range(10)})
 PIN_LENGTH = 4
 MAX_PIN_TRIES = 3
 FLAME = (255, 140, 50)
@@ -481,9 +483,14 @@ class PinScreen(_Base):
     def _handle(self, event):
         self._quit_check(event)
         if event.type == pygame.KEYDOWN:
-            if event.unicode and event.unicode.isdigit():
-                return self._press(event.unicode)
-            if event.key == pygame.K_BACKSPACE:
+            # A digit key, from whatever the keyboard reports: the typed
+            # character, or the key itself (top row or number pad) -- some
+            # keyboards and browsers don't fill in the character.
+            digit = event.unicode if event.unicode and event.unicode.isdigit() and event.unicode.isascii() \
+                else DIGIT_KEYS.get(event.key)
+            if digit:
+                return self._press(digit)
+            if event.key in (pygame.K_BACKSPACE, pygame.K_DELETE):
                 return self._press("DEL")
             if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 return self._submit()
@@ -541,6 +548,8 @@ class PinScreen(_Base):
         ui.panel(screen, self.skip_rect, bg=(30, 24, 46, 230), radius=16)
         ui.text(screen, words, font, self.skip_rect.center, color=ui.MUTED, anchor="center", thickness=1)
         self._draw_message(476)
+        ui.text(screen, "TYPE 4 NUMBERS ON YOUR KEYBOARD" if self.mode == "create" else "TYPE YOUR 4 NUMBERS",
+                ui.label_font(16), (SCREEN_WIDTH // 2, 158), color=ui.MUTED, anchor="center", thickness=1)
         setup_ui.hints(screen, [("0-9", "type"), ("Backspace", "delete"), ("Enter", "OK")],
                        [(setup_ui.DPAD, "choose"), ("pad-a", "press"), ("pad-b", "delete / back")])
         pygame.display.flip()
