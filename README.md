@@ -116,11 +116,21 @@ Chrome, Safari, Edge and Firefox, on computers, tablets and phones.
 ### Other places to put it
 
 - **itch.io** (a game site with a nice page, comments and a full-screen
-  button): each workflow run keeps the built site as a **kobito-web**
-  artifact — download it from the run's page on the Actions tab, then on
-  itch.io create a project with *Kind of project: HTML*, upload that zip,
-  tick *This file will be played in the browser*, and set the viewport to
-  960 × 540 with full screen allowed.
+  button; works from a private repository):
+  1. On itch.io: **Upload new project** — title *Kobito*, **Kind of
+     project: HTML**. Upload the **kobito-web** zip from the latest "Web
+     build" run (Actions tab → the run → *Artifacts*) and tick **This file
+     will be played in the browser**. Under *Embed options* set the
+     viewport to **960 × 540**, turn on **Fullscreen button** and
+     **Mobile friendly**, then choose who can see it (*Public*, or
+     *Restricted* with a password) and **Save**. The page's link (e.g.
+     `https://bonimit.itch.io/kobito`) is the one to share.
+  2. To update it automatically on every push: itch.io → *Settings → API
+     keys* → **Generate new API key**; then on GitHub → *Settings →
+     Secrets and variables → Actions* add a **secret** `BUTLER_API_KEY`
+     (that key) and a **variable** `ITCH_GAME` (`your-itch-name/kobito`).
+     The workflow's *itch* job then uploads each new build with butler,
+     itch.io's upload tool — no more manual zips.
 - **Vercel / Netlify / any static host**: `vercel.json` makes a
   git-connected Vercel project run the same build; or build it yourself
   and upload `build/web/`:

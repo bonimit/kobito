@@ -6,7 +6,12 @@
 # one). After that every push to the default branch rebuilds and
 # republishes. Until Pages is on, the deploy step just reports it.
 # Each run also keeps the built site as a downloadable "kobito-web"
-# artifact (ready to upload to itch.io as an HTML5 game).
+# artifact (ready to upload to itch.io as an HTML5 game by hand).
+#
+# itch.io, automatically: add a repository secret BUTLER_API_KEY (your
+# itch.io API key) and a repository variable ITCH_GAME (e.g. bonimit/kobito)
+# under Settings -> Secrets and variables -> Actions; every run then
+# uploads the new build to that itch.io page with butler.
 name: Web build
 
 on:
@@ -58,3 +63,24 @@ jobs:
       - name: Publish on GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  itch:
+    needs: build
+    # Only once the itch.io page is set up (see the top of this file).
+    if: ${{ vars.ITCH_GAME != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: kobito-web
+          path: web
+      - name: Get butler (itch.io's upload tool)
+        run: |
+          curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler-bin
+          chmod +x butler-bin/butler
+          butler-bin/butler -V
+      - name: Upload to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: butler-bin/butler push web "${{ vars.ITCH_GAME }}:html5" --userversion "build-${{ github.run_number }}"
