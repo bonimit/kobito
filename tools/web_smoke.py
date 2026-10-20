@@ -88,5 +88,7 @@ with sync_playwright() as p:
         if step in (5, 12):
             page.screenshot(path=f"web_shot_{step}.png")
     page.screenshot(path="web_shot_final.png")
+    final = page.evaluate("() => { const c = document.querySelector('canvas'); return c ? [c.width, c.height] : null }")
+    print("RESULT:", "game is drawing (canvas resized)" if final and final[0] > 100 else "NOTHING DREW", final)
     dump_text(page, "FINAL")
     browser.close()

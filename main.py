@@ -1,6 +1,11 @@
 import asyncio
 import os
 
+# The web build (Pygbag) decides which packages to download by scanning this
+# file's own imports -- without this line it never loads pygame, and the game
+# dies on its first screen with "module 'pygame' has no attribute 'Rect'".
+import pygame  # noqa: F401
+
 # Keep reading the gamepad even when the game window isn't the focused one
 # (on macOS it can open behind the Terminal it was started from).
 os.environ.setdefault("SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", "1")
