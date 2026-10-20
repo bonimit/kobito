@@ -218,7 +218,29 @@ nai-form, potential, passive, …) conjugated by rule
 (`kobito/conjugation.py`). Wrong choices are other words of the same kind
 and level, near-miss readings (a dropped long vowel, a missing ゛, a stray
 っ) and the classic conjugation slips (書きて, 帰ます). The bank is built
-the same way every time, so saves can refer to any question. A stage asks
+the same way every time, so saves can refer to any question.
+
+**You can't learn it by heart — it never runs out.** Two things keep the quiz
+fresh, so remembering the options teaches nothing:
+
+- **Every ask re-rolls the wrong choices.** The choices are always shuffled
+  (the right answer is never in the same slot), and on top of that each
+  generated question gets a *new set of wrong answers* and a new wording
+  every time it's asked (`question_gen.reroll`): the same "What does 友達
+  mean?" shows different look-alike options each time, so you have to know
+  the word, not the answer pattern.
+- **Questions made up on the spot** (`kobito/question_dyn.py`), about 3 in
+  10, each from a random seed — a new one every time, thousands of
+  combinations: **numbers** (read 306, 2,450), **time** (3:40), **dates**
+  (5月3日, days of the week), **counters** (3本, 5匹, 4人; which counter for a
+  cat?), **particles** (学校___行きます), **adjective forms** (静か → past
+  negative), **verb forms the other way round** (帰りました is which form of
+  帰る?), **sentences** (「パンを食べました」 = "I ate bread"), **opposites**,
+  **loanwords**, and two in the style of the real JLPT: **the word that fits
+  the blank** (contextual usage) and **the ★ sentence puzzle** (put the pieces
+  in order). Their readings come from rules that the tests check against known
+  answers, wrong choices are the classic slips, and a save brings each one
+  back exactly from its id. The AI-adaptive tutor draws on them too. A stage asks
 30, so you can replay many stages before anything repeats: 10 N5 stages
 in a row (300 questions) without a single repeat, 5 at N1.
 

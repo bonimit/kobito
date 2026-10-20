@@ -50,7 +50,7 @@ COMFORT_BAND = (0.65, 0.95)
 # Where each JLPT level starts on the difficulty scale (in logits).
 JLPT_DIFFICULTY = {"N5": -2.0, "N4": -1.0, "N3": 0.0, "N2": 1.0, "N1": 2.0}
 CATEGORY_OFFSET = {"kanji": 0.15, "grammar": 0.1, "reading": 0.1, "verb_conjugation": 0.05, "expression": 0.05,
-                   "vocabulary": 0.0, "loanword": -0.05}
+                   "vocabulary": 0.0, "loanword": -0.05, "numbers": 0.0, "counter": 0.1, "particle": 0.1, "sentence": 0.05}
 
 # K = a / (1 + b * n): big steps while we know little, smaller later.
 # Early on the tutor knows little, so it moves boldly (a strong player

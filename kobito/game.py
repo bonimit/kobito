@@ -62,7 +62,7 @@ from kobito.levels.sky import build_sky
 from kobito.levels.underground import build_underground
 from kobito.profile import (EXP_BADGE, EXP_CLEAR, EXP_CORRECT, EXP_ITEM, EXP_TEST, YEN_BADGE, YEN_CLEAR,
                             YEN_COIN, YEN_CORRECT)
-from kobito.questions import QuestionBank, shuffled
+from kobito.questions import DYNAMIC_SHARE, QuestionBank, shuffled
 from kobito.quiz_screen import QuizScreen
 from kobito.settings_screen import PAGE_ITEMS, PAGE_MENU, RESULT_QUIT, SettingsScreen
 from kobito.sky_background import SkyBackground
@@ -496,7 +496,7 @@ class Game:
             "underground": {str(i): w.objects_state() for i, w in self.underground_worlds.items()},
             "sky_found": sorted(self.sky_found),
             "sky": {str(i): w.objects_state() for i, w in self.sky_worlds.items()},
-            "quiz_log": [{"id": e["question"]["id"], "result": e["result"],
+            "quiz_log": [{"id": e["question"]["id"], "result": e["result"], "variant": e["question"].get("variant"),
                           "chosen": None if e["chosen"] is None else e["question"]["choices"][e["chosen"]]}
                          for e in self.quiz_log.values()],
             "level_items": list(self.level_items),
@@ -538,9 +538,8 @@ class Game:
         self.invulnerable_timer = WAKE_INVULNERABILITY_SECONDS
 
     def _restore_quiz_log(self, rows):
-        by_id = {q["id"]: q for q in self.question_bank.questions}
         for row in rows:
-            question = by_id.get(row.get("id"))
+            question = self.question_bank.get(row.get("id"), row.get("variant"))
             if question is None or row.get("result") not in ("right", "wrong", "skipped"):
                 continue
             chosen = row.get("chosen")
@@ -1097,6 +1096,14 @@ class Game:
     def _next_question(self):
         bank = self.question_bank
         if self.tutor is not None:
+            # Questions made up on the spot join the tutor's choices: some of the time it picks
+            # among those (the ones due for review included), so there's always something new.
+            if self.rng.random() < DYNAMIC_SHARE:
+                made_up = bank.fresh(self.tutor.estimated_level(), self.rng, 8, self.asked_ids)
+                made_up += [q for qid in self.tutor.reviews if str(qid).startswith("dyn_")
+                            for q in [bank.get(qid)] if q is not None and qid not in self.asked_ids]
+                if made_up:
+                    return self.tutor.pick(made_up, exclude=self.asked_ids, avoid_categories=self.recent_categories)
             return self.tutor.pick(bank.questions, exclude=self.asked_ids, avoid_categories=self.recent_categories)
         jlpt = self.rng.choice(JLPT_LEVELS) if self.difficulty_mode == MODE_RANDOM else self.jlpt_level
         return bank.pick(jlpt, exclude=self.asked_ids, history=self.question_history,
@@ -1116,7 +1123,7 @@ class Game:
         # A box that was skipped earlier asks the same question again.
         # Choices are shuffled every time a question is asked, so the right
         # answer isn't always in the same slot.
-        question = block.pending_question or shuffled(self._next_question(), self.rng)
+        question = block.pending_question or shuffled(self.question_bank.prepare(self._next_question(), self.rng), self.rng)
         block.pending_question = None
         self.asked_ids.add(question["id"])
         self._remember_question(question)

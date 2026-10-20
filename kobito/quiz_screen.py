@@ -39,6 +39,10 @@ CATEGORY_ACCENTS = {
     "expression": (250, 190, 70),
     "loanword": (60, 205, 200),
     "reading": (245, 130, 190),
+    "numbers": (255, 160, 90),
+    "counter": (150, 210, 90),
+    "particle": (120, 190, 255),
+    "sentence": (230, 150, 230),
 }
 HEADER_BAND = 24
 CORRECT_COLOR = (140, 220, 140)

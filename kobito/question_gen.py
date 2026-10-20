@@ -52,8 +52,12 @@ _O_ROW = set("おこごそぞとどのほぼぽもよろ")
 _GEMINATE_BEFORE = set("かきくけこさしすせそたちつてとぱぴぷぺぽ")
 
 
-def _rng(qid):
-    return random.Random(zlib.crc32(qid.encode("utf-8")))
+def _rng(qid, variant=None):
+    """The question's own random generator: the same every run, unless a `variant`
+    asks for a different roll (new wrong choices, a new wording) of the same question."""
+    if variant is None:
+        return random.Random(zlib.crc32(qid.encode("utf-8")))
+    return random.Random(f"{qid}#{variant}")
 
 
 def _question(qid, category, jlpt, prompt, choices, answer, explanation, hint, rng):
@@ -70,10 +74,10 @@ def _label(word):
     return f"{word[0]} ({kana_to_romaji(word[1])})"
 
 
-def _meaning_question(word, group, jlpt):
+def _meaning_question(word, group, jlpt, variant=None):
     jp, kana, meaning, pos = word
     qid = f"gen_meaning_{jlpt.lower()}_{jp}"
-    rng = _rng(qid)
+    rng = _rng(qid, variant)
     others = [w[2] for w in group if w[2] != meaning]
     choices = [meaning] + rng.sample(others, 3)
     prompt = rng.choice(MEANING_PROMPTS).format(jp=jp, romaji=kana_to_romaji(kana))
@@ -82,10 +86,10 @@ def _meaning_question(word, group, jlpt):
     return _question(qid, "vocabulary", jlpt, prompt, choices, meaning, explanation, hint, rng)
 
 
-def _reverse_question(word, group, jlpt):
+def _reverse_question(word, group, jlpt, variant=None):
     jp, kana, meaning, pos = word
     qid = f"gen_reverse_{jlpt.lower()}_{jp}"
-    rng = _rng(qid)
+    rng = _rng(qid, variant)
     others = [_label(w) for w in group if w[0] != jp]
     answer = _label(word)
     choices = [answer] + rng.sample(others, 3)
@@ -126,10 +130,10 @@ def near_misses(kana):
     return sorted(w for w in out if w and w[0] not in "っんゃゅょ")
 
 
-def _reading_question(word, group, jlpt):
+def _reading_question(word, group, jlpt, variant=None):
     jp, kana, meaning, pos = word
     qid = f"gen_reading_{jlpt.lower()}_{jp}"
-    rng = _rng(qid)
+    rng = _rng(qid, variant)
     readings = {w[1] for w in group}
     wrong = [w for w in near_misses(kana) if w not in readings]
     rng.shuffle(wrong)
@@ -217,10 +221,10 @@ FORM_HINTS = {
 }
 
 
-def _verb_question(verb_entry, form, jlpt):
+def _verb_question(verb_entry, form, jlpt, variant=None):
     verb, kana, meaning, kind = verb_entry
     qid = f"gen_verb_{jlpt.lower()}_{verb}_{form}"
-    rng = _rng(qid)
+    rng = _rng(qid, variant)
     answer = conjugate(verb, kind, form)
     traps = [m for m in dict.fromkeys(mistakes(verb, kind, form)) if m != answer]
     rng.shuffle(traps)
@@ -234,6 +238,53 @@ def _verb_question(verb_entry, form, jlpt):
     group = {"ru": "a ru-verb", "u": "an u-verb", "irr": "irregular"}[kind]
     hint = f"{verb} is {group}. {FORM_HINTS[form]}"
     return _question(qid, "verb_conjugation", jlpt, prompt, choices, answer, explanation, hint, rng)
+
+
+# -- A fresh roll of a question ----------------------------------------------------
+
+_index = {}
+
+
+def _lookup():
+    """(level, kind, key) -> the builder inputs, for every generated question."""
+    if not _index:
+        for jlpt, words in WORDS.items():
+            by_pos = {}
+            for w in words:
+                by_pos.setdefault(w[3], []).append(w)
+            for w in words:
+                group = by_pos[w[3]] if len(by_pos[w[3]]) >= 4 else words
+                _index[(jlpt, "meaning", w[0])] = (w, group)
+                _index[(jlpt, "reverse", w[0])] = (w, group)
+                _index[(jlpt, "reading", w[0])] = (w, words)
+        for jlpt, verbs in VERBS.items():
+            for v in verbs:
+                _index[(jlpt, "verb", v[0])] = (v, None)
+    return _index
+
+
+def reroll(question, variant):
+    """The same question with different wrong choices and (where there are several) a
+    different wording, so remembering the options teaches nothing -- `variant` is any
+    number; the same one always gives the same roll. Hand-written questions come back as they are."""
+    qid = question.get("id", "")
+    if not question.get("generated") or question.get("dynamic") or not qid.startswith("gen_"):
+        return question
+    try:
+        _, kind, level, rest = qid.split("_", 3)
+        level = level.upper()
+        if kind == "verb":
+            verb, form = rest.rsplit("_", 1)
+            entry = _lookup()[(level, "verb", verb)][0]
+            fresh = _verb_question(entry, form, level, variant)
+        else:
+            word, group = _lookup()[(level, kind, rest)]
+            builder = {"meaning": _meaning_question, "reverse": _reverse_question, "reading": _reading_question}[kind]
+            fresh = builder(word, group, level, variant)
+    except (KeyError, ValueError):
+        return question
+    fresh["variant"] = variant
+    return fresh
 
 
 # -- The whole set ------------------------------------------------------------------
