@@ -54,7 +54,7 @@ from kobito import save_game, ui
 from kobito.hint_service import HintService
 from kobito.item_art import get_icon
 from kobito.item_coach import ItemCoach
-from kobito.items import BIG_DRINKS, ITEMS, SMALL_SNACKS, get_item, roll_gift
+from kobito.items import BIG_DRINKS, ITEMS, ROLES, SMALL_SNACKS, benefits, get_item, roll_gift
 from kobito.levels.level1 import build_level1
 from kobito.levels import sky as sky_levels
 from kobito.levels import underground as underground_levels
@@ -103,6 +103,7 @@ BOOST_SPEED_SCALE = 1.25
 SPEECH_BOX = pygame.Rect(196 if IS_WEB else 10, SCREEN_HEIGHT - 60, 420, 56)
 SPEECH_FONT_SIZES = (19, 17, 15)   # largest that fits in two lines wins
 
+MAX_GUARD = 5              # STRENGTH items stack up to this many blocked hits
 STAGE_TUNES = 3            # each world's music comes in this many versions, one per stage
 FADE_SECONDS = 0.35        # each half of a room change / respawn fade
 BANNER_SECONDS = 3.0       # "SECRET AREA!" title when entering one
@@ -444,7 +445,10 @@ class Game:
             self._gain_sun_power(where)
         if "eiyo_drink" in boosts:
             self.boost_timer = EIYO_BOOST_SECONDS
-            self._add_effect_text("BOOST!", (where[0], where[1] - 24), (170, 255, 190))
+            self._add_effect_text("SPEED!", (where[0], where[1] - 24), (170, 255, 190))
+        if "protein_bar" in boosts:
+            self.guard_left = min(MAX_GUARD, self.guard_left + 2)
+            self._add_effect_text("GUARD ×2", (where[0], where[1] - 48), (255, 190, 130))
 
     def _lesson_log(self):
         """What the pause menu's lesson log shows: this level's questions so
@@ -979,8 +983,9 @@ class Game:
                 progress.record(self.profile, "coins")
 
     def _collect_item(self, item, where, from_gift=False):
-        """Applies one item: score, power, life, speed boost -- then has the
-        companion react and teach the word."""
+        """Applies one item -- score, power, and its role: SKILL (study EXP),
+        STRENGTH (guard against hits), SPEED, LIFE, LUCKY (円) or SUN (see
+        kobito/items.py) -- then has the companion react and teach the word."""
         was_sleepy = self.drowsy
         self.item_box[item.id] = self.item_box.get(item.id, 0) + 1
         self.level_items.append(item.id)
@@ -995,7 +1000,13 @@ class Game:
         if item.life:
             self.lives = min(MAX_LIVES, self.lives + item.life)
         if item.boost_seconds:
-            self.boost_timer = item.boost_seconds
+            self.boost_timer = max(self.boost_timer, item.boost_seconds)
+        if item.guard:
+            self.guard_left = min(MAX_GUARD, self.guard_left + item.guard)
+        if item.yen:
+            self.profile.add_yen(item.yen)
+        if item.exp:
+            self._gain_exp(item.exp)
 
         if item.group == "favorite":
             situation, color = "favorite", (255, 170, 210)
@@ -1009,10 +1020,13 @@ class Game:
         if item.group == "konbini":
             self.snacks_eaten += 1
 
-        label = item.name + (f"  +{gained} Power" if gained else "")
-        if item.life:
-            label += "  +1 Life"
-        self._add_effect_text(label, where, color)
+        self._add_effect_text(item.name, where, color)
+        # What it did for you, in the colour of its role, just under the name.
+        tags = [t for t in benefits(item) if not t.endswith("POWER") or t == "SUN POWER"]
+        if gained:
+            tags.insert(0, f"+{gained} POWER")
+        if tags:
+            self._add_effect_text("  ".join(tags), (where[0], where[1] + 22), ROLES[item.role][1])
         if from_gift:
             self._add_effect_icon(item.id, where)
         audio.play("powerup" if item.group == "power" else "item")
@@ -1298,10 +1312,11 @@ class Game:
             return
 
         if self.guard_left:
-            # The kabuto takes this one: no power or XP lost.
+            # A guard (the kabuto, or a STRENGTH item) takes this one: no power
+            # or XP lost.
             self.guard_left -= 1
             audio.play("block")
-            self._add_effect_text("兜 blocked it!", (self.player.rect.centerx, self.player.rect.top), (170, 200, 255))
+            self._add_effect_text("GUARD! Blocked it", (self.player.rect.centerx, self.player.rect.top), (255, 190, 130))
         else:
             self._take_hit()
         self.invulnerable_timer = INVULNERABILITY_SECONDS
@@ -1761,7 +1776,9 @@ class Game:
         if self.drowsy:
             tags.append(("SLEEPY... FIND A SNACK!", (120, 30, 44, 220), (255, 190, 190)))
         elif self.boost_timer > 0:
-            tags.append((f"BOOST  {math.ceil(self.boost_timer)}s", (24, 70, 44, 220), (170, 255, 190)))
+            tags.append((f"SPEED  {math.ceil(self.boost_timer)}s", (24, 70, 44, 220), (170, 255, 190)))
+        if self.guard_left:
+            tags.append((f"GUARD ×{self.guard_left}", (80, 44, 20, 220), (255, 190, 130)))
         for i, (words, bg, color) in enumerate(tags):
             width = label.size(words)[0] + 24
             pill = ui.panel(self.screen, (card.x, card.bottom + 6 + i * 30, width, 26), bg=bg, edge=(*color, 160),

@@ -333,10 +333,55 @@ def _sunflower(s):
         pygame.draw.circle(s, (90, 50, 24), (x, y), 1)
 
 
+def _protein_bar(s):
+    # a chunky bar in a foil wrapper, torn open at one end
+    _rr(s, (60, 70, 150), (2, 8, 22, 11), 2)
+    pygame.draw.rect(s, (150, 96, 60), (17, 9, 6, 9))                # the bar peeking out
+    pygame.draw.line(s, (110, 66, 40), (19, 10), (19, 16), 1)
+    pygame.draw.line(s, INK, (17, 8), (17, 18), 2)
+    pygame.draw.rect(s, (255, 170, 60), (4, 11, 11, 5))              # label band
+    pygame.draw.circle(s, INK, (9, 13), 3)                           # a little flexed-arm mark
+    pygame.draw.circle(s, WHITE, (9, 13), 2)
+
+
+def _elixir(s):
+    # a round potion flask, glowing violet, with a cork
+    pygame.draw.rect(s, (190, 150, 100), (10, 1, 6, 5))
+    pygame.draw.rect(s, INK, (10, 1, 6, 5), width=1)
+    pygame.draw.rect(s, (200, 220, 236), (10, 5, 6, 5))
+    pygame.draw.rect(s, INK, (10, 5, 6, 5), width=1)
+    pygame.draw.circle(s, INK, (13, 17), 9)
+    pygame.draw.circle(s, (200, 220, 236), (13, 17), 8)
+    pygame.draw.circle(s, (170, 90, 230), (13, 18), 7)
+    pygame.draw.circle(s, (220, 170, 255), (11, 16), 3)
+    pygame.draw.circle(s, WHITE, (10, 14), 1)
+    for x, y in ((3, 6), (23, 9), (22, 3)):
+        pygame.draw.polygon(s, (255, 236, 150), [(x, y - 2), (x + 1, y), (x, y + 2), (x - 1, y)])
+
+
+def _maneki_neko(s):
+    # the beckoning cat: white, one paw up, red collar and a gold coin
+    pygame.draw.ellipse(s, INK, (4, 10, 18, 15))
+    pygame.draw.ellipse(s, WHITE, (5, 11, 16, 13))                   # body
+    pygame.draw.circle(s, INK, (13, 9), 7)
+    pygame.draw.circle(s, WHITE, (13, 9), 6)                         # head
+    for ear in ([(7, 6), (8, 1), (11, 4)], [(19, 6), (18, 1), (15, 4)]):
+        pygame.draw.polygon(s, WHITE, ear)
+        pygame.draw.polygon(s, INK, ear, width=1)
+    pygame.draw.ellipse(s, INK, (19, 1, 6, 9))                       # raised paw
+    pygame.draw.ellipse(s, WHITE, (20, 2, 4, 7))
+    pygame.draw.circle(s, INK, (11, 9), 1)
+    pygame.draw.circle(s, INK, (15, 9), 1)
+    pygame.draw.line(s, (220, 50, 60), (8, 14), (18, 14), 2)         # collar
+    pygame.draw.circle(s, INK, (13, 19), 4)
+    pygame.draw.circle(s, (250, 210, 70), (13, 19), 3)               # koban coin
+
+
 DRAWERS = {
     "energy_drink": _energy_drink, "mega_can": _mega_can, "ume_soda": _ume_soda, "candy": _candy,
     "onigiri": _onigiri, "gummy": _gummy, "dried_ume": _dried_ume, "nuts": _nuts, "canned_coffee": _canned_coffee, "melon_pan": _melon_pan, "green_tea": _green_tea,
-    "lucky_bag": _lucky_bag, "golden_can": _golden_can,
+    "protein_bar": _protein_bar,
+    "lucky_bag": _lucky_bag, "golden_can": _golden_can, "elixir": _elixir, "maneki_neko": _maneki_neko,
     "sunflower": _sunflower,
     "ekiben": _ekiben, "pizza_bun": _pizza_bun, "gem": _gem,
     "kaminari_okoshi": _kaminari_okoshi, "wataame": _wataame, "tsukimi_dango": _tsukimi_dango,

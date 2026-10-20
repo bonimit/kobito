@@ -30,7 +30,7 @@ from kobito import input as game_input
 from kobito import ui
 from kobito.constants import FPS, IS_WEB, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.item_art import get_icon
-from kobito.items import get_item
+from kobito.items import ROLES, benefits, get_item
 from kobito.stage_end_screens import ReviewScreen
 
 RESULT_RESUME = "resume"
@@ -383,7 +383,15 @@ class SettingsScreen:
         while name_font.size(name)[0] > card.right - tx - 44 and len(name) > 4:
             name = name[:-2] + "…"
         ui.text(self.screen, name, name_font, (tx, card.y + 9), thickness=1)
-        ui.text(self.screen, item.jp, ui.body_font(16), (tx, card.y + 31), color=accent, thickness=1)
-        ui.text(self.screen, item.reading, ui.label_font(16), (tx, card.y + 52), color=ui.MUTED, thickness=1)
+        jp = ui.text(self.screen, item.jp, ui.body_font(16), (tx, card.y + 31), color=accent, thickness=1)
+        reading = ui.label_font(16)
+        if jp.right + 8 + reading.size(item.reading)[0] <= card.right - 8:
+            ui.text(self.screen, item.reading, reading, (jp.right + 8, card.y + 33), color=ui.MUTED, thickness=1)
+        # What it does for you, in its role's colour.
+        tags, font = benefits(item), ui.label_font(16)
+        while len(tags) > 1 and font.size("  ".join(tags))[0] > card.right - tx - 8:
+            plain = [t for t in tags if t.startswith("+") and t.endswith(" POWER")]
+            tags.remove(plain[0] if plain else tags[-1])   # the plain power refill goes first
+        ui.text(self.screen, "  ".join(tags), font, (tx, card.y + 54), color=ROLES[item.role][1], thickness=1)
         ui.text(self.screen, f"×{count}", ui.title_font(16) if count < 100 else ui.label_font(16),
                 (card.right - 10, card.y + 10), color=ui.GOLD, anchor="topright")

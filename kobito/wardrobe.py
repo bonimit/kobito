@@ -82,7 +82,7 @@ class Product:
     exp: int = 0         # study EXP (study books)
 
 
-BOOSTS = {"omamori", "sun_seeds", "eiyo_drink"}
+BOOSTS = {"omamori", "sun_seeds", "eiyo_drink", "protein_bar"}
 
 PRODUCTS = [
     Product("notebook", "Notebook", "ノート", "nōto", "study", 200, "+60 study EXP", exp=60),
@@ -98,6 +98,8 @@ PRODUCTS = [
             "Next stage: start with sun power"),
     Product("eiyo_drink", "Energy drink", "栄養ドリンク", "eiyō dorinku", "boost", 250,
             "Next stage: 15 s speed boost"),
+    Product("protein_bar", "Protein bar", "プロテインバー", "purotein bā", "boost", 350,
+            "Next stage: GUARD ×2 -- two enemy hits bounce off"),
 ]
 PRODUCT_BY_ID = {p.id: p for p in PRODUCTS}
 

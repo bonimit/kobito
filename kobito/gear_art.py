@@ -17,7 +17,7 @@ import math
 
 import pygame
 
-from kobito import wardrobe
+from kobito import item_art, wardrobe
 
 PAD_X = 20      # extra room either side of a dressed frame (capes, wings, poles)
 PAD_TOP = 26    # ...and above it (hats, koinobori)
@@ -347,6 +347,8 @@ def product_icon(product_id, size):
     """A konbini product: its gear icon, or a drawn study book / boost."""
     if product_id in wardrobe.GEAR:
         return gear_icon(product_id, size)
+    if product_id not in PRODUCT_ART:
+        return item_art.get_icon(product_id, size)   # a konbini item sold as is
     key = ("product", product_id, size)
     if key in _cache:
         return _cache[key]

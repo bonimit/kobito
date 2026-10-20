@@ -586,27 +586,37 @@ glance — **sky blue** for konbini snacks, **pink** for your favourites,
 and spin. Gift boxes have a dark outline and a shine.
 
 All items are data in `kobito/items.py` (icons are drawn in code in
-`kobito/item_art.py`). They're picked up on touch, add to your score and
-XP, and show up in three families:
+`kobito/item_art.py`). They're picked up on touch and add to your score and
+XP — and **every item has a role**, a job it does for you. When you grab
+one, its name pops up with what it did underneath, in the role's colour
+(e.g. `+2 POWER  +20 SKILL`), and the **Item Box** card for each item lists
+its benefits too.
 
-- **Konbini snacks — refill power.** Things you'd grab at a Japanese
-  convenience store: Genki Can (energy drink, +4), Mega Can (+5), Kan
-  Coffee (+3), Ume Soda (+3, a nod to the Ume-shu companion), Onigiri (+2),
-  Melon Pan (+2), Ocha (+2), Gummy (+2), Dried Ume (+2, the sour dried-plum
-  snack), Nuts (+3), Candy (+1). The energy drinks are generic,
-  not real brands.
+| Role | What it does | Items |
+| --- | --- | --- |
+| **POWER** (green) | refills the power gauge — wakes a sleepy player | Genki Can (+4, and a 4 s dash), Ume Soda (+3), Melon Pan (+3) |
+| **SKILL** (blue) | study EXP → raises your **ability level** (Lv) | **エリクサー Elixir** (+150, full power — rare), Ocha (+20), Kan Coffee (+15), Candy (+10), Dried Ume (+10), 綿あめ cotton candy (+60), every **favourite** (+25) |
+| **STRENGTH** (orange) | **GUARD** — the next enemy hit bounces off you, no power or XP lost (stacks up to ×5; shown as a GUARD ×n tag under the HUD) | プロテインバー Protein Bar (×2), Onigiri (×1), Nuts (×1), Mega Can (×1), 駅弁 ekiben (×2, full power) |
+| **SPEED** (teal) | a burst of running speed | Golden Can (8 s, full power), Gummy (3 s), ピザまん pizza bun (6 s), 雷おこし kaminari okoshi (8 s + guard) |
+| **LIFE** (pink) | +1 life | 月見団子 tsukimi dango (full power), shiitake, plus Lucky Bag and gem |
+| **LUCKY** (gold) | 円 to spend at the konbini | 招き猫 Maneki Neko (+300円 — rare), 福袋 Lucky Bag (+200円, +1 life, full power), 宝石 gem (+300円, +1 life) |
+| **SUN** | sun power: throw sunballs, enemies can't hurt you | ひまわり sunflower |
+
+Where they come from:
+
+- **Konbini snacks** — scattered through every level: things you'd grab at
+  a Japanese convenience store. The energy drinks are generic, not real
+  brands.
 - **Favorites — each mascot's own favourite things**, two per character
   (Capybara: yuzu, watermelon · Sloth: leaf, hibiscus · Kitsune: inari
   sushi, aburaage · Wombat: sweet potato, grass · Otter: clam, fish ·
-  Scottish Fold: tuna, milk · Frenchie: bone, sausage). Scattered through
-  every level (the HUD shows yours); each is worth +25 and +1 power.
-- **Rare finds — mostly from gift boxes.** Golden Can (full power plus an
-  8-second speed boost) and Lucky Bag / fukubukuro (full power and an extra
-  life).
-- **Treasures — only in the hidden underground stages** (see below), one
-  per stage: 駅弁 ekiben in the subway (full power), ピザまん pizza bun in the
-  sewer (power and a speed boost), 宝石 gem in the mine (big score and an
-  extra life). They glow so you can't miss them.
+  Scottish Fold: tuna, milk · Frenchie: bone, sausage). Your favourite
+  thing motivates you: +25 SKILL.
+- **Rare finds — from gift boxes:** Golden Can, Lucky Bag, Elixir, Maneki Neko.
+- **Treasures — one in each hidden stage** (see below): 駅弁 ekiben (subway),
+  ピザまん pizza bun (sewer), 宝石 gem (mine), 綿あめ cotton candy (rainbow),
+  雷おこし kaminari okoshi (thunder), 月見団子 tsukimi dango (moon). They glow so
+  you can't miss them.
 
 Plus coins and shiitake (an extra life), as before. Every item also has its
 Japanese word, reading, meaning and an example sentence — the companion
@@ -998,7 +1008,7 @@ down one street with three stops — ←/→ to walk, Enter / A to go in:
   | --- | --- |
   | Study べんきょう — raise your Lv | ノート notebook 200円 (+60 EXP) · 単語カード flashcards 350円 (+110) · 漢字ドリル kanji drill 600円 (+200) · 参考書 study guide 1,500円 (+550) |
   | Gear どうぐ | プロペラ帽子 propeller cap 1,500円 · 風呂敷 furoshiki 400円 · 太鼓 taiko drum 900円 |
-  | Next stage つぎのステージ — used up at the start of the next stage | お守り omamori 400円 (+1 life) · ひまわりの種 sunflower seeds 500円 (start with sun power) · 栄養ドリンク energy drink 250円 (15 s speed boost) |
+  | Next stage つぎのステージ — used up at the start of the next stage | お守り omamori 400円 (+1 life) · ひまわりの種 sunflower seeds 500円 (start with sun power) · 栄養ドリンク energy drink 250円 (15 s speed boost) · プロテインバー protein bar 350円 (GUARD ×2) |
 
 - **Next stage (つぎへ)** — the signpost onward.
 
