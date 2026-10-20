@@ -1,28 +1,26 @@
-"""The AI hint companion's brain: asks Claude for a short, encouraging
-nudge -- after a missed question, or when the player has been thinking
-about a question for a while -- without spelling out the answer. Falls
-back to a canned, category-based hint (no network needed) whenever no
-API credentials are configured or the request fails for any reason, so
-a hint is always available -- the game must never hang or crash on a
+"""The AI hint companion's brain: asks an AI -- Claude, Gemini or ChatGPT,
+directly with the player's own key or through a Kobito AI proxy
+(kobito/ai_client.py) -- for a short, encouraging nudge, after a missed
+question or when the player has been thinking about one for a while, without
+spelling out the answer. Falls back to the question's own authored hint (no
+network needed) whenever no AI is set up or the request fails for any reason,
+so a hint is always available -- the game must never hang or crash on a
 network hiccup during a quiz.
+
+Requests never block: start_hint() / start_nudge() / start() return an
+AIRequest straight away and the answer arrives while the game keeps drawing.
 
 The prompt is flavored with whichever companion the player picked (see
 kobito/companions.py) so Ushi, Hana, Ume-shu, Kinoko and Kobito each
 come back sounding like themselves, not interchangeable narrators.
 """
 
+from kobito import ai_client
 from kobito.companions import get_companion
 
-MODEL = "claude-opus-5-5"
-# The hint itself is a sentence or two, but thinking is always on for this
-# model and counts toward max_tokens -- leave room so the text isn't cut.
+# The hint itself is a sentence or two; leave room for models that think first.
 MAX_HINT_TOKENS = 1024
-# A hint is a quick, light task: low effort keeps it fast.
-HINT_EFFORT = "low"
-REQUEST_TIMEOUT_SECONDS = 8.0
-# If the model declines a request for policy reasons, let the API retry it
-# on its default fallback model instead of returning nothing.
-FALLBACK_BETA = "server-side-fallback-2026-07-01"
+HINT_WAIT_SECONDS = 6.0     # the quiz waits this long for a hint after a wrong answer
 
 FALLBACK_HINTS = {
     "vocabulary": "Try sounding the word out loud -- does its reading remind you of a word you already know?",
@@ -36,72 +34,58 @@ FALLBACK_HINTS = {
 DEFAULT_FALLBACK_HINT = "Take another look at the sentence's structure -- you're closer than you think!"
 
 
+_DEFAULT = object()
+
+
 class HintService:
-    """Call get_hint(question) any time after a wrong answer. Safe to
-    construct even with no API key configured -- it just always falls
-    back to a local hint in that case.
-    """
+    """Safe to construct with nothing configured: every start_* returns None
+    and get_hint() gives the local hint."""
 
-    def __init__(self, companion_id="kobito", model=MODEL):
+    def __init__(self, companion_id="kobito", client=_DEFAULT):
         self.companion = get_companion(companion_id)
-        self.model = model
-        self._client = self._build_client()
+        self._client = ai_client.default_client() if client is _DEFAULT else client
 
-    def _build_client(self):
-        try:
-            import anthropic
-        except ImportError:
+    @property
+    def available(self):
+        return self._client is not None
+
+    @property
+    def label(self):
+        """CLAUDE / GEMINI / CHATGPT / ONLINE (a proxy), or "" with no AI."""
+        return getattr(self._client, "label", "") if self._client is not None else ""
+
+    def start(self, prompt, max_tokens=MAX_HINT_TOKENS):
+        """Sends `prompt`; returns an AIRequest (poll .done / .text), or None with no AI."""
+        if self._client is None:
             return None
-
-        try:
-            return anthropic.Anthropic(timeout=REQUEST_TIMEOUT_SECONDS)
-        except Exception:
-            # No credentials configured (no ANTHROPIC_API_KEY, no `ant
-            # auth login` profile, ...) -- fine, get_hint() just falls
-            # back to a local hint below.
-            return None
-
-    def get_hint(self, question, chosen_index=None):
-        if self._client is not None:
-            hint = self._ask_claude(question, chosen_index)
-            if hint:
-                return hint
-        return self._fallback_hint(question)
+        return self._client.start(prompt, max_tokens)
 
     def complete(self, prompt, max_tokens=MAX_HINT_TOKENS):
-        """One short Claude reply to `prompt`, or None if there's no client,
-        the request fails, or the model declines. Never raises -- callers
-        always have a local line to fall back on."""
-        if self._client is None:
-            return None
-        try:
-            response = self._client.beta.messages.create(
-                model=self.model,
-                max_tokens=max_tokens,
-                output_config={"effort": HINT_EFFORT},
-                betas=[FALLBACK_BETA],
-                fallbacks="default",
-                messages=[{"role": "user", "content": prompt}],
-            )
-        except Exception:
-            # Any failure (no network, invalid/expired key, rate limit,
-            # timeout, ...) -- fall back rather than let a quiz hang or
-            # crash on something outside the player's control.
-            return None
-        if response.stop_reason == "refusal":
-            return None
-        for block in response.content:
-            if block.type == "text" and block.text.strip():
-                return block.text.strip()
-        return None
+        """Blocking version (desktop scripts and tests): the answer or None."""
+        request = self.start(prompt, max_tokens)
+        return request.wait() if request is not None else None
+
+    def start_hint(self, question, chosen_index=None):
+        return self.start(self.hint_prompt(question, chosen_index))
+
+    def start_nudge(self, question):
+        return self.start(self.nudge_prompt(question))
+
+    def get_hint(self, question, chosen_index=None):
+        hint = self.complete(self.hint_prompt(question, chosen_index)) if self._client is not None else None
+        return hint or self.fallback_hint(question)
 
     def get_nudge(self, question):
-        """A hint for a player who has been looking at a question for a
-        while without answering: points at the useful clue, never at the
-        answer. Returns None when Claude isn't available -- the quiz then
-        shows the question's own authored hint."""
+        """A hint for a player who has been looking at a question for a while
+        without answering. None when no AI is set up -- the quiz then shows the
+        question's own authored hint."""
         if self._client is None:
             return None
+        return self.complete(self.nudge_prompt(question))
+
+    def nudge_prompt(self, question):
+        """For a player who has been looking at a question for a while without
+        answering: point at the useful clue, never at the answer."""
         correct_choice = question["choices"][question["answer"]]
         lines = [
             "A student learning Japanese has been looking at this quiz question for a while",
@@ -130,9 +114,9 @@ class HintService:
             "  'Looks like you're stuck' or 'Great question' -- the game already shows",
             "  that you're speaking up.",
         ]
-        return self.complete("\n".join(lines))
+        return "\n".join(lines)
 
-    def _ask_claude(self, question, chosen_index=None):
+    def hint_prompt(self, question, chosen_index=None):
         # The model is given the ground truth (correct choice, the
         # official explanation, and the author's own hint) rather than
         # left to work the answer out from the prompt alone. Without it
@@ -171,9 +155,9 @@ class HintService:
             "  (e.g. 'Ooh, so close!') and the right answer right above your hint, so",
             "  no filler openers like 'Hmm', 'Oops', 'Not quite' or 'Don't worry'.",
         ]
-        return self.complete("\n".join(lines))
+        return "\n".join(lines)
 
-    def _fallback_hint(self, question):
+    def fallback_hint(self, question):
         # Every question in the bank ships with a hint written for that
         # exact question, so offline play gets a genuinely useful nudge
         # rather than the generic per-category line. The category and

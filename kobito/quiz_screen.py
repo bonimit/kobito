@@ -1,7 +1,6 @@
 import asyncio
 import random
 import re
-import threading
 
 import pygame
 
@@ -12,7 +11,7 @@ from kobito import ui
 from kobito.constants import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from kobito.fonts import get_font
 from kobito.companion_art import draw_companion
-from kobito.hint_service import HintService
+from kobito.hint_service import HINT_WAIT_SECONDS, HintService
 
 # Matches a parenthetical translation trailing the whole string, e.g.
 # "図書館で本を読みます。 (I read books at the library.)" -- but not a
@@ -283,33 +282,25 @@ class QuizScreen:
         self._age = 0.0           # seconds since the box opened
         self.prompted_at = None   # when the companion spoke up (seconds since opening)
         self._nudge_requested = False
-        self._claude_nudge = None  # filled in by a background thread, if Claude answers
+        self._nudge_request = None  # the AI's answer, arriving in the background
 
     @property
     def prompted(self):
         return self.prompted_at is not None
 
     def _request_nudge(self):
-        """Asks Claude for a hint on a background thread, so the quiz never
-        waits on the network. No client, or no threads (the browser build),
-        simply means the authored hint is used."""
+        """Asks the AI for a hint in the background, so the quiz never waits on
+        the network. No AI set up simply means the authored hint is used."""
         self._nudge_requested = True
         service = self.hint_service
-        if getattr(service, "_client", None) is None or not hasattr(service, "get_nudge"):
+        if not getattr(service, "available", False) or not hasattr(service, "start_nudge"):
             return
-
-        def work():
-            text = service.get_nudge(self.question)
-            if text:
-                self._claude_nudge = text
-
-        try:
-            threading.Thread(target=work, daemon=True).start()
-        except Exception:
-            pass
+        self._nudge_request = service.start_nudge(self.question)
 
     def _nudge_text(self):
-        return (self._claude_nudge or self.question.get("hint")
+        request = self._nudge_request
+        ai = request.text if request is not None and request.done else None
+        return (ai or self.question.get("hint")
                 or "Read it once more, slowly -- the answer is in the details.")
 
     def move_cursor(self, step):
@@ -421,17 +412,33 @@ class QuizScreen:
                 if correct and reveal_timer >= RESULT_DISPLAY_SECONDS:
                     return True
                 if not correct and reveal_timer >= REVEAL_BEFORE_HINT_SECONDS:
-                    # Show a "thinking" frame *before* the (possibly slow,
-                    # blocking) network call, so the player sees the companion
-                    # start working rather than a frozen screen.
-                    self._draw(selected, phase, companion_state="thinking")
-                    hint_text = self.hint_service.get_hint(self.question, chosen_index=selected)
+                    # The companion "thinks" while the AI (if there is one)
+                    # writes the hint; the screen keeps drawing, never frozen.
+                    hint_text = await self._wait_for_hint(selected, phase)
                     self._open_hint()
                     phase = PHASE_HINT
 
             self._update_detail_panel(dt)
             self._draw(selected, phase, hint_text=hint_text)
             await asyncio.sleep(0)  # yields to the browser event loop; a no-op on desktop
+
+    async def _wait_for_hint(self, selected, phase):
+        service = self.hint_service
+        request = service.start_hint(self.question, selected) if getattr(service, "available", False) else None
+        waited = 0.0
+        while request is not None and not request.done and waited < HINT_WAIT_SECONDS:
+            waited += self.clock.tick(FPS) / 1000.0
+            for event in game_input.events():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    raise SystemExit
+            self._draw(selected, phase, companion_state="thinking")
+            await asyncio.sleep(0)
+        if request is not None and request.done and request.text:
+            return request.text
+        if request is None:
+            self._draw(selected, phase, companion_state="thinking")
+        return service.fallback_hint(self.question) if hasattr(service, "fallback_hint") else service.get_hint(self.question)
 
     def _update_detail_panel(self, dt):
         target = SCREEN_WIDTH - DETAIL_PANEL_WIDTH if self.show_details else SCREEN_WIDTH

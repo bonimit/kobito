@@ -23,15 +23,22 @@ pip install -r requirements.txt
 python main.py
 ```
 
-To let Kobito (see below) generate real AI hints instead of using its
-built-in fallback hints, set an API key before running:
+To let Kobito (see below) write real AI hints instead of using its
+built-in hints, set **any one** of these API keys before running — Claude,
+Gemini or ChatGPT (no extra install: it's plain HTTPS):
 
 ```
-export ANTHROPIC_API_KEY=your-key-here
+export ANTHROPIC_API_KEY=your-key-here     # Claude
+export GEMINI_API_KEY=your-key-here        # Google Gemini
+export OPENAI_API_KEY=your-key-here        # ChatGPT
 ```
 
-The game works fine without one — Kobito just falls back to a
-category-based canned hint instead of an AI-generated one.
+With more than one set, it tries Claude, then Gemini, then ChatGPT (or the
+one named in `KOBITO_AI_PROVIDER=gemini`), and moves to the next if one is
+down. The game works fine without any — hints then come from the built-in
+per-question hints. To give **everyone** AI hints (the web build too)
+without sharing a key, run the AI proxy: see
+[AI hints for everyone](#ai-hints-for-everyone-the-ai-proxy).
 
 ## Controls
 
@@ -145,10 +152,10 @@ The build only packs `main.py`, `kobito/` and `assets/` (about 21 MB,
 mostly the Japanese fonts) — not the docs' videos or the tools.
 
 A few things behave differently in the web build:
-- **AI hints** (`ANTHROPIC_API_KEY`) don't work in-browser — WASM can't
-  make the same kind of network call the desktop build does, so it
-  always uses Kobito's local fallback hints there. Gameplay is otherwise
-  identical.
+- **AI hints** can't use an API key in the browser (a key in a web page is
+  public), so by default the web build uses the built-in hints. Point it at
+  your **AI proxy** (below) and it gets live Claude / Gemini / ChatGPT hints
+  too: set the repository variable `AI_PROXY_URL`.
 - **Saves, players and trophies** live in that browser (localStorage) —
   each person's progress stays on their own device. The **leaderboard**
   shows the players of that browser; the world leaderboard server is a
@@ -171,9 +178,8 @@ This produces `dist/Kobito` (`dist/Kobito.exe` on Windows). PyInstaller
 bundles for whatever OS it runs *on* — it doesn't cross-compile — so
 build a Windows .exe on Windows, a macOS .app on a Mac, and a Linux
 binary on Linux; there's no way to produce all three from one machine.
-See `packaging/build_desktop.py` for why `anthropic` is excluded from
-the bundle (same local-hint fallback as the web build, for a different
-reason — a PyInstaller/`cryptography` build issue on some platforms).
+AI hints work in the packaged app the same way: set an API key (or
+`KOBITO_AI_URL`) in the environment before launching it.
 
 ## Question blocks
 
@@ -392,7 +398,7 @@ sound of the word you want, or the kanji to focus on.
 **After a wrong answer** the companion's bar grows into a **hint panel**,
 typed out line by line: its own reaction ("Ooh, so close!" for Hana,
 "Mushroom for improvement!" for Kinoko), the **✓ answer**, a **TIP** —
-Claude's hint for that exact question with an API key, otherwise the
+the AI's hint for that exact question with an API key or proxy, otherwise the
 question's own — and, with Ume-shu (Deep Insight), **WHY**: the full
 explanation. The question box stays put above it, and **Read more** (R, or
 Y on a gamepad) sits in the box's bottom row for the full write-up.
@@ -419,10 +425,10 @@ always stays clear of it. If you've been **thinking about a question for
 about 10 seconds** without answering (moving between choices doesn't
 reset this), the companion **speaks up**: its box flashes gold, a "!" pops
 over its portrait, and it offers a hint — a nudge toward the clue, never the
-answer. With an API key, Claude writes that hint for the exact question in
+answer. With an AI set up (Claude, Gemini or ChatGPT), it writes that hint for the exact question in
 your companion's voice; it's requested in the background a few seconds
 early so it's ready on time, and the question's own authored hint shows
-instantly whenever Claude isn't available (offline, no key, slow network).
+instantly whenever the AI isn't available (offline, no key, slow network).
 
 ### Setting up a new game
 
@@ -440,7 +446,8 @@ night-time Tokyo (`kobito/setup_ui.py`):
   speech bubble. Its card shows its name, personality and **ability**,
   what every companion does for you (explains wrong answers, nudges you
   when you're stuck ~10 s, teaches the word for each item you collect) and
-  whether hints are **LIVE AI HINTS · CLAUDE** (an API key is set up) or
+  whether hints are **LIVE AI HINTS · CLAUDE / GEMINI / CHATGPT** (an API key
+  is set up), **LIVE AI HINTS · ONLINE** (through an AI proxy) or
   **BUILT-IN HINTS**.
 
 Both have a roster strip of every choice along the bottom: browse with
@@ -493,7 +500,7 @@ companion, for any expression without art):
   in that companion's own voice, without spelling out the correct
   answer. Press Enter/Space to dismiss.
 
-If no API key is configured, or the request fails for any reason (no
+If no AI is configured, or the request fails for any reason (no
 network, rate limit, timeout, ...), your companion falls back to that
 question's own authored hint instead — a hint is always available, and
 a network hiccup never hangs or crashes the game. The question box
@@ -504,6 +511,54 @@ name, tagline, personality, placeholder color, and an ability —
 `xp_gain_multiplier`, `xp_penalty_multiplier`, `bonus_score`, and/or
 `always_show_explanation`) and dropping its five expression frames into
 `assets/sprites/<id>/` — nothing else changes.
+
+## AI hints for everyone: the AI proxy
+
+The game can write hints with **Claude, Gemini or ChatGPT**. On the desktop
+a player can set their own key (see Setup). For the **web build** — and for
+players who have no key — run the small **AI proxy**: it holds *your* keys,
+the game sends it a question and it answers. Keys never reach the game or
+the browser.
+
+```
+export ANTHROPIC_API_KEY=...      # any one is enough; set two or three for a backup
+export GEMINI_API_KEY=...
+export OPENAI_API_KEY=...
+export AI_ALLOWED_ORIGINS=https://bonimit.github.io,https://bonimit.itch.io
+python server/kobito_ai_proxy.py          # http://0.0.0.0:8788
+```
+
+`server/kobito_ai_proxy.py` is one file, standard library only. Run it on
+any host that runs Python (a small VPS, Render, Railway, Fly.io — set the
+keys as the host's environment variables; it reads `PORT`). Behind the
+host's HTTPS address, also set `AI_TRUST_PROXY=1` so rate limits count each
+player separately. Then connect the game:
+
+- **Web build (GitHub Pages and itch.io):** in the repository, *Settings →
+  Secrets and variables → Actions → Variables → New repository variable*
+  `AI_PROXY_URL` = `https://your-proxy.example.com`. The next push writes it
+  into the build (`assets/ai.json`).
+- **Desktop:** `KOBITO_AI_URL=https://your-proxy.example.com python main.py`.
+
+The companion screen then says **LIVE AI HINTS · ONLINE**. If the proxy is
+down, slow or over its limit, the quiz quietly uses the built-in hint — the
+game never waits on it: requests run in the background (a thread on the
+desktop, an `asyncio` task and the browser's `fetch` on the web).
+
+Keeping it safe and cheap: every question is wrapped in an instruction to
+stay inside the game (a hint helper, not a general chatbot), prompts and
+answers are length-capped, each player address gets `AI_RATE_PER_MIN`
+requests a minute (default 20), and `AI_DAILY_LIMIT` (default 3000) caps the
+total per day. `AI_ALLOWED_ORIGINS` lists the sites allowed to call it.
+Other settings: `KOBITO_AI_PROVIDER` (which service first),
+`KOBITO_CLAUDE_MODEL` / `KOBITO_GEMINI_MODEL` / `KOBITO_OPENAI_MODEL`
+(defaults `claude-haiku-5-5`, `gemini-2.5-flash`, `gpt-4o-mini`), and
+`AI_MOCK=1` (canned answers, no keys, for testing). `GET /health` shows
+which services are set up.
+
+Code: `kobito/ai_providers.py` (the three services' requests),
+`kobito/ai_client.py` (proxy or direct, thread or browser),
+`kobito/hint_service.py` (the prompts) and `server/kobito_ai_proxy.py`.
 
 ## Moves: run, fly, climb — and sun power
 
@@ -728,7 +783,7 @@ item with its reading and an example sentence**, e.g.
 `おにぎり (onigiri) = rice ball. おにぎりを食べます。(I eat an onigiri.)`
 
 The line you see first is instant and works offline
-(`kobito/item_coach.py`). If an Anthropic key is set, a Claude-written
+(`kobito/item_coach.py`). If an AI is set up (Claude, Gemini or ChatGPT), an AI-written
 reaction is requested on a background thread and replaces it if it arrives
 while the box is still showing — gameplay never waits on the network.
 

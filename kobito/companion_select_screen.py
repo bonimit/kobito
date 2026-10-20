@@ -59,9 +59,9 @@ class CompanionSelectScreen:
 
     @staticmethod
     def _live_ai():
-        """True when Claude can write the hints (an API key is set up)."""
+        """The AI writing the hints (CLAUDE / GEMINI / CHATGPT / ONLINE), or "" for the built-in ones."""
         from kobito.hint_service import HintService
-        return HintService()._client is not None
+        return HintService().label
 
     async def run(self):
         """Blocks until the player confirms a companion, then returns its id."""
@@ -222,7 +222,7 @@ class CompanionSelectScreen:
 
     def _draw_ai_chip(self, card):
         if self.live_ai:
-            words, color = "LIVE AI HINTS · CLAUDE", ui.GREEN
+            words, color = f"LIVE AI HINTS · {self.live_ai}", ui.GREEN
         else:
             words, color = "BUILT-IN HINTS", ui.MUTED
         font = ui.label_font(16)

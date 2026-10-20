@@ -18,7 +18,6 @@ Two layers:
 """
 
 import random
-import threading
 from dataclasses import dataclass
 
 SITUATIONS = ("snack", "rescue", "favorite", "rare", "life", "coins", "drowsy", "asleep",
@@ -129,8 +128,7 @@ class ItemCoach:
         self.rng = rng or random.Random()
         self.speech = None
         self._token = 0
-        self._pending = {}   # token -> text from a finished Claude call
-        self._lock = threading.Lock()
+        self._requests = {}  # token -> the AI request for that speech bubble
 
     # -- Public events ---------------------------------------------------
 
@@ -176,10 +174,11 @@ class ItemCoach:
     def update(self, dt):
         if self.speech is None:
             return
-        with self._lock:
-            reply = self._pending.pop(self.speech.token, None)
-        if reply:
-            self.speech.lines[0] = reply
+        request = self._requests.get(self.speech.token)
+        if request is not None and request.done:
+            del self._requests[self.speech.token]
+            if request.text:
+                self.speech.lines[0] = request.text
         self.speech.seconds_left -= dt
         if self.speech.seconds_left <= 0:
             self.speech = None
@@ -207,11 +206,10 @@ class ItemCoach:
         self.speech = Speech(lines=list(lines), expression=expression, seconds_left=seconds, total=seconds,
                              token=self._token)
 
-    # -- Optional Claude layer -------------------------------------------
+    # -- Optional AI layer -----------------------------------------------
 
     def _ask_claude(self, situation, item, power):
-        client = getattr(self.hint_service, "_client", None)
-        if client is None:
+        if not getattr(self.hint_service, "available", False):
             return
         token = self._token
         prompt = "\n".join([
@@ -223,13 +221,7 @@ class ItemCoach:
             "If they were sleepy, say the item perks them up. Mention the Japanese word naturally.",
         ])
 
-        def work():
-            text = self.hint_service.complete(prompt)
-            if text:
-                with self._lock:
-                    self._pending[token] = text
-
-        try:
-            threading.Thread(target=work, daemon=True).start()
-        except Exception:
-            pass  # threads unavailable (e.g. the browser build): keep the local line
+        request = self.hint_service.start(prompt)
+        if request is not None:
+            self._requests = {t: r for t, r in self._requests.items() if t >= token - 3}   # forget old ones
+            self._requests[token] = request

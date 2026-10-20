@@ -16,14 +16,9 @@ The result lands in dist/Kobito (or dist/Kobito.exe on Windows, or
 dist/Kobito.app on macOS) -- copy that one file/folder anywhere and run
 it; no Python install or `pip install` needed on the machine that runs it.
 
-`anthropic` (and its dependency chain, including `cryptography`) is
-deliberately excluded from the bundle -- kobito/hint_service.py already
-falls back to a local hint whenever that import fails, so the game plays
-identically either way, and skipping it sidesteps a `cryptography`
-build-time crash PyInstaller hits on some platforms. If you want the
-Claude-generated hints in your own build, drop the three
---exclude-module lines below and set ANTHROPIC_API_KEY before running
-the built executable.
+AI hints need nothing extra in the bundle (they use plain HTTPS from the
+standard library): set ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY or
+KOBITO_AI_URL before running the app.
 """
 
 import os
@@ -41,10 +36,6 @@ if __name__ == "__main__":
             "--onefile",
             "--noconfirm",
             "--add-data", f"assets{DATA_SEP}assets",
-            "--exclude-module", "anthropic",
-            "--exclude-module", "cryptography",
-            "--exclude-module", "httpx",
-            "--exclude-module", "httpcore",
             os.path.join(ROOT, "main.py"),
         ],
         cwd=ROOT,

@@ -38,6 +38,17 @@ jobs:
           python-version: "3.12"
       - name: Install Pygbag
         run: pip install pygbag==0.9.3
+      - name: Point the web build at the AI proxy (optional)
+        # Set the repository variable AI_PROXY_URL (the address of
+        # server/kobito_ai_proxy.py) to give the browser game live Claude /
+        # Gemini / ChatGPT hints. Without it the web build uses built-in hints.
+        env:
+          AI_PROXY_URL: ${{ vars.AI_PROXY_URL }}
+        run: |
+          if [ -n "$AI_PROXY_URL" ]; then
+            python3 -c "import json, os; json.dump({'proxy': os.environ['AI_PROXY_URL'].strip()}, open('assets/ai.json', 'w'))"
+            echo "Web build will use the AI proxy."
+          fi
       - name: Build the web version
         run: bash packaging/build_web.sh
       - name: Keep the site as a download (for itch.io)
