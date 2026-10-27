@@ -550,51 +550,76 @@ name, tagline, personality, placeholder color, and an ability —
 
 ## AI hints for everyone: the AI proxy
 
-The game can write hints with **Claude, Gemini or ChatGPT**. On the desktop
-a player can set their own key (see Setup). For the **web build** — and for
-players who have no key — run the small **AI proxy**: it holds *your* keys,
-the game sends it a question and it answers. Keys never reach the game or
-the browser.
+Kobito can write its hints with **Claude, Gemini or ChatGPT**. Nothing can
+make that work without an API key living *somewhere safe*, so here is the
+shortest path for each situation — and a checker that tells you whether it
+really works.
+
+**Just you, on your computer** (1 minute): set a key and play.
 
 ```
-export ANTHROPIC_API_KEY=...      # any one is enough; set two or three for a backup
-export GEMINI_API_KEY=...
-export OPENAI_API_KEY=...
-export AI_ALLOWED_ORIGINS=https://bonimit.github.io,https://bonimit.itch.io
-python server/kobito_ai_proxy.py          # http://0.0.0.0:8788
+export ANTHROPIC_API_KEY=...     # or GEMINI_API_KEY=... or OPENAI_API_KEY=...
+python main.py                   # the companion screen says LIVE AI HINTS · CLAUDE
 ```
 
-`server/kobito_ai_proxy.py` is one file, standard library only. Run it on
-any host that runs Python (a small VPS, Render, Railway, Fly.io — set the
-keys as the host's environment variables; it reads `PORT`). Behind the
-host's HTTPS address, also set `AI_TRUST_PROXY=1` so rate limits count each
-player separately. Then connect the game:
+**Everyone who plays the web link** (itch.io / GitHub Pages — 5 minutes): the
+browser can't hold a key, so the game talks to a small proxy that does. Pick one:
 
-- **Web build (GitHub Pages and itch.io):** in the repository, *Settings →
-  Secrets and variables → Actions → Variables → New repository variable*
-  `AI_PROXY_URL` = `https://your-proxy.example.com`. The next push writes it
-  into the build (`assets/ai.json`).
-- **Desktop:** `KOBITO_AI_URL=https://your-proxy.example.com python main.py`.
+1. **Cloudflare Worker (free, no server).** dash.cloudflare.com → *Workers &
+   Pages → Create → Worker* → paste `server/cloudflare-worker.js` → *Deploy*.
+   In the worker's *Settings → Variables and Secrets* add your key(s) as
+   **Secrets** (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY` — any one is
+   enough, two or three give a backup) and a variable
+   `AI_ALLOWED_ORIGINS` = `https://bonimit.github.io,https://bonimit.itch.io`.
+   Its address is `https://<name>.<you>.workers.dev`.
+2. **Render (free, one click).** render.com → *New → Blueprint* → pick this repo
+   (`render.yaml` is ready) → paste your key(s) under *Environment*. The address
+   is `https://kobito-ai.onrender.com` (the free plan sleeps when idle, so the
+   first hint after a quiet spell is slow and the game shows the built-in hint).
+3. **Anywhere with Python:** `python server/kobito_ai_proxy.py` (one file,
+   standard library only; it reads `PORT`).
 
-The companion screen then says **LIVE AI HINTS · ONLINE**. If the proxy is
-down, slow or over its limit, the quiz quietly uses the built-in hint — the
-game never waits on it: requests run in the background (a thread on the
+Then tell the game where it is — in the GitHub repo, *Settings → Secrets and
+variables → Actions → Variables → New repository variable*: `AI_PROXY_URL` =
+your address. The next push rebuilds Pages and itch.io with it. (Desktop:
+`KOBITO_AI_URL=<address> python main.py`.)
+
+**Check that it works** — before and after:
+
+```
+python tools/check_ai.py https://your-address     # or just: python tools/check_ai.py  (uses your own keys)
+```
+
+It says, tick by tick: the proxy is up; **which services have keys and whether
+each key and model really works** (a wrong key, a model your key can't use or
+an empty quota is named in plain words); that browsers on your sites are allowed
+(CORS); and that a real hint comes back — then prints it. In the game, the
+companion-select screen shows the same truth: **CHECKING AI…**, then **LIVE AI
+HINTS · CLAUDE / GEMINI / CHATGPT / ONLINE** once it has answered, or **AI
+REACHABLE · BUILT-IN HINTS** (the reason is printed to the console).
+
+If the AI is down, slow or out of quota the quiz quietly uses the built-in hint —
+the game never waits on it (requests run in the background: a thread on the
 desktop, an `asyncio` task and the browser's `fetch` on the web).
 
-Keeping it safe and cheap: every question is wrapped in an instruction to
-stay inside the game (a hint helper, not a general chatbot), prompts and
-answers are length-capped, each player address gets `AI_RATE_PER_MIN`
-requests a minute (default 20), and `AI_DAILY_LIMIT` (default 3000) caps the
-total per day. `AI_ALLOWED_ORIGINS` lists the sites allowed to call it.
+Keeping it safe and cheap: every question is wrapped in an instruction to stay
+inside the game (a hint helper, not a general chatbot), prompts and answers are
+length-capped, `AI_ALLOWED_ORIGINS` lists the sites allowed to call it, and the
+Python proxy also gives each player `AI_RATE_PER_MIN` requests a minute (default
+20) with an `AI_DAILY_LIMIT` (default 3000) across everyone. **Also set a monthly
+spend limit in your AI provider's dashboard** — that is the real safety net.
 Other settings: `KOBITO_AI_PROVIDER` (which service first),
-`KOBITO_CLAUDE_MODEL` / `KOBITO_GEMINI_MODEL` / `KOBITO_OPENAI_MODEL`
-(defaults `claude-haiku-5-5`, `gemini-2.5-flash`, `gpt-4o-mini`), and
-`AI_MOCK=1` (canned answers, no keys, for testing). `GET /health` shows
-which services are set up.
+`KOBITO_CLAUDE_MODEL` / `KOBITO_GEMINI_MODEL` / `KOBITO_OPENAI_MODEL` (defaults
+`claude-haiku-5-5`, `gemini-2.5-flash`, `gpt-4o-mini` — if a service says the
+model isn't available to your key, set one it does offer), and `AI_MOCK=1`
+(canned answers, no keys, for testing). `GET /health?probe=1` on any proxy
+shows what `check_ai.py` shows.
 
-Code: `kobito/ai_providers.py` (the three services' requests),
-`kobito/ai_client.py` (proxy or direct, thread or browser),
-`kobito/hint_service.py` (the prompts) and `server/kobito_ai_proxy.py`.
+Code: `kobito/ai_providers.py` (the three services' requests and error
+explanations), `kobito/ai_client.py` (proxy or direct, thread or browser, and
+the status check), `kobito/hint_service.py` (the prompts),
+`server/kobito_ai_proxy.py`, `server/cloudflare-worker.js`, `render.yaml`,
+`tools/check_ai.py`.
 
 ## Moves: run, fly, climb — and sun power
 

@@ -17,6 +17,7 @@ default_client() is None and the game uses its built-in hints.
 import asyncio
 import json
 import os
+import sys
 import threading
 import time
 
@@ -63,12 +64,15 @@ def proxy_url(environ=None):
 
 
 class AIClient:
-    def __init__(self, proxy="", providers=(), environ=None, web=IS_WEB, web_post=None):
+    def __init__(self, proxy="", providers=(), environ=None, web=IS_WEB, web_post=None, web_get=None):
         self.proxy = proxy
         self.providers = list(providers)
         self.environ = environ
         self.web = web
         self._web_post = web_post or _fetch_post
+        self._web_get = web_get or _fetch_get
+        self.status = "unknown"      # check() moves it to "checking", then "ok" or "down"
+        self.problem = ""            # why it's down, in words
 
     @property
     def label(self):
@@ -102,6 +106,59 @@ class AIClient:
             request.finish(None)
         return request
 
+    # -- Is it actually working? ---------------------------------------------------
+
+    def check(self):
+        """Finds out in the background whether the AI is reachable and working, so the game tells
+        the truth (status: "checking" -> "ok" or "down"; `problem` says why). The proxy is only
+        asked for its /health -- no AI tokens are spent; direct keys get one tiny request."""
+        if self.status == "checking":
+            return
+        self.status, self.problem = "checking", ""
+        if self.web:
+            try:
+                asyncio.ensure_future(self._check_web())
+            except Exception:
+                self.status = "down"
+            return
+
+        def work():
+            try:
+                if self.proxy:
+                    info = ai_providers.get_json(self.proxy + "/health", PROXY_TIMEOUT)
+                    ok = bool(info.get("ok")) and bool(info.get("providers") or info.get("mock"))
+                    self.problem = "" if ok else "the proxy has no API key set"
+                else:
+                    ok, reasons = False, []
+                    for name in self.providers:
+                        good, message = ai_providers.diagnose(name, self.environ)
+                        if good:
+                            ok = True
+                            break
+                        reasons.append(f"{ai_providers.PROVIDERS[name]['label']}: {message}")
+                    self.problem = "" if ok else "; ".join(reasons) or "no key works"
+            except Exception as error:
+                ok, self.problem = False, ai_providers._reason(error)
+            self.status = "ok" if ok else "down"
+            if not ok:
+                print(f"[Kobito AI] not working: {self.problem}  (run: python tools/check_ai.py)", file=sys.stderr)
+
+        try:
+            threading.Thread(target=work, daemon=True).start()
+        except Exception:
+            self.status = "down"
+
+    async def _check_web(self):
+        try:
+            info = json.loads(await asyncio.wait_for(self._web_get(self.proxy + "/health"), PROXY_TIMEOUT))
+            ok = bool(info.get("ok")) and bool(info.get("providers") or info.get("mock"))
+            self.problem = "" if ok else "the proxy has no API key set"
+            self.status = "ok" if ok else "down"
+        except BaseException as error:
+            self.problem, self.status = type(error).__name__, "down"
+            if isinstance(error, (KeyboardInterrupt, SystemExit)):
+                raise
+
     # -- The desktop: a thread, urllib ---------------------------------------------
 
     def _ask_blocking(self, prompt, max_tokens):
@@ -132,6 +189,14 @@ async def _fetch_post(url, data):
     handler = RequestHandler()
     handler.debug = False
     return await handler.post(url, data)
+
+
+async def _fetch_get(url):
+    """GET with the browser's fetch (Pygbag's aio.fetch)."""
+    from aio.fetch import RequestHandler
+    handler = RequestHandler()
+    handler.debug = False
+    return await handler.get(url)
 
 
 def default_client(environ=None, web=IS_WEB):

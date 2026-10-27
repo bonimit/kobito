@@ -55,13 +55,14 @@ class CompanionSelectScreen:
         self._arrows = {}
         self._cards = []
         self._confirm = setup_ui.CONFIRM
-        self.live_ai = self._live_ai()
-
-    @staticmethod
-    def _live_ai():
-        """The AI writing the hints (CLAUDE / GEMINI / CHATGPT / ONLINE), or "" for the built-in ones."""
         from kobito.hint_service import HintService
-        return HintService().label
+        self.ai = HintService()
+        self.ai.check()              # in the background: is the AI really answering?
+
+    @property
+    def live_ai(self):
+        """The AI writing the hints (CLAUDE / GEMINI / CHATGPT / ONLINE) once it's confirmed working, else ""."""
+        return self.ai.label if self.ai.status == "ok" else ""
 
     async def run(self):
         """Blocks until the player confirms a companion, then returns its id."""
@@ -221,8 +222,13 @@ class CompanionSelectScreen:
             ui.text(screen, words, ui.body_font(15), (x + 28, y), anchor="midleft", thickness=1)
 
     def _draw_ai_chip(self, card):
-        if self.live_ai:
-            words, color = f"LIVE AI HINTS · {self.live_ai}", ui.GREEN
+        status = self.ai.status
+        if status == "ok":
+            words, color = f"LIVE AI HINTS · {self.ai.label}", ui.GREEN
+        elif status in ("checking", "unknown"):
+            words, color = "CHECKING AI…", ui.MUTED
+        elif status == "down":
+            words, color = "AI OFFLINE · BUILT-IN HINTS", (240, 180, 90)
         else:
             words, color = "BUILT-IN HINTS", ui.MUTED
         font = ui.label_font(16)
@@ -230,7 +236,7 @@ class CompanionSelectScreen:
         chip.topright = (card.right - 18, card.y + 20)
         pygame.draw.rect(self.screen, (30, 24, 48), chip, border_radius=13)
         pygame.draw.rect(self.screen, color, chip, width=1, border_radius=13)
-        pulse = 0.6 + 0.4 * math.sin(self.time * 4) if self.live_ai else 1.0
+        pulse = 0.6 + 0.4 * math.sin(self.time * 4) if status in ("ok", "checking") else 1.0
         dot = tuple(round(c * pulse) for c in color)
         pygame.draw.circle(self.screen, dot, (chip.x + 14, chip.centery), 5)
         ui.text(self.screen, words, font, (chip.x + 24, chip.centery), color=color, anchor="midleft", thickness=1)

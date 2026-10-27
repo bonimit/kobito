@@ -127,6 +127,12 @@ def post_json(url, headers, body, timeout=TIMEOUT):
         return json.loads(response.read().decode("utf-8"))
 
 
+def get_json(url, timeout=TIMEOUT):
+    import urllib.request
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"accept": "application/json"}), timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
 def complete(name, prompt, max_tokens=1024, environ=None, timeout=TIMEOUT, post=post_json):
     """Asks `name` and returns its answer text, or None for any reason at all."""
     name = normalize(name)
@@ -141,6 +147,40 @@ def complete(name, prompt, max_tokens=1024, environ=None, timeout=TIMEOUT, post=
         return parse_response(name, post(url, headers, body, timeout))
     except Exception:
         return None
+
+
+def _reason(error):
+    """A short, readable reason for a failed request (the service's own message when it sent one)."""
+    import json as _json
+    import urllib.error
+    if isinstance(error, urllib.error.HTTPError):
+        try:
+            body = _json.loads(error.read().decode("utf-8", "replace"))
+            detail = body.get("error", body)
+            detail = detail.get("message", detail) if isinstance(detail, dict) else detail
+        except Exception:
+            detail = error.reason
+        hints = {401: " (the key is wrong or revoked)", 403: " (the key isn't allowed to do this)",
+                 404: " (the model name isn't available to this key -- set KOBITO_*_MODEL)", 429: " (out of quota or rate limited)"}
+        return f"HTTP {error.code}: {str(detail)[:160]}{hints.get(error.code, '')}"
+    return f"{type(error).__name__}: {str(error)[:160]}"
+
+
+def diagnose(name, environ=None, timeout=TIMEOUT, post=post_json):
+    """(ok, message): one tiny real request to `name`, with the reason when it fails."""
+    name = normalize(name)
+    if not name:
+        return False, "unknown service"
+    key = api_key(name, environ)
+    if not key:
+        return False, "no key set"
+    try:
+        url, headers, body = build_request(name, key, model_for(name, environ), "Reply with one word: ok", 32,
+                                           base_url(name, environ))
+        text = parse_response(name, post(url, headers, body, timeout))
+    except Exception as error:
+        return False, _reason(error)
+    return (True, f"ok ({model_for(name, environ)})") if text else (False, "answered with nothing (blocked or empty)")
 
 
 def complete_any(prompt, max_tokens=1024, environ=None, prefer="", timeout=TIMEOUT, post=post_json):

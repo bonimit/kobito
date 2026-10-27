@@ -18,6 +18,8 @@ API (JSON):
     POST /v1/complete   {"prompt": "...", "max_tokens": 300, "provider": "claude|gemini|chatgpt" (optional)}
                         -> {"text": "...", "provider": "claude"}      (HTTP 200 with "text": null if no AI answered)
     GET  /health        -> {"ok": true, "providers": ["claude", ...], "mock": false}
+    GET  /health?probe=1 also makes one tiny real request to every service and reports whether its key
+                        and model work: {"probe": {"claude": {"ok": true, "message": "ok (claude-haiku-5-5)"}}}
 
 Settings (environment variables):
     KOBITO_AI_PROVIDER    which service to try first (default: Claude, then Gemini, then ChatGPT)
@@ -84,6 +86,21 @@ class Limits:
             return True
 
 
+class Probe:
+    """Health checks that really call each service, remembered for a minute so they can't be spammed."""
+
+    def __init__(self, clock=time.time):
+        self.clock, self._at, self._result, self._lock = clock, 0.0, {}, threading.Lock()
+
+    def run(self, config):
+        with self._lock:
+            if self.clock() - self._at > 60 or not self._result:
+                self._result = {name: dict(zip(("ok", "message"), ai_providers.diagnose(name, config.environ, post=config.post)))
+                                for name in config.providers()}
+                self._at = self.clock()
+            return self._result
+
+
 class Config:
     def __init__(self, environ=None, post=ai_providers.post_json):
         env = os.environ if environ is None else environ
@@ -93,6 +110,7 @@ class Config:
         self.limits = Limits(int(env.get("AI_RATE_PER_MIN", 20)), int(env.get("AI_DAILY_LIMIT", 3000)))
         self.trust_proxy = env.get("AI_TRUST_PROXY", "") == "1"
         self.mock = env.get("AI_MOCK", "") == "1"
+        self.probe = Probe()
 
     def providers(self):
         return ai_providers.configured(self.environ)
@@ -141,7 +159,11 @@ def make_handler(config):
 
         def do_GET(self):
             if self.path.split("?")[0] == "/health":
-                self._send(200, {"ok": True, "providers": config.providers(), "mock": config.mock})
+                info = {"ok": True, "providers": config.providers(), "mock": config.mock}
+                if "probe=1" in self.path:
+                    info["probe"] = config.probe.run(config)
+                    info["ok"] = config.mock or any(r["ok"] for r in info["probe"].values())
+                self._send(200, info)
             else:
                 self._send(404, {"error": "not found"})
 

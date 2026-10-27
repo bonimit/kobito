@@ -54,6 +54,20 @@ class HintService:
         """CLAUDE / GEMINI / CHATGPT / ONLINE (a proxy), or "" with no AI."""
         return getattr(self._client, "label", "") if self._client is not None else ""
 
+    @property
+    def status(self):
+        """"none" (no AI set up), "unknown", "checking", "ok" or "down" -- see AIClient.check."""
+        return getattr(self._client, "status", "unknown") if self._client is not None else "none"
+
+    @property
+    def problem(self):
+        return getattr(self._client, "problem", "") if self._client is not None else ""
+
+    def check(self):
+        """Starts the background check that tells the truth about whether the AI is working."""
+        if self._client is not None and hasattr(self._client, "check"):
+            self._client.check()
+
     def start(self, prompt, max_tokens=MAX_HINT_TOKENS):
         """Sends `prompt`; returns an AIRequest (poll .done / .text), or None with no AI."""
         if self._client is None:

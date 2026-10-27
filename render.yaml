@@ -1,0 +1,22 @@
+# One-click host for the Kobito AI proxy on Render (render.com): New -> Blueprint -> pick this repo.
+# Then open the service -> Environment and paste your API key(s). Free plan works (it sleeps when idle,
+# so the first hint after a quiet spell can take ~30 s -- the game just shows the built-in hint meanwhile).
+services:
+  - type: web
+    name: kobito-ai
+    runtime: python
+    plan: free
+    buildCommand: "echo no build needed"
+    startCommand: python server/kobito_ai_proxy.py
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: AI_ALLOWED_ORIGINS
+        value: https://bonimit.github.io,https://bonimit.itch.io
+      - key: AI_TRUST_PROXY
+        value: "1"
