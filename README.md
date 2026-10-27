@@ -596,7 +596,7 @@ an empty quota is named in plain words); that browsers on your sites are allowed
 (CORS); and that a real hint comes back — then prints it. In the game, the
 companion-select screen shows the same truth: **CHECKING AI…**, then **LIVE AI
 HINTS · CLAUDE / GEMINI / CHATGPT / ONLINE** once it has answered, or **AI
-REACHABLE · BUILT-IN HINTS** (the reason is printed to the console).
+OFFLINE · BUILT-IN HINTS** (the reason is printed to the console).
 
 If the AI is down, slow or out of quota the quiz quietly uses the built-in hint —
 the game never waits on it (requests run in the background: a thread on the
