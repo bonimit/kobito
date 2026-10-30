@@ -10,9 +10,11 @@ Art direction: a modern indie pixel trailer, not a 2000s TV spot.
     the logo assembling from scattered pixels, the fox running in.
   * Type: DotGothic16 rendered on its native 16-px grid without
     anti-aliasing and scaled by whole numbers, letter-spaced, with a 1-px
-    hard shadow. Captions sit in the scene, not on a box: a soft vignette
-    behind them, a small amber label ("01  EXPLORE"), a headline and a
-    quiet M PLUS Rounded subtitle, each with a soft shadow.
+    hard shadow. Captions sit quietly at the bottom right, in the scene
+    rather than on a box: a soft vignette behind them, a small amber label
+    ("01  EXPLORE"), a headline and a muted subtitle.
+  * Music: Y2K eurodance / J-pop at 132 bpm -- supersaw stabs, octave
+    bass, four-on-the-floor, a sparkle arpeggio; the drop lands on the map.
   * Motion: hard cuts inside a chapter; a short pixel-mosaic dissolve
     between chapters; text slides up in whole pixel steps.
 
@@ -441,16 +443,14 @@ _shade_cache = {}
 
 
 def corner_shade(right):
-    """A soft elliptical darkening that grows out of the caption's side of
-    the screen -- a vignette, not a box -- so the words sit in the scene's
-    own shadow. Bottom-left normally; the right edge for `right`."""
+    """A soft darkening growing out of the bottom-right corner (or the right
+    edge, mid-height, for `right`) -- a vignette, not a box, so the words sit
+    in the scene's own shadow."""
     if right not in _shade_cache:
         ys, xs = np.mgrid[0:H, 0:W]
-        if right:
-            d = np.sqrt(((xs - W) / 1150.0) ** 2 + ((ys - 600) / 520.0) ** 2)
-        else:
-            d = np.sqrt((xs / 1500.0) ** 2 + ((ys - (H - 230)) / 480.0) ** 2)    # centred on the words
-        alpha = (np.clip(1 - d, 0, 1) ** 1.1 * 236).astype(np.uint8)
+        cy = 560 if right else H - 160
+        d = np.sqrt(((xs - W) / 980.0) ** 2 + ((ys - cy) / 360.0) ** 2)
+        alpha = (np.clip(1 - d, 0, 1) ** 1.3 * 200).astype(np.uint8)
         shade = pygame.Surface((W, H), pygame.SRCALPHA)
         shade.fill((*INK, 0))
         pygame.surfarray.pixels_alpha(shade)[:] = alpha.T
@@ -458,7 +458,7 @@ def corner_shade(right):
     return _shade_cache[right]
 
 
-def soft_shadow(img, radius=6):
+def soft_shadow(img, radius=5):
     """A blurred ink copy of `img` to lift text off the picture."""
     w, h = img.get_size()
     pad = radius * 3
@@ -471,35 +471,35 @@ def soft_shadow(img, radius=6):
 
 
 def caption(out, f, age):
-    """Words in the scene, not on a card: a soft vignette from the corner,
-    then an amber label, the headline and a quiet subtitle, each with a soft
-    shadow. Lines rise in whole-pixel steps and arrive one after another."""
+    """A quiet caption at the bottom right, right-aligned: a small amber
+    label, the headline, a muted subtitle -- in the scene's shadow, never on
+    a box. (`top` lifts it to mid-height on the right, above a bottom panel.)
+    Lines fade in one after another, rising in whole-pixel steps."""
     lines = []
     if f["eyebrow"]:
-        lines.append(("label", px_text(f["eyebrow"], AMBER, 16, 2, spacing=2), 0))
+        lines.append(("label", px_text(f["eyebrow"], AMBER, 16, 1, spacing=2, shadow=None), 0))
     if f["head"]:
-        lines.append(("head", px_text(f["head"], PAPER, 16, 4, bold=True), 5))
+        lines.append(("head", px_text(f["head"], PAPER, 16, 3), 5))
     if f["sub"]:
-        lines.append(("sub", soft_text(f["sub"], PAPER, 30), 10))
+        lines.append(("sub", soft_text(f["sub"], MUTED, 24), 10))
     if not lines:
         return
-    gaps = {"label": 12, "head": 8, "sub": 0}
+    gaps = {"label": 8, "head": 6, "sub": 0}
     shade = corner_shade(f["top"])
     shade.set_alpha(round(255 * min(1.0, age / 12)))
     out.blit(shade, (0, 0))
     height = sum(img.get_height() + gaps[kind] for kind, img, _ in lines)
-    # bottom-left, clear of the game's own companion bar; or right-aligned mid-screen
-    y = 600 - height // 2 if f["top"] else H - 150 - height
+    y = 560 - height // 2 if f["top"] else H - 140 - height
     for kind, img, delay in lines:
-        x = W - 104 - img.get_width() if f["top"] else 104
+        x = W - 96 - img.get_width()
         k = min(1.0, max(0.0, (age - delay) / 10))
         if k > 0:
-            lift = round(12 * (1 - k)) // 4 * 4
+            lift = round(8 * (1 - k)) // 4 * 4
             glow, pad = soft_shadow(img)
-            glow.set_alpha(round(200 * k))
-            out.blit(glow, (x - pad, y + lift - pad + 4))
+            glow.set_alpha(round(190 * k))
+            out.blit(glow, (x - pad, y + lift - pad + 3))
             img = img.copy()
-            img.set_alpha(round(255 * k))
+            img.set_alpha(round(235 * k))
             out.blit(img, (x, y + lift))
         y += img.get_height() + gaps[kind]
 
@@ -526,91 +526,127 @@ def mosaic(out, block):
 RATE = 44100
 
 
+def _t(dur):
+    return np.arange(int(RATE * dur)) / RATE
+
+
+def _env(t, attack=0.004, decay=6.0):
+    return np.minimum(1, t / attack) * np.exp(-decay * t)
+
+
+def _saw(freq, t):
+    return 2 * ((t * freq) % 1.0) - 1
+
+
+def _supersaw(freq, dur, vol, decay=4.0, detune=(-0.12, -0.05, 0, 0.05, 0.12)):
+    """Five detuned saws -- the shiny Y2K trance stab."""
+    t = _t(dur)
+    wave_ = sum(_saw(freq * 2 ** (c / 12), t + i * 0.0013) for i, c in enumerate(detune)) / len(detune)
+    return vol * wave_ * _env(t, 0.003, decay)
+
+
 def _sq(freq, dur, duty=0.25, vol=0.2, decay=5.0):
-    t = np.arange(int(RATE * dur)) / RATE
-    return vol * np.where((t * freq) % 1.0 < duty, 1.0, -1.0) * np.exp(-decay * t) * np.minimum(1, t * 300)
+    t = _t(dur)
+    return vol * np.where((t * freq) % 1.0 < duty, 1.0, -1.0) * _env(t, 0.002, decay)
 
 
-def _tri(freq, dur, vol=0.3, decay=3.0):
-    t = np.arange(int(RATE * dur)) / RATE
-    return vol * (2 * np.abs(2 * ((t * freq) % 1.0) - 1) - 1) * np.exp(-decay * t) * np.minimum(1, t * 300)
+def _kick(vol=0.9):
+    t = _t(0.28)
+    freq = 48 + 120 * np.exp(-28 * t)
+    return vol * np.sin(2 * np.pi * np.cumsum(freq) / RATE) * np.exp(-9 * t)
 
 
-def _nz(dur, vol, decay, seed=1):
-    t = np.arange(int(RATE * dur)) / RATE
+def _noise(dur, vol, decay, seed=1):
+    t = _t(dur)
     return vol * np.random.default_rng(seed).uniform(-1, 1, len(t)) * np.exp(-decay * t)
+
+
+def _hp(x):
+    """A crude high-pass: what's left after a running average."""
+    return x - np.convolve(x, np.ones(8) / 8, mode="same")
 
 
 def _hz(n):
     return 440.0 * 2 ** ((n - 69) / 12)
 
 
-def _lowpass(x, k=0.25):
-    y = np.empty_like(x)
-    acc = 0.0
-    for i in range(0, len(x), 1):
-        acc += k * (x[i] - acc)
-        y[i] = acc
-    return y
-
-
 def soundtrack(duration, cuts, path):
-    """Warm, modern chiptune at 100 bpm in D major-pentatonic: a soft
-    triangle bass, a thin pulse lead with a dotted echo, a gentle kick and
-    a hat. A quiet intro pad, a soft tick on each chapter, and a resolving
-    chord on the end card."""
-    total = np.zeros(int(RATE * (duration + 1)))
+    """Y2K eurodance / J-pop at 132 bpm in B minor (Bm G D A): four-on-the-
+    floor kick, clap on 2 and 4, open hats on the off-beats, an octave-
+    bouncing bass, detuned supersaw stabs that pump against the kick, and a
+    sparkly 16th-note square arpeggio. A filtered build with a noise riser
+    under the logo, the drop when the map appears, a riser into each
+    chapter, and a final stab with a cymbal on the end card."""
+    total = np.zeros(int(RATE * (duration + 2)))
 
     def add(sig, at, gain=1.0):
         i = int(at * RATE)
-        if i < len(total):
+        if 0 <= i < len(total):
             total[i:i + len(sig)] += gain * sig[:len(total) - i]
 
-    beat = 60 / 100
-    intro, end = 2.9, duration - 6.0
-    # Intro: a slow pad and a rising arpeggio as the logo forms.
-    for n_ in (50, 57, 62, 66):
-        add(_tri(_hz(n_), intro + 0.6, 0.06, 0.4), 0)
-    for i, n_ in enumerate((74, 76, 78, 81, 83, 86)):
-        add(_sq(_hz(n_), 0.3, 0.125, 0.05, 6), 0.35 + i * 0.22)
-    chords = [(38, [62, 66, 69]), (35, [59, 62, 66]), (43, [62, 67, 71]), (45, [61, 64, 69])]   # D Bm G A
-    lead = [74, -1, 76, 78, -1, 81, 78, 76, 74, -1, 71, 74, -1, 76, -1, -1,
-            78, -1, 81, 83, -1, 81, 78, -1, 76, 78, -1, 74, -1, -1, -1, -1]
-    k, t = 0, intro
+    beat = 60 / 132
+    six = beat / 4
+    drop, end = cuts[0], cuts[-1]
+    prog = [(47, [66, 71, 74]), (43, [67, 71, 74]), (50, [66, 69, 74]), (45, [64, 69, 73])]   # Bm G D A
+    arp = [0, 1, 2, 1, 2, 0, 1, 2, 3, 2, 1, 2, 0, 1, 2, 1]
+    # Build: arpeggio alone, getting brighter, over a noise riser.
+    n = int(drop / six)
+    for k in range(n):
+        root, chord = prog[(k // 16) % 4]
+        notes = chord + [chord[0] + 12]
+        add(_sq(_hz(notes[arp[k % 16]] + 12), six * 0.9, 0.125, 0.03 + 0.05 * k / n, 14), k * six)
+        if k % 4 == 0 and k > n // 2:
+            add(_kick(0.5), k * six)
+    riser = _noise(drop, 1.0, 0, seed=9) * np.linspace(0, 1, int(RATE * drop)) ** 2 * 0.10
+    add(_hp(riser), 0)
+    # Main section.
+    k, t = 0, drop
     while t < end:
-        root, chord = chords[(k // 16) % 4]
-        if k % 4 == 0:
-            add(_tri(_hz(root), beat * 1.6, 0.30, 1.6), t)
-            add(_sq(52, 0.12, 0.5, 0.22, 30), t)                                   # soft kick
-        if k % 4 == 2:
-            add(_tri(_hz(root + 12), beat * 0.6, 0.16, 3), t)
-        if k % 8 == 4:
-            add(_nz(0.09, 0.07, 30, seed=k), t)                                     # light snare
-        if k % 2 == 1:
-            add(_nz(0.025, 0.025, 90, seed=3), t)                                   # hat
-        if k % 8 == 0:
-            for n_ in chord:
-                add(_tri(_hz(n_), beat * 3.5, 0.035, 0.8), t)                       # pad
-        note = lead[k % len(lead)]
-        if note > 0:
-            tone = _sq(_hz(note), beat * 0.4, 0.125, 0.06, 5)
-            add(tone, t)
-            add(tone, t + beat * 0.75, 0.35)                                        # dotted echo
-        t += beat / 4 * 2
+        root, chord = prog[(k // 16) % 4]
+        pos = k % 16
+        if pos % 4 == 0:
+            add(_kick(), t)
+        if pos in (4, 12):
+            add(_hp(_noise(0.16, 0.30, 18, seed=k)), t)                               # clap
+        if pos % 4 == 2:
+            add(_hp(_noise(0.12, 0.13, 14, seed=3)), t)                               # open hat
+        else:
+            add(_hp(_noise(0.03, 0.05, 90, seed=4)), t)                               # closed hat
+        if pos % 2 == 0:                                                              # octave bass
+            add(_sq(_hz(root + (12 if pos % 4 == 2 else 0)), six * 1.6, 0.5, 0.16, 7), t)
+        if pos in (2, 6, 10, 14):                                                     # off-beat stabs
+            for note in chord:
+                add(_supersaw(_hz(note), beat * 0.45, 0.07, 7), t)
+        notes = chord + [chord[0] + 12]
+        add(_sq(_hz(notes[arp[pos]] + 12), six * 0.8, 0.125, 0.045, 14), t)            # sparkle arp
+        t += six
         k += 1
-    # A soft tick on each chapter change.
-    for at in cuts:
-        add(_sq(_hz(98), 0.05, 0.5, 0.025, 40), at)
-    # End: a warm resolving chord and the intro arpeggio once more.
-    for n_ in (38, 50, 62, 66, 69, 74):
-        add(_tri(_hz(n_), 5.5, 0.07, 0.6), end)
-    for i, n_ in enumerate((74, 78, 81, 86)):
-        add(_sq(_hz(n_), 0.35, 0.125, 0.045, 5), end + 0.2 + i * 0.2)
+    # A riser into each chapter after the drop.
+    for c in cuts[1:-1]:
+        length = beat * 2
+        sweep = _noise(length, 1.0, 0, seed=int(c * 10)) * np.linspace(0, 1, int(RATE * length)) ** 3 * 0.12
+        add(_hp(sweep), c - length)
+    # End card: a big stab, a crash, a fading sparkle.
+    for note in (47, 59, 66, 71, 74, 78):
+        add(_supersaw(_hz(note), 4.0, 0.06, 0.8), end)
+    add(_kick(), end)
+    add(_hp(_noise(2.5, 0.22, 1.6, seed=7)), end)
+    for i, note in enumerate((83, 86, 90, 95)):
+        add(_sq(_hz(note), 0.3, 0.125, 0.04, 6), end + 0.25 + i * six * 2)
+    # Pump: duck everything a little on each kick of the main section.
+    pump = np.ones(len(total))
+    k = 0
+    while drop + k * beat < end:
+        i = int((drop + k * beat) * RATE)
+        dip = 1 - 0.35 * np.exp(-np.arange(int(RATE * beat)) / (RATE * 0.09))
+        pump[i:i + len(dip)] = dip[:len(pump) - i]
+        k += 1
+    total *= pump
     total = total[:int(RATE * duration)]
-    total = _lowpass(total, 0.55)
-    fade = int(RATE * 1.2)
+    fade = int(RATE * 1.5)
     total[-fade:] *= np.linspace(1, 0, fade)
-    total /= max(1e-6, np.abs(total).max()) / 0.85
+    total = np.tanh(total / max(1e-6, np.abs(total).max()) * 1.6)          # glue + loudness
+    total /= np.abs(total).max() / 0.9
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
