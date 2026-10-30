@@ -565,6 +565,10 @@ python main.py                   # the companion screen says LIVE AI HINTS · CL
 **Everyone who plays the web link** (itch.io / GitHub Pages — 5 minutes): the
 browser can't hold a key, so the game talks to a small proxy that does. Pick one:
 
+0. **Fastest, from a terminal** (needs Node.js; free Cloudflare account, no card):
+   `npx wrangler login`, then `npx wrangler deploy`, then
+   `npx wrangler secret put GEMINI_API_KEY` (or `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) and
+   paste the key when asked. `wrangler.toml` is already set up. Or use the dashboard:
 1. **Cloudflare Worker (free, no server).** dash.cloudflare.com → *Workers &
    Pages → Create → Worker* → paste `server/cloudflare-worker.js` → *Deploy*.
    In the worker's *Settings → Variables and Secrets* add your key(s) as

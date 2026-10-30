@@ -1,0 +1,11 @@
+# Deploys server/cloudflare-worker.js with Cloudflare's `wrangler` tool (free plan, no card needed):
+#   npx wrangler login
+#   npx wrangler deploy
+#   npx wrangler secret put GEMINI_API_KEY        # paste your key when asked (or ANTHROPIC_API_KEY / OPENAI_API_KEY)
+# Then check it:  python tools/check_ai.py https://kobito-ai.<your-name>.workers.dev
+name = "kobito-ai"
+main = "server/cloudflare-worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+AI_ALLOWED_ORIGINS = "https://bonimit.github.io,https://bonimit.itch.io"
