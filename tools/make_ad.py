@@ -155,6 +155,7 @@ def quiz_frames(g, question, anchor, bg, n_answer, answer_right=True, n_reveal=2
         quiz._age += 1 / FPS
         quiz._draw(target, PHASE_REVEAL)
         yield frame(g.screen.copy(), cx=where["cx"], **caps)
+    quiz._hint_started = quiz._age          # the panel types the hint out from this moment
     for _ in range(n_hint):
         quiz._age += 1 / FPS
         quiz._draw(target, PHASE_HINT, hint_text=hint, companion_state="talking")
