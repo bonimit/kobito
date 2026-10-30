@@ -10,20 +10,20 @@ Art direction: a modern indie pixel trailer, not a 2000s TV spot.
     the logo assembling from scattered pixels, the fox running in.
   * Type: DotGothic16 rendered on its native 16-px grid without
     anti-aliasing and scaled by whole numbers, letter-spaced, with a 1-px
-    hard shadow. Captions are a lower-left block: a small amber label
-    ("01  EXPLORE"), a headline, a quiet M PLUS Rounded subtitle.
+    hard shadow. Captions sit in the scene, not on a box: a soft vignette
+    behind them, a small amber label ("01  EXPLORE"), a headline and a
+    quiet M PLUS Rounded subtitle, each with a soft shadow.
   * Motion: hard cuts inside a chapter; a short pixel-mosaic dissolve
     between chapters; text slides up in whole pixel steps.
 
-     0  opening -- the logo assembles
-     3  01 EXPLORE   the overworld map
-     7  02 PLAY      run · jump · stomp
-    12  03 LEARN     every block is a quiz
-    15  04 TRAVEL    Hawaii, the North Pole, Greenland, Galápagos ...
-    20  05 DISCOVER  secret rooms: fall in, climb out, parachute down
-    25  06 POWER UP
-    28  07 STUDY     question types, then N5 -> N1
-    33  08 BUDDY     a wrong answer and a live AI hint
+     0  opening -- the logo assembles, the capybara walks in
+     4  01 EXPLORE   the overworld map
+     9  02 PLAY      run · jump · stomp
+    15  03 LEARN     every block is a quiz
+    19  04 TRAVEL    Hawaii, the North Pole, Galápagos
+    24  05 DISCOVER  secret rooms: fall in, parachute down
+    29  06 STUDY     vocabulary, kanji, JLPT-style
+    33  07 BUDDY     a wrong answer and a live AI hint
     39  end card
 
 Every gameplay shot is the actual game, driven frame by frame by
@@ -77,8 +77,9 @@ def step(g, n=ad.SIM_STEPS):
 
 def frame(game=None, eyebrow=None, head=None, sub=None, card=None, top=False):
     """One frame of the trailer: a game picture (or a full-screen card) and
-    its caption -- a small label, a headline and a subtitle. `top` puts the
-    caption at the top, for shots whose action is at the bottom."""
+    its caption -- a small label, a headline and a subtitle. `top` moves the
+    caption off the bottom (to the right-hand side), for shots whose action
+    is at the bottom."""
     return {"game": game, "eyebrow": eyebrow, "head": head, "sub": sub, "card": card, "top": top}
 
 
@@ -222,26 +223,26 @@ def blit_center(out, img, cx, y):
 
 # == Shots ===================================================================================
 
-def opening(n=90):
-    mascot = town_ui.Mascot("kitsune")
+def opening(n=120):
+    mascot = town_ui.Mascot("capybara")
     canvas = pygame.Surface((LW, LH))
 
     def draw(out, t):
         night_bg(canvas, t)
-        draw_logo(canvas, t, (LW // 2, 108), assemble=min(1.0, t / 1.3))
-        # the fox runs in along the horizon and stops under the logo
-        k = min(1.0, t / 1.6)
+        draw_logo(canvas, t, (LW // 2, 108), assemble=min(1.0, t / 2.0))
+        # the capybara walks in along the horizon and stops under the logo
+        k = min(1.0, t / 2.6)
         fx = round(-40 + (LW // 2 + 40) * (1 - (1 - k) ** 2))
         mascot.update(1 / FPS, k < 1)
         sprite = mascot.frame([], scale=1, moving=k < 1, facing_right=True)
         canvas.blit(sprite, sprite.get_rect(midbottom=(fx, LH - 26)))
         pygame.draw.rect(canvas, INK_3, (0, LH - 26, LW, 1))
         upscale(canvas, out)
-        if t > 1.5:
-            k2 = min(1.0, (t - 1.5) / 0.3)
+        if t > 2.2:
+            k2 = min(1.0, (t - 2.2) / 0.5)
             label = px_text("こびと", AMBER, 16, 3, spacing=4)
             blit_center(out, label, W // 2, round(560 - 8 * (1 - k2)) // 4 * 4)
-        if t > 1.9:
+        if t > 2.7:
             line = soft_text("A pixel platformer that teaches you Japanese", PAPER, 34)
             blit_center(out, line, W // 2, 660)
 
@@ -249,8 +250,8 @@ def opening(n=90):
         yield frame(card=lambda out, t=i / FPS: draw(out, t))
 
 
-def world_map(n=120):
-    m = WorldSelectScreen("kitsune")
+def world_map(n=150):
+    m = WorldSelectScreen("capybara")
     towns = ["tokyo", "kyoto", "okinawa"]            # a little tour along the roads
     m.x, m.y = m.world.nodes["sky"]
     m._snap_camera()
@@ -268,15 +269,14 @@ def world_map(n=120):
         yield frame(m.screen.copy(), "01  EXPLORE", "Pick a world", "23 places on one big map")
 
 
-def run_jump_stomp(g, n=150):
+def run_jump_stomp(g, n=165):
     reset(g, g.surface)
     place(g, 64)
     held.update({RIGHT, RUN})
-    heads = ["Run.", "Run. Jump.", "Run. Jump. Stomp."]
     for i in range(n):
         bot(g)
         step(g)
-        yield frame(snap(g), "02  PLAY", heads[min(2, i // 45)], "Classic platforming, from Tokyo to Hokkaido")
+        yield frame(snap(g), "02  PLAY", "Run, jump, stomp", "Classic platforming, from Tokyo to Hokkaido")
     held.clear()
 
 
@@ -308,22 +308,21 @@ def quiz_block(g):
     held.clear()
     block.mark_used()
     bg = snap(g)
-    for i, f in enumerate(quiz_frames(g, question, block.rect.move(-g.camera_x, 0), bg, 40, n_reveal=22)):
-        yield frame(f["game"], *(caps if i < 40 else ("03  LEARN", "Correct!", "犬 = いぬ, dog  ·  +10 XP")))
+    for i, f in enumerate(quiz_frames(g, question, block.rect.move(-g.camera_x, 0), bg, 54, n_reveal=30)):
+        yield frame(f["game"], *(caps if i < 54 else ("03  LEARN", "Correct!", "犬 = いぬ, dog  ·  +10 XP")))
     block.mark_answered(True)
     g._add_effect_text("+10 XP", (block.rect.centerx, block.rect.top), (150, 255, 170))
-    for _ in range(14):
+    for _ in range(24):
         step(g)
         yield frame(snap(g), "03  LEARN", "Correct!", "犬 = いぬ, dog  ·  +10 XP")
     g._check_question_blocks = real_check
 
 
-def around_the_world(per=24):
+def around_the_world(per=56):
     stops = [("hawaii", "Hawaii", "ハワイ"), ("north_pole", "North Pole", "ほっきょく"),
-             ("greenland", "Greenland", "グリーンランド"), ("galapagos", "Galápagos", "ガラパゴス"),
-             ("london", "London", "ロンドン"), ("kyoto", "Kyoto", "きょうと")]
+             ("galapagos", "Galápagos", "ガラパゴス")]
     for theme, name, kana in stops:
-        g = Game("kitsune", theme, companion_id="hana", item_box={}, badges=[])
+        g = Game("capybara", theme, companion_id="hana", item_box={}, badges=[])
         g._take_hit = lambda *_: None
         reset(g)
         place(g, 400)
@@ -333,6 +332,7 @@ def around_the_world(per=24):
         for _ in range(per):
             bot(g)
             step(g)
+            g.effects = []                         # no pickup labels floating through the caption
             yield frame(snap(g), "04  TRAVEL", name, kana)
         held.clear()
 
@@ -342,52 +342,24 @@ def secret_rooms(g):
     pit = s.secret_pits[0]
     reset(g, s)
     place(g, (pit["x0"] + pit["x1"]) // 2, s.ground_y - 40)
-    for i in range(62):
+    for i in range(75):
         step(g)
         if g.world is not s and g.transition is None:
             held.update({RIGHT, RUN})
             bot(g)
         yield frame(snap(g), "05  DISCOVER", "Secret rooms", "Subways, sewers and mines under every stage")
     held.clear()
-    room = g.world
-    if room.underground:
-        reset(g, room)
-        place(g, room.goal.rect.centerx, room.ground_y)
-        held.add(UP)
-        for _ in range(40):
-            step(g)
-            yield frame(snap(g), "05  DISCOVER", "Climb out", "のぼる  ·  to climb")
-        held.clear()
     reset(g, s)
     g._enter_sky(next(iter(s.springs)).link)
     g._leave_hidden()
     step(g, 70)                       # let the chute drift into view first
     g.banner = None
-    for _ in range(50):
+    for _ in range(66):
         step(g)
         yield frame(snap(g), "05  DISCOVER", "Parachute down", "パラシュート  ·  back from the secret sky")
 
 
-def power_ups(g):
-    s = g.surface
-    reset(g, s)
-    sun = min((c for c in s.collectibles if c.kind == "sunflower"), key=lambda c: c.rect.x)
-    stone = min((pl for pl in s.platforms if pl.rect.left <= sun.rect.centerx <= pl.rect.right
-                 and pl.rect.top >= sun.rect.bottom - 4), key=lambda pl: pl.rect.top)
-    place(g, stone.rect.left + 14, stone.rect.top)
-    held.add(RIGHT)
-    for i in range(84):
-        if g.sun_power:
-            held.discard(RIGHT)
-            (held.add if i % 10 == 0 else held.discard)(FIRE)
-        step(g)
-        yield frame(snap(g), "06  POWER UP", "Sunflower power" if i < 42 else "Throw sunballs",
-                    "Onigiri, melon pan, elixirs — every item helps")
-    held.clear()
-
-
-QUIZ_KINDS = [("Vocabulary", "gen_meaning_n4_地震"), ("Kanji", "kanji_n2_001"), ("Grammar", "grammar_n2_001"),
-              ("JLPT-style", None), ("Reading", "read_n3_003")]
+QUIZ_KINDS = [("Vocabulary", "gen_meaning_n4_地震"), ("Kanji", "kanji_n2_001"), ("JLPT-style", None)]
 
 
 def learn(g):
@@ -404,55 +376,23 @@ def learn(g):
             continue
         quiz = QuizScreen(g.screen, shuffled(q, random.Random(i)), background=bg, anchor_rect=anchor,
                           hint_service=g.hint_service, points=20)
-        for _ in range(18):
+        for _ in range(40):
             quiz._age += 1 / FPS
             quiz._draw(None, PHASE_ANSWERING)
-            yield frame(g.screen.copy(), "07  STUDY", name, "From your first kana to JLPT N1")
-    yield from levels_card(60)
-
-
-def levels_card(n):
-    canvas = pygame.Surface((LW, LH))
-    levels = ["N5", "N4", "N3", "N2", "N1"]
-
-    def draw(out, t):
-        night_bg(canvas, t)
-        tile, gap = 52, 12
-        x0 = LW // 2 - (5 * tile + 4 * gap) // 2
-        lit_upto = t / 0.18
-        for i, lv in enumerate(levels):
-            rect = pygame.Rect(x0 + i * (tile + gap), 74, tile, tile)
-            lit = i < lit_upto
-            pygame.draw.rect(canvas, INK, rect.move(2, 2))
-            pygame.draw.rect(canvas, AMBER if lit else INK_2, rect)
-            pygame.draw.rect(canvas, PAPER if lit else INK_3, rect, 1)
-            label = px_text(lv, INK if lit else MUTED, 16, 1, spacing=1, shadow=None)
-            canvas.blit(label, label.get_rect(center=rect.center))
-            if i < 4:                                                    # the dotted path between tiles
-                for d in range(2, gap - 1, 3):
-                    canvas.set_at((rect.right + d, rect.centery), AMBER if i + 1 < lit_upto else INK_3)
-        upscale(canvas, out)
-        if t > 0.6:
-            blit_center(out, px_text("ENDLESS QUESTIONS", PAPER, 16, 4, spacing=2), W // 2, 640)
-        if t > 0.9:
-            blit_center(out, soft_text("New questions every time, from N5 to N1", MUTED, 34), W // 2, 780)
-
-    for i in range(n):
-        yield frame(card=lambda out, t=i / FPS: draw(out, t))
+            yield frame(g.screen.copy(), "06  STUDY", name, "Endless questions, from your first kana to JLPT N1")
 
 
 def ai_buddy(g):
     picker = CompanionSelectScreen()
-    for i in range(66):
-        index = [0, 2, 4][min(2, i // 22)]
+    for i in range(60):
+        index = [0, 2][min(1, i // 30)]
         if index != picker.index:
             picker.index, picker.typed = index, 0.0
         picker.time += 1 / FPS
         picker.typed += 60 / FPS
         picker.backdrop.update(1 / FPS)
         picker._draw()
-        yield frame(picker.screen.copy(), "08  BUDDY", "Pick a companion", "Five friends, each with a perk",
-                    top=True)
+        yield frame(picker.screen.copy())          # a full screen of its own UI: no caption on top
     bank = {q["id"]: q for q in g.question_bank.questions}
     q = shuffled(bank["kanji_n5_001"], random.Random(1))
     reset(g, g.surface)
@@ -462,16 +402,16 @@ def ai_buddy(g):
     hint = ("Ooh, so close! 語 means 'language' and it's read ご -- so think 'Japan' + 'language'. "
             "You've got this!")
     for i, f in enumerate(quiz_frames(g, q, pygame.Rect(480, 430, 1, 1), bg, 24, answer_right=False,
-                                      n_reveal=12, hint=hint, n_hint=78)):
+                                      n_reveal=12, hint=hint, n_hint=90)):
         if i < 36:
-            yield frame(f["game"], "08  BUDDY", "Stuck?", "Your buddy has your back", top=True)
+            yield frame(f["game"], "07  BUDDY", "Stuck?", "Your buddy has your back", top=True)
         else:
-            yield frame(f["game"], "08  BUDDY", "Live AI hints", "Written for you by Claude, Gemini or ChatGPT",
+            yield frame(f["game"], "07  BUDDY", "Live AI hints", "Written for you by Claude, Gemini or ChatGPT",
                         top=True)
 
 
 def end_card(n):
-    mascot = town_ui.Mascot("kitsune")
+    mascot = town_ui.Mascot("capybara")
     canvas = pygame.Surface((LW, LH))
 
     def draw(out, t):
@@ -497,38 +437,70 @@ def end_card(n):
 
 # == Composition ================================================================================
 
+_shade_cache = {}
+
+
+def corner_shade(right):
+    """A soft elliptical darkening that grows out of the caption's side of
+    the screen -- a vignette, not a box -- so the words sit in the scene's
+    own shadow. Bottom-left normally; the right edge for `right`."""
+    if right not in _shade_cache:
+        ys, xs = np.mgrid[0:H, 0:W]
+        if right:
+            d = np.sqrt(((xs - W) / 1150.0) ** 2 + ((ys - 600) / 520.0) ** 2)
+        else:
+            d = np.sqrt((xs / 1500.0) ** 2 + ((ys - (H - 230)) / 480.0) ** 2)    # centred on the words
+        alpha = (np.clip(1 - d, 0, 1) ** 1.1 * 236).astype(np.uint8)
+        shade = pygame.Surface((W, H), pygame.SRCALPHA)
+        shade.fill((*INK, 0))
+        pygame.surfarray.pixels_alpha(shade)[:] = alpha.T
+        _shade_cache[right] = shade
+    return _shade_cache[right]
+
+
+def soft_shadow(img, radius=6):
+    """A blurred ink copy of `img` to lift text off the picture."""
+    w, h = img.get_size()
+    pad = radius * 3
+    base = pygame.Surface((w + 2 * pad, h + 2 * pad), pygame.SRCALPHA)
+    dark = img.copy()
+    dark.fill((*INK, 255), special_flags=pygame.BLEND_RGBA_MIN)
+    base.blit(dark, (pad, pad))
+    small = pygame.transform.smoothscale(base, (max(1, base.get_width() // radius), max(1, base.get_height() // radius)))
+    return pygame.transform.smoothscale(small, base.get_size()), pad
+
+
 def caption(out, f, age):
-    """A compact caption panel at the lower left (upper left with `top`):
-    an amber label, the headline, a quiet subtitle. Translucent ink with an
-    amber edge -- just big enough for its words. Lines rise in whole-pixel
-    steps and arrive one after another."""
+    """Words in the scene, not on a card: a soft vignette from the corner,
+    then an amber label, the headline and a quiet subtitle, each with a soft
+    shadow. Lines rise in whole-pixel steps and arrive one after another."""
     lines = []
     if f["eyebrow"]:
         lines.append(("label", px_text(f["eyebrow"], AMBER, 16, 2, spacing=2), 0))
     if f["head"]:
-        lines.append(("head", px_text(f["head"], PAPER, 16, 4, bold=True), 2))
+        lines.append(("head", px_text(f["head"], PAPER, 16, 4, bold=True), 5))
     if f["sub"]:
-        lines.append(("sub", soft_text(f["sub"], MUTED, 30), 4))
+        lines.append(("sub", soft_text(f["sub"], PAPER, 30), 10))
     if not lines:
         return
-    gaps = {"label": 14, "head": 10, "sub": 0}
-    pad_x, pad_y = 40, 30
-    width = max(img.get_width() for _, img, _ in lines) + 2 * pad_x
-    height = sum(img.get_height() + gaps[kind] for kind, img, _ in lines) + 2 * pad_y
-    panel = pygame.Rect(72, 64 if f["top"] else H - 64 - height, width, height)
-    k0 = min(1.0, age / 4)
-    glass = pygame.Surface(panel.size, pygame.SRCALPHA)
-    glass.fill((*INK, round(214 * k0)))
-    out.blit(glass, panel)
-    pygame.draw.rect(out, AMBER, (panel.x, panel.y, 8, round(panel.height * k0) // 8 * 8))
-    y = panel.y + pad_y
+    gaps = {"label": 12, "head": 8, "sub": 0}
+    shade = corner_shade(f["top"])
+    shade.set_alpha(round(255 * min(1.0, age / 12)))
+    out.blit(shade, (0, 0))
+    height = sum(img.get_height() + gaps[kind] for kind, img, _ in lines)
+    # bottom-left, clear of the game's own companion bar; or right-aligned mid-screen
+    y = 600 - height // 2 if f["top"] else H - 150 - height
     for kind, img, delay in lines:
-        k = min(1.0, max(0.0, (age - delay) / 5))
+        x = W - 104 - img.get_width() if f["top"] else 104
+        k = min(1.0, max(0.0, (age - delay) / 10))
         if k > 0:
-            lift = round(8 * (1 - k)) // 4 * 4
+            lift = round(12 * (1 - k)) // 4 * 4
+            glow, pad = soft_shadow(img)
+            glow.set_alpha(round(200 * k))
+            out.blit(glow, (x - pad, y + lift - pad + 4))
             img = img.copy()
             img.set_alpha(round(255 * k))
-            out.blit(img, (panel.x + pad_x, y + lift))
+            out.blit(img, (x, y + lift))
         y += img.get_height() + gaps[kind]
 
 
@@ -583,7 +555,7 @@ def _lowpass(x, k=0.25):
 
 
 def soundtrack(duration, cuts, path):
-    """Warm, modern chiptune at 112 bpm in D major-pentatonic: a soft
+    """Warm, modern chiptune at 100 bpm in D major-pentatonic: a soft
     triangle bass, a thin pulse lead with a dotted echo, a gentle kick and
     a hat. A quiet intro pad, a soft tick on each chapter, and a resolving
     chord on the end card."""
@@ -594,7 +566,7 @@ def soundtrack(duration, cuts, path):
         if i < len(total):
             total[i:i + len(sig)] += gain * sig[:len(total) - i]
 
-    beat = 60 / 112
+    beat = 60 / 100
     intro, end = 2.9, duration - 6.0
     # Intro: a slow pad and a rising arpeggio as the logo forms.
     for n_ in (50, 57, 62, 66):
@@ -648,7 +620,7 @@ def soundtrack(duration, cuts, path):
 
 # == Main =======================================================================================
 
-DISSOLVE = [2, 4, 8, 12, 12, 8, 4, 2]       # mosaic block size over the 8 frames around a chapter cut
+DISSOLVE = [2, 3, 4, 6, 8, 10, 10, 8, 6, 4, 3, 2]     # mosaic block size over the frames around a chapter cut
 
 
 def main():
@@ -658,10 +630,10 @@ def main():
     video_tmp = os.path.join(tmp, "video.mp4")
     enc = ad.encoder(video_tmp, (W, H))
 
-    g = Game("kitsune", "tokyo", companion_id="hana", item_box={}, badges=[])
+    g = Game("capybara", "tokyo", companion_id="hana", item_box={}, badges=[])
     g._take_hit = lambda *_: None
     sections = [opening(), world_map(), run_jump_stomp(g), quiz_block(g), around_the_world(),
-                secret_rooms(g), power_ups(g), learn(g), ai_buddy(g)]
+                secret_rooms(g), learn(g), ai_buddy(g)]
     cuts = []
 
     def stream():
