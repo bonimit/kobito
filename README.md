@@ -614,7 +614,7 @@ Python proxy also gives each player `AI_RATE_PER_MIN` requests a minute (default
 spend limit in your AI provider's dashboard** — that is the real safety net.
 Other settings: `KOBITO_AI_PROVIDER` (which service first),
 `KOBITO_CLAUDE_MODEL` / `KOBITO_GEMINI_MODEL` / `KOBITO_OPENAI_MODEL` (defaults
-`claude-haiku-5-5`, `gemini-2.5-flash`, `gpt-4o-mini` — if a service says the
+`claude-haiku-5-5`, `gemini-3.8-flash`, `gpt-4o-mini` — if a service says the
 model isn't available to your key, set one it does offer), and `AI_MOCK=1`
 (canned answers, no keys, for testing). `GET /health?probe=1` on any proxy
 shows what `check_ai.py` shows.

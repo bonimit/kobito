@@ -4,7 +4,7 @@ so it runs on the desktop game and on the small proxy server
 (server/kobito_ai_proxy.py) alike, with no SDKs to install.
 
     ANTHROPIC_API_KEY                  Claude      (model: KOBITO_CLAUDE_MODEL,  default claude-haiku-5-5)
-    GEMINI_API_KEY / GOOGLE_API_KEY    Gemini      (model: KOBITO_GEMINI_MODEL,  default gemini-2.5-flash)
+    GEMINI_API_KEY / GOOGLE_API_KEY    Gemini      (model: KOBITO_GEMINI_MODEL,  default gemini-3.8-flash)
     OPENAI_API_KEY                     ChatGPT     (model: KOBITO_OPENAI_MODEL,  default gpt-4o-mini)
     KOBITO_AI_PROVIDER=claude|gemini|chatgpt     which one to try first
 
@@ -25,7 +25,7 @@ PROVIDERS = {
     },
     "gemini": {
         "label": "GEMINI", "keys": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model_env": "KOBITO_GEMINI_MODEL",
-        "model": "gemini-2.5-flash", "base": "https://generativelanguage.googleapis.com",
+        "model": "gemini-3.8-flash", "base": "https://generativelanguage.googleapis.com",
     },
     "chatgpt": {
         "label": "CHATGPT", "keys": ("OPENAI_API_KEY",), "model_env": "KOBITO_OPENAI_MODEL",

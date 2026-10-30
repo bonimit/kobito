@@ -13,7 +13,7 @@ const GUARD = "You are a friendly companion character inside a Japanese-learning
 const MAX_PROMPT = 3500, MAX_TOKENS = 1024;
 const PROVIDERS = {
   claude: { keys: ["ANTHROPIC_API_KEY"], model: ["KOBITO_CLAUDE_MODEL", "claude-haiku-5-5"] },
-  gemini: { keys: ["GEMINI_API_KEY", "GOOGLE_API_KEY"], model: ["KOBITO_GEMINI_MODEL", "gemini-2.5-flash"] },
+  gemini: { keys: ["GEMINI_API_KEY", "GOOGLE_API_KEY"], model: ["KOBITO_GEMINI_MODEL", "gemini-3.8-flash"] },
   chatgpt: { keys: ["OPENAI_API_KEY"], model: ["KOBITO_OPENAI_MODEL", "gpt-4o-mini"] },
 };
 const ORDER = ["claude", "gemini", "chatgpt"];
