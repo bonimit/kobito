@@ -240,15 +240,23 @@ class Detour(Exception):
 
 
 def run_bot(g, jump_holes=True):
-    """make_ad's auto-runner, plus: take off early for every hole in the
-    ground (at full run it otherwise reacts too late and drops into a
-    secret pit, which only the 'under the city' chapter should show)."""
+    """make_ad's auto-runner, plus: take off early for every gap in the
+    ground -- plain holes and secret pits alike. At a full run it otherwise
+    reacts too late and drops in, and only the 'under the city' chapter
+    should ever show the hero going down a hole."""
     bot(g)
     p = g.player
-    if jump_holes and p.on_ground and not g.world.hidden:
-        for pit in g.surface.secret_pits:
-            if 0 < pit["x0"] - p.rect.right < 90:
-                held.add(JUMP)
+    # On flat ground on_ground flickers every other update (one update of
+    # gravity moves the hero 0.5 px, which rounds to 0, so it doesn't touch
+    # down until the next). We sample every second update, so after a bounce
+    # we can land on the "off" phase every time -- count resting as grounded.
+    grounded = p.on_ground or 0 <= p.velocity_y <= 31
+    if jump_holes and grounded and not g.world.hidden:
+        segs = g.world.ground_segments_px
+        edges = [end for (_, end), (start, _) in zip(segs, segs[1:]) if start > end]
+        edges += [pit["x0"] for pit in g.surface.secret_pits]
+        if any(0 < edge - p.rect.right < 110 for edge in edges):
+            held.add(JUMP)
 
 
 def ad_game(theme):
@@ -265,7 +273,9 @@ def ad_game(theme):
 
 
 def stay_on_surface(g):
-    if g.world is not g.surface:
+    """Stop the render if the hero goes down a hole in a shot that isn't about that."""
+    p = g.player
+    if g.world is not g.surface or p.rect.top > g.surface.ground_y + 10 or g.transition is not None:
         raise Detour("the hero fell into a hole outside the secret-room chapter")
 
 
