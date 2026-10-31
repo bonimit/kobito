@@ -1,6 +1,6 @@
-"""A 45-second trailer for Kobito in a modern pixel-art style, made from the real game.
+"""A one-minute trailer for Kobito in a modern pixel-art style, made from the real game.
 
-    python tools/make_ad45.py            # writes docs/ad45_16x9.mp4 (1920x1080, 45.0 s)
+    python tools/make_trailer.py         # writes docs/trailer_16x9.mp4 (1920x1080, 60.0 s)
 
 Art direction: a modern indie pixel trailer, not a 2000s TV spot.
   * Palette: deep night ink, warm off-white and one amber accent (a cyan
@@ -15,18 +15,25 @@ Art direction: a modern indie pixel trailer, not a 2000s TV spot.
     ("01  EXPLORE"), a headline and a muted subtitle.
   * Music: Y2K eurodance / J-pop at 132 bpm -- supersaw stabs, octave
     bass, four-on-the-floor, a sparkle arpeggio; the drop lands on the map.
-  * Motion: hard cuts inside a chapter; a short pixel-mosaic dissolve
-    between chapters; text slides up in whole pixel steps.
+  * Motion: hard cuts inside a chapter; a half-second crossfade between
+    chapters; text rises in whole pixel steps.
+
+It tells one journey, each beat held long enough to take in, chapters
+joined by a gentle half-second crossfade:
 
      0  opening -- the logo assembles, the capybara walks in
-     4  01 EXPLORE   the overworld map
-     9  02 PLAY      run · jump · stomp
-    15  03 LEARN     every block is a quiz
-    19  04 TRAVEL    Hawaii, the North Pole, Galápagos
-    24  05 DISCOVER  secret rooms: fall in, parachute down
-    29  06 STUDY     vocabulary, kanji, JLPT-style
-    33  07 BUDDY     a wrong answer and a live AI hint
-    39  end card
+     5  THE JOURNEY BEGINS  walk the world map to Tokyo and hop in
+    11  TOKYO               first steps: run, jump, stomp
+    17  TOKYO               the first ? block -- a question, answered right
+    22  UNDER THE CITY      drop down a hole, explore the secret room, climb back out
+    33  A LITTLE HELP       a wrong answer; Hana's live hint
+    39  FURTHER AWAY        Hawaii, the North Pole, Galápagos
+    47  GROWING             harder questions, then N5 -> N1
+    55  end card
+
+The hero only ever falls into a hole in the "under the city" chapter (and
+that shot follows it all the way down and back up); anywhere else the
+render stops with an error if it does.
 
 Every gameplay shot is the actual game, driven frame by frame by
 tools/make_ad.py. Needs ffmpeg and numpy.
@@ -55,7 +62,7 @@ from kobito.quiz_screen import PHASE_ANSWERING, QuizScreen  # noqa: E402
 from kobito.world_select_screen import WorldSelectScreen  # noqa: E402
 
 FPS = ad.FPS
-LENGTH = 45 * FPS
+LENGTH = 60 * FPS
 W, H = 1920, 1080
 LW, LH = 480, 270                      # the pixel canvas of the cards (x4)
 RIGHT, UP, JUMP, RUN, FIRE = pygame.K_RIGHT, pygame.K_UP, pygame.K_SPACE, pygame.K_LSHIFT, pygame.K_x
@@ -224,85 +231,136 @@ def blit_center(out, img, cx, y):
 
 
 # == Shots ===================================================================================
+#
+# One continuous journey: the same Tokyo stage (one Game) runs from the first
+# steps through the quiz, the secret subway and the hint; then the world opens up.
 
-def opening(n=120):
+class Detour(Exception):
+    """The hero changed world (fell down a hole) in a shot that isn't about that."""
+
+
+def run_bot(g, jump_holes=True):
+    """make_ad's auto-runner, plus: take off early for every hole in the
+    ground (at full run it otherwise reacts too late and drops into a
+    secret pit, which only the 'under the city' chapter should show)."""
+    bot(g)
+    p = g.player
+    if jump_holes and p.on_ground and not g.world.hidden:
+        for pit in g.surface.secret_pits:
+            if 0 < pit["x0"] - p.rect.right < 90:
+                held.add(JUMP)
+
+
+def ad_game(theme):
+    """A Game for the trailer: no damage, and no interactive quiz popping up
+    when the hero bumps a ? block (it would wait for a key press forever --
+    the trailer draws its quizzes itself)."""
+    g = Game("capybara", theme, companion_id="hana", item_box={}, badges=[])
+    g._take_hit = lambda *_: None
+
+    async def no_quiz():
+        return None
+    g._check_question_blocks = no_quiz
+    return g
+
+
+def stay_on_surface(g):
+    if g.world is not g.surface:
+        raise Detour("the hero fell into a hole outside the secret-room chapter")
+
+
+def opening(n=150):
     mascot = town_ui.Mascot("capybara")
     canvas = pygame.Surface((LW, LH))
 
     def draw(out, t):
         night_bg(canvas, t)
-        draw_logo(canvas, t, (LW // 2, 108), assemble=min(1.0, t / 2.0))
+        draw_logo(canvas, t, (LW // 2, 108), assemble=min(1.0, t / 2.2))
         # the capybara walks in along the horizon and stops under the logo
-        k = min(1.0, t / 2.6)
+        k = min(1.0, t / 3.0)
         fx = round(-40 + (LW // 2 + 40) * (1 - (1 - k) ** 2))
         mascot.update(1 / FPS, k < 1)
         sprite = mascot.frame([], scale=1, moving=k < 1, facing_right=True)
         canvas.blit(sprite, sprite.get_rect(midbottom=(fx, LH - 26)))
         pygame.draw.rect(canvas, INK_3, (0, LH - 26, LW, 1))
         upscale(canvas, out)
-        if t > 2.2:
-            k2 = min(1.0, (t - 2.2) / 0.5)
+        if t > 2.4:
+            k2 = min(1.0, (t - 2.4) / 0.5)
             label = px_text("こびと", AMBER, 16, 3, spacing=4)
             blit_center(out, label, W // 2, round(560 - 8 * (1 - k2)) // 4 * 4)
-        if t > 2.7:
+        if t > 3.0:
             line = soft_text("A pixel platformer that teaches you Japanese", PAPER, 34)
+            line.set_alpha(round(255 * min(1.0, (t - 3.0) / 0.6)))
             blit_center(out, line, W // 2, 660)
 
     for i in range(n):
         yield frame(card=lambda out, t=i / FPS: draw(out, t))
 
 
-def world_map(n=150):
+def world_map(walk=150, hold=10):
+    """Choose Tokyo on the map: walk there along the roads, hop in, fade."""
+    from kobito.world_select_screen import ENTER_SECONDS
     m = WorldSelectScreen("capybara")
-    towns = ["tokyo", "kyoto", "okinawa"]            # a little tour along the roads
-    m.x, m.y = m.world.nodes["sky"]
+    dest = "tokyo"
+    # start from the town whose road to Tokyo is about four seconds' walk
+    start = min((n for n in m.world.nodes if n != dest), key=lambda n: abs(_route_len(m, n, dest) - 760))
+    m.x, m.y = m.world.nodes[start]
     m._snap_camera()
-    leg = 0
-    for i in range(n):
-        if not m.route and leg < len(towns):
-            m.route = m.world.route(m.x, m.y, towns[leg])
-            leg += 1
-        dt = 1 / FPS
+    m.route = m.world.route(m.x, m.y, dest)
+    caps = ("THE JOURNEY BEGINS", "Pick where to go", "23 places on one big map")
+    dt = 1 / FPS
+    for i in range(walk + hold):
         m.time += dt
         m._walk(dt)
         m.mascot.update(dt, m.moving)
         m._follow(dt)
         m._draw()
-        yield frame(m.screen.copy(), "01  EXPLORE", "Pick a world", "23 places on one big map")
+        yield frame(m.screen.copy(), *caps)
+    m._update_near(quiet=True)
+    m.near = dest
+    m._go_in()
+    while m.entering[1] < ENTER_SECONDS:
+        m.entering[1] += dt
+        m.time += dt
+        m.mascot.update(dt, False)
+        m._draw()
+        yield frame(m.screen.copy(), *caps)
 
 
-def run_jump_stomp(g, n=165):
+def _route_len(m, start, dest):
+    x, y = m.world.nodes[start]
+    pts = [(x, y)] + list(m.world.route(x, y, dest))
+    return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:]))
+
+
+def first_steps(g, n=180):
     reset(g, g.surface)
     place(g, 64)
     held.update({RIGHT, RUN})
-    for i in range(n):
-        bot(g)
+    for _ in range(n):
+        run_bot(g)
         step(g)
-        yield frame(snap(g), "02  PLAY", "Run, jump, stomp", "Classic platforming, from Tokyo to Hokkaido")
+        stay_on_surface(g)
+        yield frame(snap(g), "TOKYO", "First steps", "Run, jump and stomp through the city")
     held.clear()
 
 
-def quiz_block(g):
+def first_question(g):
     s = g.surface
     block = min((b for b in s.question_blocks if b.rect.x > g.player.rect.x + 60), key=lambda b: b.rect.x)
     question = shuffled(g.question_bank.questions[0], random.Random(3))       # 犬 (いぬ)
     reset(g)
-    place(g, block.rect.centerx - 70)
-    caps = ("03  LEARN", "Every block is a quiz", "Answer in Japanese to power up")
+    place(g, block.rect.centerx - 140)
+    caps = ("TOKYO", "Every block asks a question", "Answer in Japanese to power up")
     held.add(RIGHT)
-    for _ in range(10):
+    for _ in range(24):
         if g.player.rect.centerx >= block.rect.centerx - 4:
             held.discard(RIGHT)
         step(g)
         yield frame(snap(g), *caps)
     held.discard(RIGHT)
     held.add(JUMP)
-    real_check = g._check_question_blocks
-
-    async def no_quiz():
-        return None
-    g._check_question_blocks = no_quiz
-    for _ in range(12):
+    for _ in range(14):
         step(g)
         if block in g.player.touched:
             break
@@ -310,65 +368,109 @@ def quiz_block(g):
     held.clear()
     block.mark_used()
     bg = snap(g)
-    for i, f in enumerate(quiz_frames(g, question, block.rect.move(-g.camera_x, 0), bg, 54, n_reveal=30)):
-        yield frame(f["game"], *(caps if i < 54 else ("03  LEARN", "Correct!", "犬 = いぬ, dog  ·  +10 XP")))
+    right = ("TOKYO", "Correct!", "犬 = いぬ  ·  dog  ·  +10 XP")
+    for i, f in enumerate(quiz_frames(g, question, block.rect.move(-g.camera_x, 0), bg, 60, n_reveal=36)):
+        yield frame(f["game"], *(caps if i < 60 else right))
     block.mark_answered(True)
     g._add_effect_text("+10 XP", (block.rect.centerx, block.rect.top), (150, 255, 170))
+    for _ in range(30):
+        step(g)
+        yield frame(snap(g), *right)
+
+
+def under_the_city(g):
+    """Run up to a hole, drop in, land in the hidden room, explore -- then
+    climb the rope back out and hop onto the street. The whole round trip."""
+    s = g.surface
+    pit = min((p for p in s.secret_pits if p["x0"] > g.player.rect.right + 300), key=lambda p: p["x0"],
+              default=s.secret_pits[0])
+    reset(g, s)
+    place(g, pit["x0"] - 260)
+    held.update({RIGHT})
+    caps = ("UNDER THE CITY", "A hole in the street…", "Some holes lead somewhere")
+    for _ in range(150):                                          # walk in (no jumping) and fall
+        step(g)
+        yield frame(snap(g), *caps)
+        if g.world is not s or g.transition is not None:
+            break
+    else:
+        raise Detour("the hero never fell into the secret pit")
+    held.clear()
+    while g.transition is not None:                               # the fade, game paused
+        step(g)
+        yield frame(snap(g), *caps)
+    room = g.world
+    from kobito.game import HIDDEN_STYLES
+    spec = HIDDEN_STYLES[room.style]                              # whichever room this hole leads to
+    caps = ("UNDER THE CITY", f"A secret {spec['meaning']}", f"{spec['jp']} ({spec['reading']})  ·  hidden rooms under every stage")
+    held.update({RIGHT})
+    for _ in range(80):                                           # land, look around, explore
+        if g.player.on_ground:
+            run_bot(g, jump_holes=False)
+        step(g)
+        yield frame(snap(g), *caps)
+    held.clear()
+    # back up the rope
+    reset(g, room)
+    place(g, room.goal.rect.centerx, room.ground_y)
+    held.add(UP)
+    caps = ("UNDER THE CITY", "Climb back out", "のぼる  ·  to climb")
+    for _ in range(150):                                          # climb, fade, hop out of the hole
+        step(g)
+        if g.world is s:
+            held.clear()
+        yield frame(snap(g), *caps)
+        if g.world is s and g.climb_out is None and g.transition is None:
+            break
+    held.update({RIGHT})                                          # and carry on down the street
     for _ in range(24):
         step(g)
-        yield frame(snap(g), "03  LEARN", "Correct!", "犬 = いぬ, dog  ·  +10 XP")
-    g._check_question_blocks = real_check
+        yield frame(snap(g), *caps)
+    held.clear()
 
 
-def around_the_world(per=56):
-    stops = [("hawaii", "Hawaii", "ハワイ"), ("north_pole", "North Pole", "ほっきょく"),
-             ("galapagos", "Galápagos", "ガラパゴス")]
-    for theme, name, kana in stops:
-        g = Game("capybara", theme, companion_id="hana", item_box={}, badges=[])
-        g._take_hit = lambda *_: None
+def a_little_help(g):
+    bank = {q["id"]: q for q in g.question_bank.questions}
+    q = shuffled(bank["kanji_n5_001"], random.Random(1))
+    reset(g, g.surface)
+    step(g, 4)
+    bg = snap(g)
+    hint = ("Ooh, so close! 語 means 'language' and it's read ご -- so think 'Japan' + 'language'. "
+            "You've got this!")
+    for i, f in enumerate(quiz_frames(g, q, pygame.Rect(480, 430, 1, 1), bg, 45, answer_right=False,
+                                      n_reveal=20, hint=hint, n_hint=120)):
+        if i < 65:
+            yield frame(f["game"], "A LITTLE HELP", "Stuck?", "Everyone gets stuck sometimes", top=True)
+        else:
+            yield frame(f["game"], "A LITTLE HELP", "Hana's got you", "Live hints from Claude, Gemini or ChatGPT",
+                        top=True)
+
+
+def travel(theme, name, kana, n=84):
+    def shot():
+        g = ad_game(theme)
         reset(g)
         place(g, 400)
         held.update({RIGHT, RUN})
         step(g, 20)
         g.banner = None
-        for _ in range(per):
-            bot(g)
+        for _ in range(n):
+            run_bot(g)
             step(g)
+            stay_on_surface(g)
             g.effects = []                         # no pickup labels floating through the caption
-            yield frame(snap(g), "04  TRAVEL", name, kana)
+            yield frame(snap(g), "FURTHER AWAY", name, kana)
         held.clear()
-
-
-def secret_rooms(g):
-    s = g.surface
-    pit = s.secret_pits[0]
-    reset(g, s)
-    place(g, (pit["x0"] + pit["x1"]) // 2, s.ground_y - 40)
-    for i in range(75):
-        step(g)
-        if g.world is not s and g.transition is None:
-            held.update({RIGHT, RUN})
-            bot(g)
-        yield frame(snap(g), "05  DISCOVER", "Secret rooms", "Subways, sewers and mines under every stage")
-    held.clear()
-    reset(g, s)
-    g._enter_sky(next(iter(s.springs)).link)
-    g._leave_hidden()
-    step(g, 70)                       # let the chute drift into view first
-    g.banner = None
-    for _ in range(66):
-        step(g)
-        yield frame(snap(g), "05  DISCOVER", "Parachute down", "パラシュート  ·  back from the secret sky")
+    return shot()
 
 
 QUIZ_KINDS = [("Vocabulary", "gen_meaning_n4_地震"), ("Kanji", "kanji_n2_001"), ("JLPT-style", None)]
 
 
-def learn(g):
+def growing(g):
     bank = {q["id"]: q for q in g.question_bank.questions}
     jlpt = next((q for q in g.question_bank.questions if q.get("style") == "jlpt" and "ordering" in q["id"]), None)
     reset(g, g.surface)
-    place(g, 1500)
     step(g, 4)
     bg = snap(g)
     anchor = pygame.Rect(480, 420, 1, 1)
@@ -378,38 +480,44 @@ def learn(g):
             continue
         quiz = QuizScreen(g.screen, shuffled(q, random.Random(i)), background=bg, anchor_rect=anchor,
                           hint_service=g.hint_service, points=20)
-        for _ in range(40):
+        for _ in range(45):
             quiz._age += 1 / FPS
             quiz._draw(None, PHASE_ANSWERING)
-            yield frame(g.screen.copy(), "06  STUDY", name, "Endless questions, from your first kana to JLPT N1")
+            yield frame(g.screen.copy(), "GROWING", name, "The questions grow with you", top=True)
 
 
-def ai_buddy(g):
-    picker = CompanionSelectScreen()
-    for i in range(60):
-        index = [0, 2][min(1, i // 30)]
-        if index != picker.index:
-            picker.index, picker.typed = index, 0.0
-        picker.time += 1 / FPS
-        picker.typed += 60 / FPS
-        picker.backdrop.update(1 / FPS)
-        picker._draw()
-        yield frame(picker.screen.copy())          # a full screen of its own UI: no caption on top
-    bank = {q["id"]: q for q in g.question_bank.questions}
-    q = shuffled(bank["kanji_n5_001"], random.Random(1))
-    reset(g, g.surface)
-    place(g, 2900)
-    step(g, 4)
-    bg = snap(g)
-    hint = ("Ooh, so close! 語 means 'language' and it's read ご -- so think 'Japan' + 'language'. "
-            "You've got this!")
-    for i, f in enumerate(quiz_frames(g, q, pygame.Rect(480, 430, 1, 1), bg, 24, answer_right=False,
-                                      n_reveal=12, hint=hint, n_hint=90)):
-        if i < 36:
-            yield frame(f["game"], "07  BUDDY", "Stuck?", "Your buddy has your back", top=True)
-        else:
-            yield frame(f["game"], "07  BUDDY", "Live AI hints", "Written for you by Claude, Gemini or ChatGPT",
-                        top=True)
+def levels_card(n=105):
+    canvas = pygame.Surface((LW, LH))
+    levels = ["N5", "N4", "N3", "N2", "N1"]
+
+    def draw(out, t):
+        night_bg(canvas, t)
+        tile, gap = 52, 12
+        x0 = LW // 2 - (5 * tile + 4 * gap) // 2
+        lit_upto = t / 0.35
+        for i, lv in enumerate(levels):
+            rect = pygame.Rect(x0 + i * (tile + gap), 74, tile, tile)
+            lit = i < lit_upto
+            pygame.draw.rect(canvas, INK, rect.move(2, 2))
+            pygame.draw.rect(canvas, AMBER if lit else INK_2, rect)
+            pygame.draw.rect(canvas, PAPER if lit else INK_3, rect, 1)
+            label = px_text(lv, INK if lit else MUTED, 16, 1, shadow=None)
+            canvas.blit(label, label.get_rect(center=rect.center))
+            if i < 4:
+                for d in range(2, gap - 1, 3):
+                    canvas.set_at((rect.right + d, rect.centery), AMBER if i + 1 < lit_upto else INK_3)
+        upscale(canvas, out)
+        if t > 1.2:
+            img = px_text("FROM YOUR FIRST KANA TO JLPT N1", PAPER, 16, 3, spacing=2)
+            img.set_alpha(round(255 * min(1.0, (t - 1.2) / 0.5)))
+            blit_center(out, img, W // 2, 660)
+        if t > 1.8:
+            img = soft_text("Endless questions, new every time you play", MUTED, 32)
+            img.set_alpha(round(255 * min(1.0, (t - 1.8) / 0.5)))
+            blit_center(out, img, W // 2, 760)
+
+    for i in range(n):
+        yield frame(card=lambda out, t=i / FPS: draw(out, t))
 
 
 def end_card(n):
@@ -512,13 +620,6 @@ def compose(f, age):
         pygame.transform.scale(f["game"], (W, H), out)
         caption(out, f, age)
     return out
-
-
-def mosaic(out, block):
-    if block <= 1:
-        return out
-    small = pygame.transform.scale(out, (W // block, H // block))
-    return pygame.transform.scale(small, (W, H))
 
 
 # == Soundtrack =================================================================================
@@ -656,7 +757,7 @@ def soundtrack(duration, cuts, path):
 
 # == Main =======================================================================================
 
-DISSOLVE = [2, 3, 4, 6, 8, 10, 10, 8, 6, 4, 3, 2]     # mosaic block size over the frames around a chapter cut
+CROSSFADE = 15          # frames: each chapter fades in over the last frame of the one before
 
 
 def main():
@@ -666,46 +767,44 @@ def main():
     video_tmp = os.path.join(tmp, "video.mp4")
     enc = ad.encoder(video_tmp, (W, H))
 
-    g = Game("capybara", "tokyo", companion_id="hana", item_box={}, badges=[])
-    g._take_hit = lambda *_: None
-    sections = [opening(), world_map(), run_jump_stomp(g), quiz_block(g), around_the_world(),
-                secret_rooms(g), learn(g), ai_buddy(g)]
+    g = ad_game("tokyo")
+    sections = [opening(), world_map(), first_steps(g), first_question(g), under_the_city(g), a_little_help(g),
+                travel("hawaii", "Hawaii", "ハワイ"), travel("north_pole", "North Pole", "ほっきょく"),
+                travel("galapagos", "Galápagos", "ガラパゴス"), growing(g), levels_card()]
     cuts = []
 
     def stream():
-        """Every frame in order; the end card fills whatever is left of the 45 s."""
+        """Every frame in order; the end card fills whatever is left of the minute."""
         n = 0
         for section in sections:
             cuts.append(n)
             for f in section:
                 yield f
                 n += 1
-        if LENGTH - n < 3 * FPS:
-            raise SystemExit(f"shots run {n / FPS:.1f} s -- trim them, the end card needs 3 s")
+        if LENGTH - n < 4 * FPS:
+            raise SystemExit(f"shots run {n / FPS:.1f} s -- trim them, the end card needs 4 s")
         cuts.append(n)
         yield from end_card(LENGTH - n)
 
-    # Frames go out a few behind the ones being made, so a dissolve can start before its cut.
-    half = len(DISSOLVE) // 2
-    last, age, buffer, i = None, 0, [], 0
-    source = stream()
-    done = False
-    while not done or buffer:
-        while not done and len(buffer) < half + 1:
-            try:
-                buffer.append(next(source))
-            except StopIteration:
-                done = True
-        f = buffer.pop(0)
+    last, age, i = None, 0, 0
+    previous = None                  # the last frame of the chapter before, for the crossfade
+    for f in stream():
         ad.frame_no = i
         key = (f["eyebrow"], f["head"])
         age = age + 1 if key == last else 0
         last = key
         out = compose(f, age)
-        for c in cuts[1:]:
-            if c - half <= i < c + half:
-                out = mosaic(out, DISSOLVE[i - (c - half)])
+        since = i - max(c for c in cuts if c <= i)
+        if previous is not None and i > 0 and since < CROSSFADE:
+            k = (since + 1) / (CROSSFADE + 1)
+            fade = previous.copy()
+            fade.set_alpha(round(255 * (1 - k) ** 1.5))
+            out.blit(fade, (0, 0))
+        if since >= CROSSFADE or i == 0:
+            held_frame = out
         enc.stdin.write(pygame.image.tobytes(out, "RGB"))
+        if i + 1 in cuts:
+            previous = held_frame
         i += 1
     enc.stdin.close()
     enc.wait()
@@ -714,7 +813,7 @@ def main():
 
     audio = os.path.join(tmp, "music.wav")
     soundtrack(duration, [c / FPS for c in cuts[1:]], audio)
-    out = os.path.join(out_dir, "ad45_16x9.mp4")
+    out = os.path.join(out_dir, "trailer_16x9.mp4")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", video_tmp, "-i", audio, "-c:v", "copy", "-c:a", "aac",
                     "-b:a", "192k", "-shortest", "-movflags", "+faststart", out], check=True)
     print(f"{out}: {os.path.getsize(out) / 1e6:.1f} MB")
