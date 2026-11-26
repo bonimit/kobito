@@ -495,7 +495,7 @@ async def main():
     gif = os.path.join(OUT_DIR, "cover.gif")
     subprocess.run(
         ["ffmpeg", "-y", "-loglevel", "error", "-i", mp4, "-vf",
-         "fps=10,scale=560:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];"
+         "fps=10,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];"
          "[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle", gif],
         check=True)
     for path in (mp4, gif):
