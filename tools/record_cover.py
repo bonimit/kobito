@@ -164,8 +164,8 @@ def draw_title(surface, strength, lines):
     veil = pygame.Surface((W, H), pygame.SRCALPHA)
     veil.fill((14, 10, 26, round(200 * strength)))
     surface.blit(veil, (0, 0))
-    title = ui.title_font(96).render("KOBITO", True, (255, 214, 90))
-    shadow = ui.title_font(96).render("KOBITO", True, (60, 30, 20))
+    title = ui.title_font(80).render("KOTOBA QUEST", True, (255, 214, 90))
+    shadow = ui.title_font(80).render("KOTOBA QUEST", True, (60, 30, 20))
     for img, dy in ((shadow, 5), (title, 0)):
         img.set_alpha(round(255 * strength))
         surface.blit(img, img.get_rect(center=(W // 2, 210 + dy)))
@@ -177,7 +177,7 @@ def draw_title(surface, strength, lines):
         y += size + 14
 
 
-TITLE_LINES = [("こびと  ·  a Japanese-learning platformer", 26, (255, 244, 214)),
+TITLE_LINES = [("ことばクエスト  ·  a Japanese-learning platformer", 26, (255, 244, 214)),
                ("Run, jump, and answer JLPT N5 – N1 questions", 20, (190, 210, 255))]
 END_LINES = [("Learn Japanese while you play", 26, (255, 244, 214)),
              ("1,400+ questions  ·  N5 – N1  ·  AI companion hints", 20, (190, 210, 255))]
